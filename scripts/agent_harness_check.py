@@ -17,10 +17,19 @@ SERVICE_DIRS = (
     "web-app",
 )
 
+DOC_DIRS = (
+    "docs/product",
+    "docs/architecture",
+    "docs/compliance",
+    "docs/agent-harness",
+    "docs/runbooks",
+)
+
 REQUIRED_DIRS = (
     "docs",
     "scripts",
     *SERVICE_DIRS,
+    *DOC_DIRS,
 )
 
 REQUIRED_FILES = (
@@ -30,10 +39,71 @@ REQUIRED_FILES = (
     ".gitattributes",
     ".gitignore",
     "docs/README.md",
+    "docs/product/brazil-trucker-finance-blueprint.md",
+    "docs/product/mvp-scope.md",
+    "docs/product/product-principles.md",
+    "docs/product/user-personas.md",
+    "docs/product/glossary-pt-br.md",
+    "docs/product/roadmap.md",
+    "docs/architecture/system-overview.md",
+    "docs/architecture/service-boundaries.md",
+    "docs/architecture/data-model.md",
+    "docs/architecture/api-contracts.md",
+    "docs/architecture/event-contracts.md",
+    "docs/architecture/security.md",
+    "docs/architecture/auth.md",
+    "docs/architecture/observability.md",
+    "docs/architecture/deployment.md",
+    "docs/compliance/rntrc-antt.md",
+    "docs/compliance/vale-pedagio.md",
+    "docs/compliance/diesel-anp.md",
+    "docs/compliance/insurance.md",
+    "docs/compliance/mei-caminhoneiro.md",
+    "docs/compliance/ipva-licensing.md",
+    "docs/compliance/tax-profiles.md",
+    "docs/compliance/official-source-register.md",
+    "docs/agent-harness/README.md",
+    "docs/agent-harness/workflow.md",
+    "docs/agent-harness/architecture.md",
+    "docs/agent-harness/validation.md",
+    "docs/agent-harness/testing-policy.md",
+    "docs/agent-harness/golden-principles.md",
+    "docs/agent-harness/observability.md",
+    "docs/agent-harness/risk-register.md",
+    "docs/runbooks/local-development.md",
+    "docs/runbooks/demo-seed.md",
+    "docs/runbooks/data-import-failure.md",
+    "docs/runbooks/incident-response.md",
+    "docs/runbooks/production-release.md",
     "scripts/agent_harness_check.py",
     *(f"{service}/AGENTS.md" for service in SERVICE_DIRS),
     *(f"{service}/README.md" for service in SERVICE_DIRS),
 )
+
+REQUIRED_TEXT = {
+    "AGENTS.md": (
+        "docs/agent-harness/README.md",
+        "python scripts/agent_harness_check.py",
+    ),
+    "README.md": (
+        "not an official government, legal, tax, accounting, or insurance channel",
+        "docs/architecture/api-contracts.md",
+    ),
+    "docs/compliance/official-source-register.md": (
+        "ANTT",
+        "ANP",
+        "SUSEP",
+        "Receita Federal",
+    ),
+    "docs/architecture/api-contracts.md": (
+        "GET /api/drivers/me",
+        "POST /api/trips/{tripId}/profitability-estimate",
+    ),
+    "docs/architecture/event-contracts.md": (
+        "trip.finance.recalculate.requested",
+        "trip.finance.recalculated",
+    ),
+}
 
 
 def _missing_paths(paths: tuple[str, ...], expected_type: str) -> list[str]:
@@ -48,20 +118,39 @@ def _missing_paths(paths: tuple[str, ...], expected_type: str) -> list[str]:
     return missing
 
 
+def _content_failures(required_text: dict[str, tuple[str, ...]]) -> list[str]:
+    failures: list[str] = []
+
+    for relative_path, expected_values in required_text.items():
+        path = ROOT / relative_path
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for expected_value in expected_values:
+            if expected_value not in text:
+                failures.append(f"{relative_path} missing text: {expected_value}")
+
+    return failures
+
+
 def main() -> int:
     missing_dirs = _missing_paths(REQUIRED_DIRS, "directory")
     missing_files = _missing_paths(REQUIRED_FILES, "file")
+    content_failures = _content_failures(REQUIRED_TEXT)
 
-    if missing_dirs or missing_files:
+    if missing_dirs or missing_files or content_failures:
         print("agent harness check failed", file=sys.stderr)
         for path in missing_dirs:
             print(f"missing directory: {path}", file=sys.stderr)
         for path in missing_files:
             print(f"missing file: {path}", file=sys.stderr)
+        for failure in content_failures:
+            print(f"content failure: {failure}", file=sys.stderr)
         return 1
 
     print("agent harness check passed")
     print(f"checked {len(REQUIRED_DIRS)} directories and {len(REQUIRED_FILES)} files")
+    print(f"checked {sum(len(values) for values in REQUIRED_TEXT.values())} required text markers")
     return 0
 
 
