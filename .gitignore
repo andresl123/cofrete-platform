@@ -1,0 +1,45 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor and tool state
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# JavaScript and mobile tooling
+node_modules/
+.next/
+.expo/
+dist/
+build/
+coverage/
+
+# Native/mobile build output
+android/.gradle/
+android/app/build/
+ios/Pods/
+ios/build/
+
+# Local generated data
+tmp/
+temp/
