@@ -22,6 +22,7 @@ This repository is structured as a multi-service platform so API, worker, mobile
 - Product promise: `docs/product/brazil-trucker-finance-blueprint.md`
 - Architecture: `docs/architecture/system-overview.md`
 - Kubernetes deployment: `docs/architecture/kubernetes.md`
+- Repository structure: `docs/architecture/repository-structure.md`
 - Service ownership: `docs/architecture/service-boundaries.md`
 - API contracts: `docs/architecture/api-contracts.md`
 - Event contracts: `docs/architecture/event-contracts.md`
@@ -41,3 +42,21 @@ python scripts/agent_harness_check.py
 ```
 
 This verifies the baseline folders, ownership files, and required documentation expected by follow-up tasks.
+
+## Current Status
+
+Working now:
+
+- Repository foundation and service ownership placeholders.
+- Product, architecture, compliance, runbook, and agent harness docs.
+- Harness validation script.
+- Worktree helper script for task branches.
+
+Planned in follow-up issues:
+
+- Docker Compose local infrastructure and `.env.example`.
+- GitHub PR checks, PR template, and image publishing workflow.
+- Java/Spring Boot service scaffolds.
+- Expo mobile app scaffold.
+- React/Vite web app scaffold.
+- Runtime smoke scripts and demo seed/reset scripts.

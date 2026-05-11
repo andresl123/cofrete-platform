@@ -46,6 +46,7 @@ REQUIRED_FILES = (
     "docs/product/glossary-pt-br.md",
     "docs/product/roadmap.md",
     "docs/architecture/system-overview.md",
+    "docs/architecture/repository-structure.md",
     "docs/architecture/service-boundaries.md",
     "docs/architecture/data-model.md",
     "docs/architecture/api-contracts.md",
@@ -67,6 +68,8 @@ REQUIRED_FILES = (
     "docs/agent-harness/workflow.md",
     "docs/agent-harness/architecture.md",
     "docs/agent-harness/validation.md",
+    "docs/agent-harness/runtime-smoke-tests.md",
+    "docs/agent-harness/worktree-development.md",
     "docs/agent-harness/testing-policy.md",
     "docs/agent-harness/golden-principles.md",
     "docs/agent-harness/observability.md",
@@ -77,6 +80,10 @@ REQUIRED_FILES = (
     "docs/runbooks/incident-response.md",
     "docs/runbooks/production-release.md",
     "scripts/agent_harness_check.py",
+    "scripts/start_task_worktree.sh",
+    "scripts/smoke/README.md",
+    "scripts/demo/README.md",
+    "scripts/ci/README.md",
     *(f"{service}/AGENTS.md" for service in SERVICE_DIRS),
     *(f"{service}/README.md" for service in SERVICE_DIRS),
 )
@@ -99,10 +106,26 @@ REQUIRED_TEXT = {
     "docs/architecture/api-contracts.md": (
         "GET /api/drivers/me",
         "POST /api/trips/{tripId}/profitability-estimate",
+        "POST /api/trips/{tripId}/vale-pedagio-confirmation",
+        "GET /api/documents",
     ),
     "docs/architecture/event-contracts.md": (
         "trip.finance.recalculate.requested",
         "trip.finance.recalculated",
+        "reserve.allocation.requested",
+        "\"version\": 1",
+    ),
+    "docs/architecture/repository-structure.md": (
+        "scripts/smoke",
+        ".github/workflows/pr-checks.yml",
+    ),
+    "docs/agent-harness/runtime-smoke-tests.md": (
+        "finance-calculation-smoke.sh",
+        "toll reimbursement does not increase profit",
+    ),
+    "docs/agent-harness/worktree-development.md": (
+        "scripts/start_task_worktree.sh",
+        "../cofrete-platform-worktrees/",
     ),
     "docs/architecture/deployment.md": (
         "Kubernetes is the intended production runtime",
