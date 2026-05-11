@@ -14,3 +14,4 @@
 - Imported public data is normalized server-side.
 - Gov.br and official government credentials are never handled by Cofrete.
 - Toll reimbursement and Vale-Pedagio are never profit.
+- MEI, IPVA, freight-floor, waiting-time, and tax planning values are configurable by source/year instead of hardcoded.

@@ -2,20 +2,25 @@
 
 Events use JSON payloads, explicit event type names, idempotency keys where needed, and correlation IDs for traceability.
 
-## `trip.finance.recalculate.requested`
+## Naming Decision
+
+The master blueprint names the trip request event `trip.recalculation.requested` and the fuel import event `fuel-price.import.completed`. Those names are canonical going forward. Earlier planning used `trip.finance.recalculate.requested` and `fuel-prices.import.completed`; implementations should not introduce those older names unless a migration compatibility issue explicitly requires them.
+
+## `trip.recalculation.requested`
 
 Published by Core API when trip economics change.
 
 ```json
 {
-  "eventType": "trip.finance.recalculate.requested",
+  "eventType": "trip.recalculation.requested",
   "version": 1,
   "eventId": "evt_123",
-  "tripId": "trip_123",
-  "driverId": "driver_123",
+  "tripId": "TRIP-001",
+  "driverId": "DRIVER-001",
+  "truckId": "TRUCK-001",
   "reason": "EXPENSE_CREATED",
   "correlationId": "corr_123",
-  "occurredAt": "2026-05-11T12:00:00Z"
+  "requestedAt": "2026-05-11T12:00:00Z"
 }
 ```
 
@@ -49,34 +54,33 @@ Published when reserve allocation should be recalculated after freight payment, 
   "eventType": "reserve.allocation.requested",
   "version": 1,
   "eventId": "evt_125",
-  "freightId": "freight_123",
-  "paymentId": "payment_123",
-  "driverId": "driver_123",
-  "grossPaymentAmount": "8000.00",
+  "freightPaymentId": "PAY-001",
+  "tripId": "TRIP-001",
+  "grossAmount": "8000.00",
   "currency": "BRL",
   "correlationId": "corr_123",
-  "occurredAt": "2026-05-11T12:00:10Z"
+  "requestedAt": "2026-05-11T12:00:10Z"
 }
 ```
 
-## `fuel-prices.import.completed`
+## `fuel-price.import.completed`
 
 Published by Data Importer Worker after a fuel dataset import finishes.
 
 ```json
 {
-  "eventType": "fuel-prices.import.completed",
+  "eventType": "fuel-price.import.completed",
   "version": 1,
   "eventId": "evt_126",
   "source": "ANP",
-  "fuelType": "DIESEL_S10",
+  "fuelTypes": ["DIESEL_S10"],
   "periodStart": "2026-05-03",
   "periodEnd": "2026-05-09",
-  "recordsImported": 1234,
+  "recordsImported": 12345,
   "freshnessStatus": "CURRENT",
   "importAuditId": "import_123",
   "correlationId": "corr_123",
-  "occurredAt": "2026-05-11T12:00:20Z"
+  "completedAt": "2026-05-11T12:00:20Z"
 }
 ```
 
@@ -90,11 +94,12 @@ Published by Data Importer Worker after toll data import or normalization comple
   "version": 1,
   "eventId": "evt_127",
   "source": "ANTT_DADOS_ABERTOS",
-  "recordsImported": 987,
+  "recordsImported": 500,
+  "formats": ["CSV", "JSON"],
   "freshnessStatus": "CURRENT",
   "importAuditId": "import_124",
   "correlationId": "corr_123",
-  "occurredAt": "2026-05-11T12:00:30Z"
+  "completedAt": "2026-05-11T12:00:30Z"
 }
 ```
 
@@ -103,4 +108,4 @@ Published by Data Importer Worker after toll data import or normalization comple
 - Consumers must be idempotent by `eventId` or domain-specific idempotency key.
 - Monetary values are decimal strings with explicit currency.
 - Events must not contain secrets or raw document content.
-- Event payloads must include `version`, `correlationId`, and `occurredAt`.
+- Event payloads must include `version`, `correlationId`, and a timestamp field named for the event action, such as `requestedAt`, `completedAt`, or `occurredAt`.

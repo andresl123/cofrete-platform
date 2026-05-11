@@ -7,7 +7,7 @@ Owns:
 - Users, drivers, trucks, trailers, and tax profiles.
 - Freights, trips, direct costs, refuels, toll records, and Vale-Pedagio records.
 - Reserve buckets, reserve transactions, customers, receivables, and documents.
-- Compliance metadata and mobile/web authentication.
+- Compliance metadata, CIOT/freight-floor inputs, waiting-time records, IPVA/licensing reminders, and mobile/web authentication.
 - API request validation and persistence.
 
 Does not own:
@@ -23,6 +23,8 @@ Owns:
 - Trip profitability calculations.
 - Reserve allocation calculations.
 - Safe-withdrawal calculations.
+- Fuel estimate calculations from route km, consumption, diesel price, and confidence.
+- Waiting-time financial impact and customer profitability recalculation.
 - Financial health scoring.
 - Idempotent handling of finance events.
 
@@ -38,6 +40,7 @@ Owns:
 
 - ANP diesel price imports.
 - ANTT toll dataset imports when added.
+- Optional future ANTT freight-floor table imports.
 - Import audit records, freshness status, retries, and failure reporting.
 
 Does not own:

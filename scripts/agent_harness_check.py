@@ -61,8 +61,10 @@ REQUIRED_FILES = (
     "docs/compliance/diesel-anp.md",
     "docs/compliance/insurance.md",
     "docs/compliance/mei-caminhoneiro.md",
+    "docs/compliance/ciot-freight-floor.md",
     "docs/compliance/ipva-licensing.md",
     "docs/compliance/tax-profiles.md",
+    "docs/compliance/waiting-time.md",
     "docs/compliance/official-source-register.md",
     "docs/agent-harness/README.md",
     "docs/agent-harness/workflow.md",
@@ -105,15 +107,33 @@ REQUIRED_TEXT = {
     ),
     "docs/architecture/api-contracts.md": (
         "GET /api/drivers/me",
+        "POST /api/tax-profile",
         "POST /api/trips/{tripId}/profitability-estimate",
-        "POST /api/trips/{tripId}/vale-pedagio-confirmation",
+        "POST /api/trips/{tripId}/acceptance-decision",
+        "POST /api/trips/{tripId}/vale-pedagio",
+        "GET /api/compliance/score",
         "GET /api/documents",
     ),
     "docs/architecture/event-contracts.md": (
-        "trip.finance.recalculate.requested",
+        "trip.recalculation.requested",
         "trip.finance.recalculated",
         "reserve.allocation.requested",
+        "fuel-price.import.completed",
         "\"version\": 1",
+    ),
+    "docs/architecture/data-model.md": (
+        "tax_rule_year",
+        "ipva_rule",
+        "TripProfitabilitySnapshot",
+        "WaitingTimeRecord",
+    ),
+    "docs/compliance/ciot-freight-floor.md": (
+        "CIOT required?",
+        "Freight-Floor Checker",
+    ),
+    "docs/compliance/waiting-time.md": (
+        "extra_waiting_charge",
+        "waiting_time_rule",
     ),
     "docs/architecture/repository-structure.md": (
         "scripts/smoke",
@@ -135,6 +155,19 @@ REQUIRED_TEXT = {
         "Current Cluster Access Status",
         "Kubernetes Secrets",
         "IngressClass",
+    ),
+    "docs/compliance/diesel-anp.md": (
+        "driver_confirmed",
+        "official_weekly",
+        "truck_consumption_profile",
+    ),
+    "docs/compliance/ipva-licensing.md": (
+        "ipva_rule",
+        "never use one national hardcoded truck percentage",
+    ),
+    "docs/compliance/mei-caminhoneiro.md": (
+        "tax_rule_year",
+        "Do not hardcode the annual limit",
     ),
 }
 

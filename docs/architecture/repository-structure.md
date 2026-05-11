@@ -35,6 +35,10 @@ docs/
 
 The docs are source-of-truth files, not generated artifacts. Changes to contracts, service ownership, validation commands, deployment assumptions, or compliance wording must update these docs.
 
+The canonical RNTRC/ANTT filename is `docs/compliance/rntrc-antt.md`. If a planning note refers to `rntrc-anttt.md`, treat that as a typo and keep the existing corrected filename.
+
+Blueprint-required compliance topics currently have dedicated files for RNTRC/ANTT, CIOT/freight floor, Vale-Pedagio, diesel/ANP, insurance, MEI Caminhoneiro, IPVA/licensing, tax profiles, loading/unloading waiting time, and the official-source register.
+
 ## Planned Infrastructure Structure
 
 COF-003 and COF-004 are expected to add:

@@ -19,6 +19,24 @@ Vale-Pedagio and toll reimbursements are pass-through or receivable money. They 
 - "If you paid tolls yourself, track the amount as reimbursement to collect."
 - "Confirm official Vale-Pedagio rules with ANTT or qualified support before production decisions."
 
+## Route-Based Toll Estimates
+
+The free MVP architecture should use imported ANTT toll plaza data, OSRM/OpenStreetMap route geometry, and geospatial matching. ANTT open data can identify plazas and tariffs, but it does not by itself answer "origin + destination + vehicle + axles = exact toll cost."
+
+Recommended detection flow:
+
+```text
+1. Get route polyline from OSRM or another route engine.
+2. Buffer the route by 300 to 800 meters.
+3. Search toll plazas inside the buffer.
+4. Validate highway, direction, municipality, state, and km marker when available.
+5. Apply truck category or axle count.
+6. Calculate estimated toll total.
+7. Store the result as pass-through or reimbursement, not profit.
+```
+
+Paid APIs such as Maplink, Google Routes, Rotas Brasil, or TollGuru can be evaluated later for production validation, coverage, and SLA.
+
 ## Official Sources
 
 See `docs/compliance/official-source-register.md`.
