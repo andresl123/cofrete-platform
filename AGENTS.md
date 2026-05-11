@@ -27,6 +27,7 @@ This file is intentionally short. Durable project knowledge belongs in versioned
 | System boundaries | `docs/architecture/service-boundaries.md` |
 | API contracts | `docs/architecture/api-contracts.md` |
 | Event contracts | `docs/architecture/event-contracts.md` |
+| Runtime smoke tests | `docs/agent-harness/runtime-smoke-tests.md` |
 | Validation | `docs/agent-harness/validation.md` |
 | Testing policy | `docs/agent-harness/testing-policy.md` |
 | Golden principles | `docs/agent-harness/golden-principles.md` |
@@ -35,6 +36,7 @@ This file is intentionally short. Durable project knowledge belongs in versioned
 ## Working Rules
 
 - Use a dedicated Git worktree branch for each task.
+- Prefer `scripts/start_task_worktree.sh <task-name> [base-branch]` when starting a new task branch.
 - Read the nearest `AGENTS.md` before editing a service.
 - Keep service-specific changes inside that service unless the task requires shared repo updates.
 - Run `python scripts/agent_harness_check.py` before opening a PR that changes repository structure.
