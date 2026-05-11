@@ -14,17 +14,22 @@
 - Mobile app scaffold.
 - Identity, driver, truck, and tax profile model.
 - Versioned API and event contracts.
+- Tax rule year, IPVA rule, compliance profile, and insurance policy models.
 
 ## M2 Finance Engine
 
 - Freight and trip profitability APIs.
 - Deterministic finance calculation engine.
 - Reserve bucket and safe-withdrawal allocation.
+- Trip profitability snapshots and explainable calculation traces.
 
 ## M3 Brazil Data And Compliance
 
 - ANP diesel importer with fixtures.
 - Toll and Vale-Pedagio classification.
+- CIOT and manual ANTT minimum freight-floor comparison.
+- Loading/unloading waiting-time tracking.
+- IPVA/licensing and Pessoa Fisica autonoma tax-profile support.
 - Compliance center data model and wording.
 - Receivables and customer payment tracking.
 

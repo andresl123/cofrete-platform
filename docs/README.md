@@ -10,6 +10,6 @@ Keep documents focused and link related service-specific details from the releva
 - `architecture/`: system overview, service boundaries, data model, contracts, auth, security, observability, and deployment.
 - `architecture/kubernetes.md`: Kubernetes production deployment conventions and cluster discovery status.
 - `architecture/repository-structure.md`: current and planned repository layout.
-- `compliance/`: Brazil-specific advisory compliance notes and official-source register.
+- `compliance/`: Brazil-specific advisory compliance notes, including RNTRC/ANTT, CIOT/freight floor, tolls, diesel, insurance, IPVA/licensing, tax profiles, waiting time, and official-source register.
 - `agent-harness/`: agent workflow, validation, testing policy, risk register, and engineering principles.
 - `runbooks/`: local development, demo seed, importer failure, incident response, and production release.

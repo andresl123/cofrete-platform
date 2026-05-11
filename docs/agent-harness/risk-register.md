@@ -7,6 +7,10 @@
 | Toll handling | Reimbursement counted as profit | Explicit toll classification |
 | Diesel prices | Stale or inaccurate price changes estimates | Source confidence and freshness metadata |
 | RNTRC/insurance | App may imply official verification | Separate app reminders from official action |
+| CIOT/freight floor | App may imply a legal certification or use stale ANTT tables | Advisory wording, source dates, and importer tests before automation |
+| IPVA/licensing | Hardcoded national rules would be wrong by state/year | State/year rule tables with official-source links |
+| Loading/unloading waiting time | Wrong threshold or rate could create customer disputes | Configurable source-backed rule and legal review before production copy |
+| gov.br/ANTT login | Asking for government credentials would create trust and security risk | App auth stays separate; never request gov.br credentials |
 | User documents | Sensitive files exposed | Authenticated access and no raw logs |
 | Receipts/images | Storage and access-control risk | Signed URLs or authenticated APIs |
 | Payment data | Financial privacy risk | Least privilege and audit logging |
