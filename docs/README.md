@@ -8,6 +8,7 @@ Keep documents focused and link related service-specific details from the releva
 
 - `product/`: product promise, MVP scope, personas, glossary, and roadmap.
 - `architecture/`: system overview, service boundaries, data model, contracts, auth, security, observability, and deployment.
+- `architecture/kubernetes.md`: Kubernetes production deployment conventions and cluster discovery status.
 - `compliance/`: Brazil-specific advisory compliance notes and official-source register.
 - `agent-harness/`: agent workflow, validation, testing policy, risk register, and engineering principles.
 - `runbooks/`: local development, demo seed, importer failure, incident response, and production release.

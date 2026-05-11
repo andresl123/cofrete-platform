@@ -44,3 +44,21 @@ npm run build
 ```sh
 docker compose config
 ```
+
+## Future Kubernetes Checks
+
+These commands become required once Kubernetes manifests or deployment tooling exist.
+
+```sh
+kubectl kustomize deploy/overlays/staging
+```
+
+```sh
+kubectl apply --dry-run=server -f <rendered-manifests.yaml>
+```
+
+```sh
+kubectl rollout status deployment/<deployment-name> -n <namespace>
+```
+
+Use the Kubernetes REST gateway for read-only cluster inspection when configured. Never print or commit gateway tokens, kubeconfig contents, Secret values, or rendered Secret data.

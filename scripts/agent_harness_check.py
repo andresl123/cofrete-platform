@@ -50,6 +50,7 @@ REQUIRED_FILES = (
     "docs/architecture/data-model.md",
     "docs/architecture/api-contracts.md",
     "docs/architecture/event-contracts.md",
+    "docs/architecture/kubernetes.md",
     "docs/architecture/security.md",
     "docs/architecture/auth.md",
     "docs/architecture/observability.md",
@@ -102,6 +103,15 @@ REQUIRED_TEXT = {
     "docs/architecture/event-contracts.md": (
         "trip.finance.recalculate.requested",
         "trip.finance.recalculated",
+    ),
+    "docs/architecture/deployment.md": (
+        "Kubernetes is the intended production runtime",
+        "docs/architecture/kubernetes.md",
+    ),
+    "docs/architecture/kubernetes.md": (
+        "Current Cluster Access Status",
+        "Kubernetes Secrets",
+        "IngressClass",
     ),
 }
 
