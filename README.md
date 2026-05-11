@@ -21,6 +21,7 @@ This repository is structured as a multi-service platform so API, worker, mobile
 - Product scope: `docs/product/mvp-scope.md`
 - Product promise: `docs/product/brazil-trucker-finance-blueprint.md`
 - Architecture: `docs/architecture/system-overview.md`
+- Kubernetes deployment: `docs/architecture/kubernetes.md`
 - Service ownership: `docs/architecture/service-boundaries.md`
 - API contracts: `docs/architecture/api-contracts.md`
 - Event contracts: `docs/architecture/event-contracts.md`
