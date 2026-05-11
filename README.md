@@ -1,6 +1,10 @@
 # Cofrete Platform
 
-Cofrete Platform is a multi-service repository for the Cofrete product. The repository is intentionally structured around service boundaries so API, worker, mobile, web, and documentation work can land in focused PRs.
+Cofrete is a financial health and compliance assistant for Brazilian truck drivers and owner-operators. It helps answer one practical question:
+
+> After fuel, tolls, maintenance, tires, insurance, taxes, documents, emergency reserve, and future truck replacement, how much money is actually safe to use?
+
+This repository is structured as a multi-service platform so API, worker, mobile, web, and documentation work can land in focused PRs.
 
 ## Structure
 
@@ -12,6 +16,21 @@ Cofrete Platform is a multi-service repository for the Cofrete product. The repo
 - `docs/`: product, architecture, compliance, and operations docs.
 - `scripts/`: local automation.
 
+## Source Of Truth
+
+- Product scope: `docs/product/mvp-scope.md`
+- Product promise: `docs/product/brazil-trucker-finance-blueprint.md`
+- Architecture: `docs/architecture/system-overview.md`
+- Service ownership: `docs/architecture/service-boundaries.md`
+- API contracts: `docs/architecture/api-contracts.md`
+- Event contracts: `docs/architecture/event-contracts.md`
+- Compliance boundaries: `docs/compliance/official-source-register.md`
+- Agent workflow: `docs/agent-harness/README.md`
+
+## Compliance Boundary
+
+Cofrete is advisory product software. It is not an official government, legal, tax, accounting, or insurance channel. Production behavior must link drivers to official ANTT, ANP, SUSEP, Receita Federal, state DETRAN/SEFAZ, insurer, and professional guidance where appropriate.
+
 ## Validation
 
 Run the repository harness check from the repo root:
@@ -20,4 +39,4 @@ Run the repository harness check from the repo root:
 python scripts/agent_harness_check.py
 ```
 
-This verifies the baseline folders and ownership files expected by follow-up tasks.
+This verifies the baseline folders, ownership files, and required documentation expected by follow-up tasks.
