@@ -31,3 +31,4 @@ mobile-app / web-app
 - Compliance wording must remain advisory and link to official sources.
 - Events must include correlation IDs for tracing.
 - Contracts live in docs until generated or shared contract packages are introduced.
+- `core-api` must be internally modular from the first implementation, with explicit `profile`, `trip`, `finance`, `reserve`, `compliance`, `receivables`, and `imports` modules so domains can be tested independently and extracted later if scale requires it.

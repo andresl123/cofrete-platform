@@ -10,6 +10,20 @@ Owns:
 - Compliance metadata, CIOT/freight-floor inputs, waiting-time records, IPVA/licensing reminders, and mobile/web authentication.
 - API request validation and persistence.
 
+Internal implementation rule:
+
+When implementation begins, `core-api` must be internally modular. Keep clear package/module boundaries for:
+
+- `profile`
+- `trip`
+- `finance`
+- `reserve`
+- `compliance`
+- `receivables`
+- `imports`
+
+These modules should be separated in code even while they deploy together inside `core-api`. This keeps the first implementation simple to operate while preserving a clean path to extract high-pressure domains into independent services later.
+
 Does not own:
 
 - Long-running external imports.
