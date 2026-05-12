@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cofrete Architecture Explainer</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #5b6472;
+      --line: #d9e0e8;
+      --page: #f5f1e9;
+      --panel: #ffffff;
+      --dark: #1e2a36;
+      --green: #21745a;
+      --blue: #285b93;
+      --amber: #a76516;
+      --red: #a63b3b;
+      --soft-green: #dff0eb;
+      --soft-blue: #e4edf8;
+      --soft-amber: #fff0d9;
+      --soft-red: #f8e2e2;
+      --shadow: 0 18px 42px rgba(23, 32, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.52;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: 76vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 470px);
+      gap: 42px;
+      align-items: center;
+      padding: 52px 0 36px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--green);
+      font-size: 0.82rem;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin-bottom: 22px;
+      font-size: clamp(2.55rem, 7vw, 5.4rem);
+      line-height: 0.96;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      font-size: clamp(1.8rem, 3.2vw, 2.75rem);
+      line-height: 1.06;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin-bottom: 8px;
+      font-size: 1.07rem;
+    }
+
+    .lead {
+      max-width: 720px;
+      margin-bottom: 26px;
+      color: #384453;
+      font-size: clamp(1.07rem, 2vw, 1.28rem);
+    }
+
+    .quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .quick-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 13px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #33404f;
+      font-size: 0.92rem;
+      font-weight: 760;
+      text-decoration: none;
+    }
+
+    .summary-panel {
+      background: var(--dark);
+      color: white;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .summary-top {
+      padding: 22px 22px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .summary-top strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 1.2rem;
+    }
+
+    .summary-top p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .summary-list {
+      display: grid;
+      gap: 1px;
+      background: rgba(255, 255, 255, 0.11);
+    }
+
+    .summary-item {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 15px 18px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .summary-badge {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.14);
+      font-weight: 900;
+    }
+
+    .summary-item p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.92rem;
+    }
+
+    .summary-item strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    section {
+      padding: 56px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.72fr) minmax(280px, 1fr);
+      gap: 32px;
+      align-items: end;
+      margin-bottom: 26px;
+    }
+
+    .section-head p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card {
+      min-height: 184px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 10px 24px rgba(23, 32, 42, 0.06);
+    }
+
+    .card p {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      margin-bottom: 13px;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 0.75rem;
+      font-weight: 850;
+    }
+
+    .tag.green {
+      background: var(--soft-green);
+      color: var(--green);
+    }
+
+    .tag.blue {
+      background: var(--soft-blue);
+      color: var(--blue);
+    }
+
+    .tag.amber {
+      background: var(--soft-amber);
+      color: var(--amber);
+    }
+
+    .tag.red {
+      background: var(--soft-red);
+      color: var(--red);
+    }
+
+    .architecture-map {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .diagram {
+      min-height: 500px;
+      display: grid;
+      align-content: center;
+      gap: 13px;
+      padding: 24px;
+      border-radius: 8px;
+      background: var(--dark);
+      color: white;
+    }
+
+    .layer {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .node {
+      min-height: 92px;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .node strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .node span {
+      color: rgba(255, 255, 255, 0.74);
+      font-size: 0.9rem;
+    }
+
+    .node.core {
+      background: #2d785f;
+    }
+
+    .node.data {
+      background: #2e5d91;
+    }
+
+    .node.queue {
+      background: #8a5b1f;
+    }
+
+    .connector {
+      width: 2px;
+      height: 24px;
+      justify-self: center;
+      background: rgba(255, 255, 255, 0.32);
+    }
+
+    .note {
+      padding: 22px;
+      border: 1px solid #e4c88f;
+      border-radius: 8px;
+      background: #fff8ea;
+    }
+
+    .note p {
+      color: #5d4b30;
+    }
+
+    .list {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .list li {
+      margin: 8px 0;
+    }
+
+    .doc-index {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .doc-link {
+      display: grid;
+      gap: 5px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      text-decoration: none;
+      box-shadow: 0 8px 20px rgba(23, 32, 42, 0.05);
+    }
+
+    .doc-link strong {
+      color: #263442;
+    }
+
+    .doc-link span {
+      color: var(--muted);
+      font-size: 0.93rem;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .timeline-num {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--dark);
+      color: white;
+      font-weight: 900;
+    }
+
+    .timeline-item p {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #eef2f6;
+      color: #233142;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    footer {
+      padding: 30px 0 46px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    @media (max-width: 920px) {
+      .hero,
+      .section-head,
+      .architecture-map {
+        grid-template-columns: 1fr;
+      }
+
+      .grid,
+      .grid.two,
+      .doc-index {
+        grid-template-columns: 1fr;
+      }
+
+      .layer {
+        grid-template-columns: 1fr;
+      }
+
+      .diagram {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .page {
+        width: min(100% - 22px, 1180px);
+      }
+
+      .hero {
+        min-height: auto;
+        padding-top: 34px;
+      }
+
+      section {
+        padding: 42px 0;
+      }
+
+      .quick-links a {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Architecture docs explained</p>
+        <h1>Cofrete is a docs-first, multi-service platform.</h1>
+        <p class="lead">
+          The architecture folder describes how Cofrete should be built: a mobile-first product,
+          a Core API, asynchronous workers, durable data, documented contracts, and Kubernetes as
+          the intended production runtime.
+        </p>
+        <nav class="quick-links" aria-label="Page shortcuts">
+          <a href="#system">System</a>
+          <a href="#services">Services</a>
+          <a href="#contracts">Contracts</a>
+          <a href="#data">Data</a>
+          <a href="#runtime">Runtime</a>
+          <a href="#docs">Source docs</a>
+        </nav>
+      </div>
+
+      <aside class="summary-panel" aria-label="Architecture summary">
+        <div class="summary-top">
+          <strong>Architecture in one minute</strong>
+          <p>The repository defines the target shape before the service code is scaffolded.</p>
+        </div>
+        <div class="summary-list">
+          <div class="summary-item">
+            <div class="summary-badge">1</div>
+            <div>
+              <strong>Clients stay thin</strong>
+              <p>Mobile and web call Cofrete APIs. Business math stays in backend/domain code.</p>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-badge">2</div>
+            <div>
+              <strong>Core API owns product data</strong>
+              <p>It validates requests, stores primary records, publishes events, and stays internally modular by domain.</p>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-badge">3</div>
+            <div>
+              <strong>Workers handle async work</strong>
+              <p>Finance calculations and external data imports run behind RabbitMQ events.</p>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-badge">4</div>
+            <div>
+              <strong>Production means Kubernetes</strong>
+              <p>Docker Compose is planned for local development only; production targets the user's cluster.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </header>
+
+    <section id="system">
+      <div class="section-head">
+        <h2>System Shape</h2>
+        <p>
+          Cofrete is planned as a monorepo with multiple deployable services. The client apps do not
+          fetch official external data directly; server-side services import, normalize, audit, and expose it.
+        </p>
+      </div>
+      <div class="architecture-map">
+        <div class="diagram" aria-label="Cofrete architecture diagram">
+          <div class="layer">
+            <div class="node">
+              <strong>mobile-app</strong>
+              <span>Driver onboarding, freight calculator, reserve wallet, compliance center.</span>
+            </div>
+            <div class="node">
+              <strong>web-app</strong>
+              <span>Admin, demo, support, and operational dashboards.</span>
+            </div>
+          </div>
+          <div class="connector" aria-hidden="true"></div>
+          <div class="layer">
+            <div class="node core">
+              <strong>core-api</strong>
+              <span>Synchronous product APIs, auth, validation, and primary business records.</span>
+            </div>
+            <div class="node data">
+              <strong>PostgreSQL</strong>
+              <span>Drivers, trips, expenses, reserves, documents, receivables, snapshots, imports.</span>
+            </div>
+          </div>
+          <div class="connector" aria-hidden="true"></div>
+          <div class="node queue">
+            <strong>RabbitMQ</strong>
+            <span>Finance recalculation, reserve allocation, and import completion events.</span>
+          </div>
+          <div class="connector" aria-hidden="true"></div>
+          <div class="layer">
+            <div class="node">
+              <strong>finance-worker</strong>
+              <span>Deterministic finance calculations, reserve allocation, safe withdrawal, health scoring.</span>
+            </div>
+            <div class="node">
+              <strong>data-importer-worker</strong>
+              <span>ANP diesel imports, toll data imports, future ANTT freight-floor imports.</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="note">
+          <h3>Current status</h3>
+          <p>
+            These docs describe implementation targets. The repository currently has service folders,
+            README files, AGENTS guidance, architecture docs, runbooks, and validation scripts. Source code,
+            Dockerfiles, package files, migrations, and tests are reserved for service scaffold issues.
+          </p>
+          <ul class="list">
+            <li>Contracts are markdown source-of-truth until OpenAPI or shared contract packages exist.</li>
+            <li>Kubernetes values are proposed defaults until real cluster discovery succeeds.</li>
+            <li>Compliance wording must stay advisory and point back to official sources.</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section id="services">
+      <div class="section-head">
+        <h2>Service Ownership</h2>
+        <p>
+          The boundaries are meant to keep finance logic auditable and prevent frontend or worker code
+          from quietly owning data it should not own.
+        </p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <span class="tag green">Core API</span>
+          <h3>Primary product system</h3>
+          <p>Owns users, drivers, trucks, trips, costs, refuels, tolls, reserves, receivables, documents, compliance metadata, authentication, validation, and persistence. Implementation should keep explicit internal modules for profile, trip, finance, reserve, compliance, receivables, and imports.</p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Finance Worker</span>
+          <h3>Auditable calculations</h3>
+          <p>Owns trip profitability, reserve allocation, safe withdrawal, fuel estimates, waiting-time impact, customer profitability, financial health, and idempotent event handling.</p>
+        </article>
+        <article class="card">
+          <span class="tag amber">Data Importer</span>
+          <h3>External datasets</h3>
+          <p>Owns ANP diesel imports, future ANTT toll and freight-floor imports, import audit records, freshness status, retries, and failure reporting.</p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Mobile App</span>
+          <h3>Driver workflows</h3>
+          <p>Owns mobile navigation, validation presentation, offline and error states, and API client usage. It should not become the source of business math.</p>
+        </article>
+        <article class="card">
+          <span class="tag green">Web App</span>
+          <h3>Admin and support</h3>
+          <p>Owns admin/backoffice workflows, demo visibility, support screens, and operational dashboards when enabled.</p>
+        </article>
+        <article class="card">
+          <span class="tag red">Docs</span>
+          <h3>Architecture source of truth</h3>
+          <p>Owns product, architecture, compliance, runbook, and harness knowledge until concrete service scaffolds add generated or shared artifacts.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="contracts">
+      <div class="section-head">
+        <h2>APIs And Events</h2>
+        <p>
+          The API contracts explain what client and backend calls should exist. Event contracts explain
+          how the Core API asks workers to do asynchronous work.
+        </p>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <span class="tag green">HTTP APIs</span>
+          <h3>Driver-facing product actions</h3>
+          <p>Planned endpoints cover profile and tax setup, trips, profitability estimates, expenses, reserves, fuel prices, tolls, Vale-Pedagio, compliance, customers, and receivables.</p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Response shape</span>
+          <h3>Results need traceability</h3>
+          <p>Profitability responses must include gross freight, direct cost, required reserves, safe personal withdrawal, financial health, currency, and a calculation trace ID.</p>
+        </article>
+        <article class="card">
+          <span class="tag amber">RabbitMQ events</span>
+          <h3>Async domain work</h3>
+          <p>Canonical events include <code>trip.recalculation.requested</code>, <code>trip.finance.recalculated</code>, <code>reserve.allocation.requested</code>, and import completion events.</p>
+        </article>
+        <article class="card">
+          <span class="tag red">Event rules</span>
+          <h3>Reliable and auditable</h3>
+          <p>Events need versions, event IDs, correlation IDs, action timestamps, idempotent consumers, decimal-string monetary values, and no secrets or raw document content.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="data">
+      <div class="section-head">
+        <h2>Data Model</h2>
+        <p>
+          The model is organized around identities, trucks, trip economics, reserves, Brazil-specific
+          datasets, compliance, receivables, and import audits.
+        </p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <span class="tag blue">Identity</span>
+          <h3>Who and what is operating</h3>
+          <p>Users, drivers, companies, trucks, trailers, tax profiles, yearly tax rules, and IPVA rules define the operating profile.</p>
+        </article>
+        <article class="card">
+          <span class="tag green">Trip economics</span>
+          <h3>How a freight becomes a decision</h3>
+          <p>Freights, trips, expenses, refuels, cost inputs, profitability snapshots, freight-floor checks, waiting time, and consumption profiles explain the money.</p>
+        </article>
+        <article class="card">
+          <span class="tag amber">Reserves</span>
+          <h3>Money set aside</h3>
+          <p>Reserve buckets, transactions, and rules separate maintenance, tires, taxes, insurance, replacement, emergency, salary, and profit decisions.</p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Brazil data</span>
+          <h3>External operating facts</h3>
+          <p>Fuel prices, station prices, driver fuel reports, toll plazas, tariffs, trip tolls, and Vale-Pedagio records support localized decisions.</p>
+        </article>
+        <article class="card">
+          <span class="tag red">Compliance</span>
+          <h3>Advisory records</h3>
+          <p>RNTRC, insurance, compliance documents, alerts, score snapshots, maintenance, and tire records keep operational risks visible.</p>
+        </article>
+        <article class="card">
+          <span class="tag green">Audit</span>
+          <h3>Explainability by default</h3>
+          <p>Financial, import, compliance, and document records should keep timestamps and enough input metadata to explain how a value was produced.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Auth, Security, And Observability</h2>
+        <p>
+          These docs set the operating rules for user access, sensitive data, logs, health checks,
+          tracing, import freshness, and finance calculation visibility.
+        </p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <span class="tag blue">Auth</span>
+          <h3>Separate from official portals</h3>
+          <p>Cofrete app login is separate from gov.br, ANTT, RNTRC Digital, Receita Federal, ANP, SUSEP, insurers, and state systems.</p>
+        </article>
+        <article class="card">
+          <span class="tag red">Security</span>
+          <h3>Sensitive trucking data</h3>
+          <p>The platform may handle CPF/CNPJ metadata, plates, RENAVAM, RNTRC, insurance documents, receipts, freight values, customer payment history, and future location data.</p>
+        </article>
+        <article class="card">
+          <span class="tag green">Observability</span>
+          <h3>Signals that matter</h3>
+          <p>Services should expose health/readiness, structured logs, correlation IDs, import audit records, calculation traces, retry and dead-letter visibility, and dataset freshness indicators.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="runtime">
+      <div class="section-head">
+        <h2>Deployment And Kubernetes</h2>
+        <p>
+          Deployment docs make one thing explicit: Docker Compose is for local development, while
+          production is intended to run on the user's Kubernetes cluster.
+        </p>
+      </div>
+      <div class="timeline">
+        <article class="timeline-item">
+          <div class="timeline-num">1</div>
+          <div>
+            <h3>Local</h3>
+            <p>Docker Compose is planned as a developer convenience for PostgreSQL, RabbitMQ, MinIO, and service networking once those files exist.</p>
+          </div>
+        </article>
+        <article class="timeline-item">
+          <div class="timeline-num">2</div>
+          <div>
+            <h3>CI</h3>
+            <p>GitHub Actions should run the repository harness, service tests, image build validation, and future manifest validation.</p>
+          </div>
+        </article>
+        <article class="timeline-item">
+          <div class="timeline-num">3</div>
+          <div>
+            <h3>Staging</h3>
+            <p>The staging namespace should validate release candidates with production-like configuration before promotion.</p>
+          </div>
+        </article>
+        <article class="timeline-item">
+          <div class="timeline-num">4</div>
+          <div>
+            <h3>Production</h3>
+            <p>Core API, workers, and web admin should run as Kubernetes workloads. Stateful dependencies need explicit backup, restore, durability, and ownership decisions.</p>
+          </div>
+        </article>
+      </div>
+      <div class="grid two" style="margin-top: 16px;">
+        <article class="card">
+          <span class="tag amber">Pending discovery</span>
+          <h3>Cluster facts are not confirmed</h3>
+          <p>No real namespaces, ingress classes, storage classes, operators, registry credentials, certificate issuers, or observability components have been confirmed from this workspace.</p>
+        </article>
+        <article class="card">
+          <span class="tag green">Proposed defaults</span>
+          <h3>Use until discovery succeeds</h3>
+          <p>Proposed namespaces are <code>cofrete-staging</code> and <code>cofrete</code>. Images should use immutable Git SHA tags, and workers should not be externally exposed.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Design Rules To Preserve</h2>
+        <p>
+          These rules show up across the architecture docs and should guide future code, schemas,
+          infrastructure, and tests.
+        </p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <span class="tag green">Finance</span>
+          <h3>Deterministic and auditable</h3>
+          <p>Financial calculations must be repeatable, traceable, and backed by input/output snapshots.</p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Modularity</span>
+          <h3>Core API starts modular</h3>
+          <p>The first Core API implementation should separate profile, trip, finance, reserve, compliance, receivables, and imports so domains can be tested independently and extracted later.</p>
+        </article>
+        <article class="card">
+          <span class="tag amber">Imports</span>
+          <h3>Server-side official data</h3>
+          <p>External ANP and ANTT datasets should be imported by backend services, not fetched directly from clients.</p>
+        </article>
+        <article class="card">
+          <span class="tag red">Compliance</span>
+          <h3>Advisory wording only</h3>
+          <p>Cofrete should link to official sources and avoid presenting itself as a government, legal, tax, accounting, or insurance channel.</p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Traceability</span>
+          <h3>Correlation IDs everywhere</h3>
+          <p>API requests, events, logs, calculation traces, and import records should be connected by identifiers.</p>
+        </article>
+        <article class="card">
+          <span class="tag green">Secrets</span>
+          <h3>Never commit secret values</h3>
+          <p>ConfigMaps may hold non-secret settings. Credentials belong in Kubernetes Secrets or the cluster's secret-management convention.</p>
+        </article>
+        <article class="card">
+          <span class="tag amber">Operations</span>
+          <h3>Backups before production</h3>
+          <p>Production data is not ready without documented backup schedules, restore tests, queue durability, and object-storage retention.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="docs">
+      <div class="section-head">
+        <h2>Architecture Docs Index</h2>
+        <p>
+          This page summarizes the markdown files in this folder. Use the links below when you need
+          the exact source text or implementation-target details.
+        </p>
+      </div>
+      <div class="doc-index">
+        <a class="doc-link" href="./system-overview.md"><strong>system-overview.md</strong><span>High-level service map, responsibilities, and design constraints.</span></a>
+        <a class="doc-link" href="./service-boundaries.md"><strong>service-boundaries.md</strong><span>What each service owns and explicitly does not own.</span></a>
+        <a class="doc-link" href="./repository-structure.md"><strong>repository-structure.md</strong><span>Current foundation layout and planned service/infrastructure paths.</span></a>
+        <a class="doc-link" href="./api-contracts.md"><strong>api-contracts.md</strong><span>Target HTTP endpoints, response expectations, and error shape.</span></a>
+        <a class="doc-link" href="./event-contracts.md"><strong>event-contracts.md</strong><span>Canonical event names, payload examples, and event rules.</span></a>
+        <a class="doc-link" href="./data-model.md"><strong>data-model.md</strong><span>First implementation target for entities, SQL targets, and audit fields.</span></a>
+        <a class="doc-link" href="./auth.md"><strong>auth.md</strong><span>Roles, token expectations, and gov.br separation boundary.</span></a>
+        <a class="doc-link" href="./security.md"><strong>security.md</strong><span>Sensitive data, security requirements, and review triggers.</span></a>
+        <a class="doc-link" href="./observability.md"><strong>observability.md</strong><span>Required service signals, high-value events, and log rules.</span></a>
+        <a class="doc-link" href="./deployment.md"><strong>deployment.md</strong><span>Target environments, production runtime shape, config rules, and release rules.</span></a>
+        <a class="doc-link" href="./kubernetes.md"><strong>kubernetes.md</strong><span>Kubernetes target architecture, proposed defaults, open decisions, and CI/CD implications.</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page">
+    Static architecture explainer generated from docs/architecture on 2026-05-12.
+  </footer>
+</body>
+</html>

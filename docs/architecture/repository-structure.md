@@ -91,6 +91,15 @@ Until real scripts exist, `scripts/smoke/README.md`, `scripts/demo/README.md`, a
 core-api/
   pom.xml
   src/
+    main/
+      .../
+        profile/
+        trip/
+        finance/
+        reserve/
+        compliance/
+        receivables/
+        imports/
   Dockerfile
 
 finance-worker/
@@ -117,3 +126,5 @@ web-app/
 ```
 
 Service scaffolding issues must update local `README.md` and `AGENTS.md` files with real validation commands.
+
+The `core-api` package names above are implementation targets, not a requirement to use that exact Java base package path. The important rule is that the Core API starts as an internally modular service with explicit domain boundaries for profile, trip, finance, reserve, compliance, receivables, and imports. Cross-module calls should go through clear application/service interfaces rather than sharing ad hoc persistence or business logic.

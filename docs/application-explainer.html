@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cofrete Application Explainer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18202a;
+      --muted: #586272;
+      --line: #d8dee8;
+      --paper: #f7f4ee;
+      --panel: #ffffff;
+      --green: #1f7a5a;
+      --blue: #255c99;
+      --amber: #b56b12;
+      --red: #b63b3b;
+      --teal-soft: #dff2ec;
+      --blue-soft: #e4eef9;
+      --amber-soft: #fff0d7;
+      --red-soft: #f9e3e3;
+      --shadow: 0 20px 45px rgba(24, 32, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: 82vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+      gap: 48px;
+      align-items: center;
+      padding: 56px 0 42px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      margin: 0 0 12px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      font-size: clamp(2.6rem, 7vw, 5.75rem);
+      line-height: 0.94;
+      letter-spacing: 0;
+      margin-bottom: 24px;
+      max-width: 780px;
+    }
+
+    .lead {
+      color: #384351;
+      font-size: clamp(1.08rem, 2vw, 1.35rem);
+      max-width: 720px;
+      margin-bottom: 28px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.66);
+      color: #34404e;
+      font-weight: 700;
+      font-size: 0.92rem;
+      white-space: nowrap;
+    }
+
+    .phone {
+      width: min(100%, 410px);
+      justify-self: end;
+      background: #101821;
+      border-radius: 30px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .screen {
+      background: #fdfdfb;
+      border-radius: 22px;
+      overflow: hidden;
+      min-height: 610px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screen-top {
+      background: #24313f;
+      color: white;
+      padding: 22px 20px 26px;
+    }
+
+    .screen-top p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.74);
+      font-size: 0.88rem;
+    }
+
+    .screen-top strong {
+      display: block;
+      font-size: 1.2rem;
+      margin-bottom: 4px;
+    }
+
+    .decision {
+      margin: -14px 16px 16px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 12px 28px rgba(24, 32, 42, 0.14);
+      padding: 18px;
+      border: 1px solid #edf0f5;
+    }
+
+    .decision h2 {
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--green);
+      background: var(--teal-soft);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-weight: 800;
+      font-size: 0.84rem;
+      margin-bottom: 18px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .money-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      padding: 12px 0;
+      border-top: 1px solid #edf0f5;
+      color: #34404e;
+      font-size: 0.95rem;
+    }
+
+    .money-row strong {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .money-row.safe strong {
+      color: var(--green);
+      font-size: 1.12rem;
+    }
+
+    .screen-list {
+      padding: 0 16px 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .mini-card {
+      background: #f3f6fa;
+      border: 1px solid #e4e9f0;
+      border-radius: 8px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .mini-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: white;
+    }
+
+    .mini-icon.green {
+      background: var(--green);
+    }
+
+    .mini-icon.blue {
+      background: var(--blue);
+    }
+
+    .mini-icon.amber {
+      background: var(--amber);
+    }
+
+    .mini-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .mini-card strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    section {
+      padding: 58px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(280px, 1fr);
+      gap: 32px;
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    .section-head h2 {
+      font-size: clamp(1.8rem, 3vw, 2.7rem);
+      line-height: 1.05;
+      margin-bottom: 0;
+    }
+
+    .section-head p {
+      color: var(--muted);
+      margin-bottom: 0;
+      font-size: 1.03rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px;
+      min-height: 190px;
+      box-shadow: 0 10px 24px rgba(24, 32, 42, 0.06);
+    }
+
+    .card h3 {
+      font-size: 1.08rem;
+      margin-bottom: 8px;
+    }
+
+    .card p {
+      color: var(--muted);
+      margin-bottom: 0;
+    }
+
+    .tag {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .tag.green {
+      color: var(--green);
+      background: var(--teal-soft);
+    }
+
+    .tag.blue {
+      color: var(--blue);
+      background: var(--blue-soft);
+    }
+
+    .tag.amber {
+      color: var(--amber);
+      background: var(--amber-soft);
+    }
+
+    .tag.red {
+      color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .step {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      min-height: 170px;
+    }
+
+    .step::after {
+      content: "";
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      width: 12px;
+      height: 2px;
+      background: var(--line);
+    }
+
+    .step:last-child::after {
+      display: none;
+    }
+
+    .step-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #24313f;
+      color: white;
+      font-weight: 900;
+      margin-bottom: 12px;
+      font-size: 0.88rem;
+    }
+
+    .step h3 {
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .step p {
+      color: var(--muted);
+      margin-bottom: 0;
+      font-size: 0.94rem;
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr minmax(280px, 390px);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .system-map {
+      background: #1f2934;
+      color: white;
+      border-radius: 8px;
+      padding: 24px;
+      display: grid;
+      gap: 14px;
+      align-content: center;
+      min-height: 440px;
+    }
+
+    .layer {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .node {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .node.primary {
+      background: #2f8064;
+    }
+
+    .node.queue {
+      background: #8a591d;
+    }
+
+    .node.db {
+      background: #315a8a;
+    }
+
+    .node strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .node span {
+      color: rgba(255, 255, 255, 0.76);
+      font-size: 0.88rem;
+    }
+
+    .connector {
+      width: 2px;
+      height: 26px;
+      background: rgba(255, 255, 255, 0.3);
+      justify-self: center;
+    }
+
+    .callout {
+      background: #fff8ea;
+      border: 1px solid #ead1a6;
+      border-radius: 8px;
+      padding: 22px;
+    }
+
+    .callout h3 {
+      margin-bottom: 10px;
+    }
+
+    .callout p {
+      color: #5e4a2d;
+    }
+
+    .plain-list {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .plain-list li {
+      margin: 8px 0;
+    }
+
+    .source-links {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .source-links a {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px 14px;
+      text-decoration: none;
+      font-weight: 700;
+      color: #334050;
+    }
+
+    footer {
+      color: var(--muted);
+      padding: 30px 0 46px;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .section-head,
+      .architecture {
+        grid-template-columns: 1fr;
+      }
+
+      .phone {
+        justify-self: start;
+      }
+
+      .grid,
+      .flow,
+      .source-links {
+        grid-template-columns: 1fr;
+      }
+
+      .step::after {
+        display: none;
+      }
+
+      .layer {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .page {
+        width: min(100% - 22px, 1180px);
+      }
+
+      .hero {
+        min-height: auto;
+        padding-top: 34px;
+      }
+
+      .screen {
+        min-height: auto;
+      }
+
+      section {
+        padding: 42px 0;
+      }
+
+      .pill {
+        white-space: normal;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Cofrete Platform</p>
+        <h1>Know what freight money is actually safe to use.</h1>
+        <p class="lead">
+          Cofrete is a Brazil-focused financial health and compliance assistant for autonomous truck drivers,
+          MEI Caminhoneiro drivers, TAC operators, and later small fleet owners. It turns a freight offer into
+          a practical answer: accept, renegotiate, or reject.
+        </p>
+        <div class="hero-actions" aria-label="Main product promises">
+          <span class="pill">Driver-friendly finance</span>
+          <span class="pill">Brazil compliance context</span>
+          <span class="pill">Mobile-first workflows</span>
+        </div>
+      </div>
+
+      <aside class="phone" aria-label="Example Cofrete result">
+        <div class="screen">
+          <div class="screen-top">
+            <strong>Freight decision</strong>
+            <p>Goiania, GO to Sao Paulo, SP</p>
+          </div>
+          <div class="decision">
+            <h2>Trip estimate</h2>
+            <div class="status"><span class="dot"></span> Good health</div>
+            <div class="money-row">
+              <span>Gross freight</span>
+              <strong>R$ 8,000</strong>
+            </div>
+            <div class="money-row">
+              <span>Real trip cost</span>
+              <strong>R$ 4,900</strong>
+            </div>
+            <div class="money-row">
+              <span>Required reserves</span>
+              <strong>R$ 1,600</strong>
+            </div>
+            <div class="money-row safe">
+              <span>Safe withdrawal</span>
+              <strong>R$ 1,100</strong>
+            </div>
+          </div>
+          <div class="screen-list">
+            <div class="mini-card">
+              <div class="mini-icon green">F</div>
+              <div>
+                <strong>Fuel budget</strong>
+                <p>Uses route km, truck consumption, diesel price, and source confidence.</p>
+              </div>
+            </div>
+            <div class="mini-card">
+              <div class="mini-icon blue">R</div>
+              <div>
+                <strong>Reserve wallet</strong>
+                <p>Separates maintenance, tires, taxes, insurance, replacement, and salary.</p>
+              </div>
+            </div>
+            <div class="mini-card">
+              <div class="mini-icon amber">C</div>
+              <div>
+                <strong>Compliance alerts</strong>
+                <p>Tracks RNTRC, CIOT, insurance, IPVA/licensing, and official-source links.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </header>
+
+    <section>
+      <div class="section-head">
+        <h2>The simple idea</h2>
+        <p>
+          Many freight decisions look profitable when only gross freight is shown. Cofrete subtracts the
+          real costs and future obligations first, then shows the amount the driver can safely use.
+        </p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <span class="tag green">Money</span>
+          <h3>Safe withdrawal, not vanity revenue</h3>
+          <p>Gross freight is split into direct trip costs, pass-through toll items, required reserves, taxes, debt, driver salary, and profit.</p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Trust</span>
+          <h3>Every result must be explainable</h3>
+          <p>Calculations keep input and output snapshots so a driver, support user, or auditor can see how a number was produced.</p>
+        </article>
+        <article class="card">
+          <span class="tag amber">Brazil</span>
+          <h3>Localized to trucking realities</h3>
+          <p>The MVP includes MEI Caminhoneiro support, ANP diesel data, RNTRC, CIOT, freight-floor checks, Vale-Pedagio, insurance, and IPVA/licensing reminders.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>How a freight decision works</h2>
+        <p>
+          The driver enters a new freight or trip. Cofrete estimates real economics, separates pass-through
+          money, checks compliance risks, and returns a decision-ready result.
+        </p>
+      </div>
+      <div class="flow" aria-label="Freight decision flow">
+        <article class="step">
+          <div class="step-number">1</div>
+          <h3>Enter the offer</h3>
+          <p>Origin, destination, total km, loaded km, freight value, payment timing, truck, customer, and route assumptions.</p>
+        </article>
+        <article class="step">
+          <div class="step-number">2</div>
+          <h3>Estimate trip costs</h3>
+          <p>Fuel, ARLA, tolls, meals, lodging, reimbursements, and direct expenses are calculated or recorded.</p>
+        </article>
+        <article class="step">
+          <div class="step-number">3</div>
+          <h3>Reserve future money</h3>
+          <p>Maintenance, tires, insurance, documents, taxes, truck replacement, and emergency reserves are allocated.</p>
+        </article>
+        <article class="step">
+          <div class="step-number">4</div>
+          <h3>Check Brazil risks</h3>
+          <p>CIOT, RNTRC, freight-floor context, Vale-Pedagio, insurance, waiting time, and receivables are surfaced as advisory checks.</p>
+        </article>
+        <article class="step">
+          <div class="step-number">5</div>
+          <h3>Decide</h3>
+          <p>The driver sees profit, safe withdrawal, confidence, and a practical recommendation to accept, renegotiate, or reject.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Main product modules</h2>
+        <p>
+          The planned MVP is mobile-first for drivers, with web reserved for admin, demo, support, and
+          backoffice workflows unless a future issue expands it.
+        </p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <span class="tag blue">Onboarding</span>
+          <h3>Driver and truck profile</h3>
+          <p>Stores driver identity, truck details, tax profile, state, RNTRC metadata, insurance, financing, and income goals.</p>
+        </article>
+        <article class="card">
+          <span class="tag green">Calculator</span>
+          <h3>Freight profitability</h3>
+          <p>Computes gross freight, direct costs, reserves, profit, margin, safe withdrawal, and financial health status.</p>
+        </article>
+        <article class="card">
+          <span class="tag amber">Wallet</span>
+          <h3>Reserve buckets</h3>
+          <p>Uses virtual envelopes for fuel cash flow, maintenance, tires, insurance, taxes, documents, truck replacement, emergency, salary, and profit.</p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Receivables</span>
+          <h3>Payment tracking</h3>
+          <p>Tracks advances, balances, Pix, boleto or transfer, Vale-Pedagio, reimbursements, partial payments, and late customer payments.</p>
+        </article>
+        <article class="card">
+          <span class="tag green">Maintenance</span>
+          <h3>Truck cost intelligence</h3>
+          <p>Builds toward cost-per-km, service history, tire lifecycle, downtime, and future preventive maintenance reminders.</p>
+        </article>
+        <article class="card">
+          <span class="tag red">Compliance</span>
+          <h3>Advisory compliance center</h3>
+          <p>Organizes RNTRC, CIOT, MEI, IPVA/licensing, insurance, CNH, document expiration, and official action links without pretending to be an official channel.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>System shape</h2>
+        <p>
+          Cofrete is planned as a multi-service platform. Clients call the Core API. Heavy finance work and
+          external data imports happen asynchronously through workers.
+        </p>
+      </div>
+      <div class="architecture">
+        <div class="system-map" aria-label="Cofrete service map">
+          <div class="layer">
+            <div class="node">
+              <strong>Mobile app</strong>
+              <span>Driver workflows, onboarding, calculator, wallet, compliance center.</span>
+            </div>
+            <div class="node">
+              <strong>Web app</strong>
+              <span>Admin, support, demo visibility, and operational dashboards.</span>
+            </div>
+          </div>
+          <div class="connector" aria-hidden="true"></div>
+          <div class="layer">
+            <div class="node primary">
+              <strong>Core API</strong>
+              <span>Authentication, product APIs, validation, and primary business data.</span>
+            </div>
+            <div class="node db">
+              <strong>PostgreSQL</strong>
+              <span>Drivers, trips, expenses, reserves, documents, receivables, snapshots.</span>
+            </div>
+          </div>
+          <div class="connector" aria-hidden="true"></div>
+          <div class="node queue">
+            <strong>RabbitMQ events</strong>
+            <span>Trip recalculation requests, reserve allocation requests, and import completion events.</span>
+          </div>
+          <div class="connector" aria-hidden="true"></div>
+          <div class="layer">
+            <div class="node">
+              <strong>Finance worker</strong>
+              <span>Deterministic profitability, reserve, safe-withdrawal, and health score calculations.</span>
+            </div>
+            <div class="node">
+              <strong>Data importer worker</strong>
+              <span>ANP diesel prices, toll data, future ANTT freight-floor imports, and freshness status.</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="callout">
+          <h3>Current repository status</h3>
+          <p>
+            This repository is currently at the foundation stage. The service directories exist, but each
+            service currently contains README and AGENTS guidance only. The detailed source of truth is the
+            documentation under <strong>docs/</strong>.
+          </p>
+          <ul class="plain-list">
+            <li>M0 foundation and docs are present.</li>
+            <li>Core API, workers, mobile app, and web app scaffolds are planned follow-up work.</li>
+            <li>The validation script checks the expected repository structure and documentation baseline.</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Important boundaries</h2>
+        <p>
+          The product is advisory software. It helps organize decisions, but it does not replace official
+          systems, government portals, accountants, insurers, or legal guidance.
+        </p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <span class="tag red">Not official</span>
+          <h3>No government account proxy</h3>
+          <p>Cofrete login is separate from gov.br, ANTT, Receita Federal, ANP, SUSEP, insurer, and state systems.</p>
+        </article>
+        <article class="card">
+          <span class="tag amber">Pass-through</span>
+          <h3>Tolls are not profit</h3>
+          <p>Vale-Pedagio and toll reimbursements are tracked separately from profit and safe personal withdrawal.</p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Official links</span>
+          <h3>Compliance copy points back to sources</h3>
+          <p>When decisions affect tax, insurance, RNTRC, CIOT, freight floor, IPVA, or licensing, the product should link to official sources.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Where this page came from</h2>
+        <p>
+          This explainer summarizes the repository README, product docs, architecture docs, service boundary
+          docs, API and event contract docs, and the current service README placeholders.
+        </p>
+      </div>
+      <div class="source-links">
+        <a href="./product/mvp-scope.md">Product MVP scope</a>
+        <a href="./product/brazil-trucker-finance-blueprint.md">Finance blueprint</a>
+        <a href="./architecture/system-overview.md">System overview</a>
+        <a href="./architecture/service-boundaries.md">Service boundaries</a>
+        <a href="./architecture/api-contracts.md">API contracts</a>
+        <a href="./compliance/official-source-register.md">Official source register</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page">
+    Cofrete application explainer. Static documentation page generated from the repository state on 2026-05-12.
+  </footer>
+</body>
+</html>
