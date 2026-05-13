@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:cofrete_core_api;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: true
+    schemas: core_api
+    default-schema: core_api
+    create-schemas: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: core_api

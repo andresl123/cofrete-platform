@@ -62,6 +62,7 @@ REQUIRED_FILES = (
     "docs/architecture/auth.md",
     "docs/architecture/observability.md",
     "docs/architecture/deployment.md",
+    "docs/architecture/core-api-scaffold-explainer.html",
     "docs/compliance/rntrc-antt.md",
     "docs/compliance/vale-pedagio.md",
     "docs/compliance/diesel-anp.md",
@@ -129,6 +130,7 @@ REQUIRED_TEXT = {
         "mvn -q validate test",
         "npm run test:ci",
         "docker compose config",
+        "task-specific HTML explainer",
     ),
     "scripts/ci/README.md": (
         ".github/workflows/pr-checks.yml",
@@ -228,6 +230,14 @@ REQUIRED_TEXT = {
         "Current Cluster Access Status",
         "Kubernetes Secrets",
         "IngressClass",
+    ),
+    "docs/architecture/core-api-scaffold-explainer.html": (
+        "ROU-209 / COF-005",
+        "Core API service scaffold",
+        "cd core-api && mvn -q validate test",
+        "docker compose config",
+        "python scripts/agent_harness_check.py",
+        "Live PostgreSQL startup smoke",
     ),
     "docs/compliance/diesel-anp.md": (
         "driver_confirmed",
