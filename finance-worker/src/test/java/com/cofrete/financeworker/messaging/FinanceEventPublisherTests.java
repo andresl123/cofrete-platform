@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.cofrete.financeworker.messaging.events.TripFinanceRecalculatedEvent;
 import java.time.Instant;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
@@ -39,14 +40,27 @@ class FinanceEventPublisherTests {
             eventType,
             1,
             "evt_124",
+            "trip:TRIP-001:finance-result:1:calc_123",
             "TRIP-001",
+            "DRIVER-001",
+            1,
+            "calc_123",
             "8000.00",
+            "385.70",
             "4900.00",
             "1600.00",
             "1100.00",
+            "1100.00",
             "BRL",
             "GOOD",
+            Map.of(
+                "fuel", "CURRENT",
+                "toll", "CURRENT",
+                "tax", "CURRENT",
+                "compliance", "UNKNOWN"
+            ),
             "corr_123",
+            "finance-worker",
             Instant.parse("2026-05-11T12:00:05Z")
         );
     }

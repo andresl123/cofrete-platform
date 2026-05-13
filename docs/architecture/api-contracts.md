@@ -1,10 +1,19 @@
 # API Contracts
 
-These contracts are implementation targets. They are versioned by documentation until OpenAPI generation is introduced.
+These contracts are the Core API implementation target for the MVP. They are versioned by this canonical markdown document until OpenAPI generation is introduced.
 
-## Auth And Sessions
+## Contract Versioning
 
-Auth endpoints are owned by Core API. Cofrete app login is separate from gov.br, ANTT, RNTRC Digital, Receita Federal, ANP, SUSEP, insurer, DETRAN, SEFAZ, or other official systems.
+- Current contract version: `v1`.
+- Public paths use the `/api` prefix.
+- Breaking field, enum, authorization, or error-shape changes require a contract update before implementation.
+- Additive optional fields are allowed when older clients can ignore them safely.
+- All timestamps are ISO-8601 UTC strings.
+- Monetary values are decimal strings with explicit `currency`.
+- Distances use kilometers and decimal strings when precision matters.
+- IDs shown here are opaque application IDs unless a field explicitly identifies an official source identifier.
+
+## Endpoint Index
 
 ```http
 POST /api/auth/register
@@ -12,13 +21,93 @@ POST /api/auth/login
 POST /api/auth/refresh
 POST /api/auth/logout
 GET /api/auth/me
+POST /api/drivers
+GET /api/drivers/me
+PATCH /api/drivers/me
+POST /api/trucks
+GET /api/trucks
+GET /api/trucks/{truckId}
+PUT /api/trucks/{truckId}
+POST /api/tax-profile
+GET /api/tax-profile
+POST /api/trips
+GET /api/trips/{tripId}
+POST /api/trips/{tripId}/profitability-estimate
+GET /api/trips/{tripId}/profitability-snapshot
+POST /api/trips/{tripId}/acceptance-decision
+POST /api/expenses
+GET /api/expenses?from=&to=&category=
+POST /api/reserve-rules
+GET /api/reserve-wallets
+POST /api/reserve-allocations
+GET /api/financial-health-score
+GET /api/fuel-prices/latest?fuel=DIESEL_S10&state=GO&city=GOIANIA
+GET /api/fuel-prices/history?fuel=DIESEL_S10&state=GO&city=GOIANIA
+POST /api/fuel-prices/driver-report
+GET /api/trucks/{truckId}/consumption-profile
+POST /api/trips/{tripId}/fuel-estimate
+POST /api/toll-estimates
+GET /api/trips/{tripId}/tolls
+POST /api/trips/{tripId}/tolls/manual-payment
+POST /api/trips/{tripId}/vale-pedagio
+GET /api/toll-data/import-status
+GET /api/compliance/profile
+PUT /api/compliance/rntrc
+POST /api/compliance/rntrc/check-public-status
+POST /api/compliance/insurance-policies
+GET /api/compliance/insurance-policies
+GET /api/compliance/score
+GET /api/compliance/calendar
+GET /api/documents
+POST /api/documents
+POST /api/customers
+GET /api/customers/{customerId}/profitability
+POST /api/receivables
+GET /api/receivables?status=overdue
+PUT /api/receivables/{receivableId}/mark-paid
 ```
+
+## Advisory Boundary
+
+Cofrete stores authoritative app records only for data entered by the driver, created by Cofrete, or imported and audited by Cofrete. Profitability, reserves, safe withdrawal, fuel, toll, tax, insurance, RNTRC, CIOT, freight-floor, IPVA, licensing, and waiting-time data are advisory unless the response includes a documented official source, source period, and freshness timestamp.
+
+Responses that use official or external data must include source metadata where applicable:
+
+```json
+{
+  "source": "ANP",
+  "sourceType": "official_dataset",
+  "sourceUrl": "https://www.gov.br/anp",
+  "sourcePeriodStart": "2026-05-03",
+  "sourcePeriodEnd": "2026-05-09",
+  "retrievedAt": "2026-05-11T12:00:00Z",
+  "freshnessStatus": "CURRENT",
+  "confidence": "official_weekly",
+  "importAuditId": "import_123"
+}
+```
+
+Freshness values:
+
+- `CURRENT`
+- `STALE`
+- `FAILED`
+- `UNKNOWN`
+
+Official-source caveats:
+
+- ANP diesel prices must show source period, retrieval time, confidence, and stale/unknown state when current data is unavailable.
+- Toll estimates and Vale-Pedagio records are pass-through or reimbursement data and must not inflate profit or safe withdrawal.
+- Compliance APIs must use advisory wording and official-channel links; Cofrete must not imply it updates RNTRC, Receita Federal, ANTT, DETRAN, SEFAZ, SUSEP, insurer, or gov.br records.
+- Tax and insurance outputs are planning metadata unless backed by a documented source and review timestamp.
+
+## Auth And Sessions
+
+Auth endpoints are owned by Core API. Cofrete app login is separate from gov.br, ANTT, RNTRC Digital, Receita Federal, ANP, SUSEP, insurer, DETRAN, SEFAZ, or other official systems.
 
 All non-auth product APIs require an authenticated Cofrete principal unless an implementation issue explicitly documents a public endpoint.
 
 ### Principal Model
-
-Authenticated principals use this shape:
 
 ```json
 {
@@ -44,47 +133,17 @@ Valid internal service role values:
 
 Tokens and session metadata may include principal ID, principal type, roles, account ID, company ID, issued-at time, expiry, and token ID. Tokens must not include CPF/CNPJ, truck plate, RENAVAM, RNTRC, document contents, freight values, receivable values, bank/payment data, or compliance document data.
 
-### `POST /api/auth/register`
+### Auth Endpoints
 
-Creates a Cofrete application identity only. Driver profile, truck, tax, and compliance data remain owned by their profile APIs.
+| Method | Path | Purpose | Request | Response | Error cases |
+|---|---|---|---|---|---|
+| `POST` | `/api/auth/register` | Create Cofrete application identity. | Email, password, display name, client type. | Principal. | `VALIDATION_ERROR`, `CONFLICT`, `RATE_LIMITED` |
+| `POST` | `/api/auth/login` | Authenticate Cofrete credentials and create refresh session. | Email, password, client type. | Access token, refresh token or cookie, principal. | `UNAUTHENTICATED`, `RATE_LIMITED` |
+| `POST` | `/api/auth/refresh` | Rotate or validate refresh session. | Refresh token or secure cookie. | New access token, optional rotated refresh token, principal. | `UNAUTHENTICATED`, `SESSION_REVOKED` |
+| `POST` | `/api/auth/logout` | Revoke active refresh session. | Refresh token or secure cookie. | Revocation status. | `UNAUTHENTICATED` |
+| `GET` | `/api/auth/me` | Return authenticated principal and linked profile references. | None. | Principal, driver profile reference, company reference. | `UNAUTHENTICATED` |
 
-Example request:
-
-```json
-{
-  "email": "driver@example.com",
-  "password": "example-password",
-  "displayName": "Example Driver",
-  "clientType": "MOBILE"
-}
-```
-
-Example response:
-
-```json
-{
-  "principal": {
-    "id": "user_123",
-    "type": "DRIVER",
-    "accountId": "acct_123",
-    "companyId": null,
-    "roles": ["DRIVER"]
-  }
-}
-```
-
-Rules:
-
-- MVP self-registration creates a `DRIVER` principal by default.
-- `COMPANY_ADMIN` assignment must remain disabled until a future company-mode issue implements that workflow.
-- `SUPPORT` and `PLATFORM_ADMIN` assignment must be administrative and auditable, not public self-registration.
-- If Cofrete stores passwords directly, store only Argon2id or bcrypt password hashes.
-
-### `POST /api/auth/login`
-
-Authenticates Cofrete application credentials and creates a refresh session.
-
-Example request:
+Example login request:
 
 ```json
 {
@@ -94,7 +153,7 @@ Example request:
 }
 ```
 
-Example response:
+Example login response:
 
 ```json
 {
@@ -112,176 +171,215 @@ Example response:
 }
 ```
 
-Rules:
+Auth rules:
 
-- Mobile clients should receive refresh material only in a form suitable for platform secure storage.
-- Web admin should prefer secure, HTTP-only, SameSite refresh cookies when same-site deployment allows it.
-- Login failure responses should not reveal whether the email exists.
+- MVP self-registration creates a `DRIVER` principal by default.
+- `COMPANY_ADMIN` assignment must remain disabled until a future company-mode issue implements that workflow.
+- `SUPPORT` and `PLATFORM_ADMIN` assignment must be administrative and auditable.
+- Access tokens must be short-lived.
+- Refresh tokens or refresh sessions must be revocable.
+- Mobile clients should store secrets only in platform secure storage.
+- Web admin should prefer secure, HTTP-only, SameSite cookies when deployment shape allows it.
+- Service-to-service credentials are separate from user login sessions.
+- Workers authenticate as internal services with least privilege.
 
-### `POST /api/auth/refresh`
+## Driver, Truck, And Tax Profile
 
-Rotates or validates the active refresh session and returns a new access token.
+These APIs own app-maintained driver identity metadata, truck metadata, and tax-planning profile data. They do not write official government records.
 
-Example request for bearer-token refresh clients:
+| Method | Path | Purpose | Request | Response | Error cases |
+|---|---|---|---|---|---|
+| `POST` | `/api/drivers` | Create driver profile for the authenticated principal. | Name, contact, state, CPF/CNPJ metadata, RNTRC metadata. | `driver` resource. | `VALIDATION_ERROR`, `CONFLICT`, `FORBIDDEN` |
+| `GET` | `/api/drivers/me` | Return current driver's profile. | None. | `driver` resource with source/advisory metadata. | `UNAUTHENTICATED`, `NOT_FOUND` |
+| `PATCH` | `/api/drivers/me` | Update app-maintained driver profile fields. | Partial editable driver fields. | Updated `driver` resource. | `VALIDATION_ERROR`, `FORBIDDEN` |
+| `POST` | `/api/trucks` | Register a truck owned or operated by the driver. | Plate, RENAVAM metadata, axle count, category, fuel type. | `truck` resource. | `VALIDATION_ERROR`, `CONFLICT` |
+| `GET` | `/api/trucks` | List driver trucks. | Optional `active=true`. | `trucks[]`. | `UNAUTHENTICATED` |
+| `GET` | `/api/trucks/{truckId}` | Return truck metadata. | Path `truckId`. | `truck` resource. | `NOT_FOUND`, `FORBIDDEN` |
+| `PUT` | `/api/trucks/{truckId}` | Replace editable truck metadata. | Full editable truck fields. | Updated `truck` resource. | `VALIDATION_ERROR`, `NOT_FOUND`, `FORBIDDEN` |
+| `POST` | `/api/tax-profile` | Create or replace active tax-planning profile. | Regime, state, year, source/review metadata when known. | `taxProfile` resource. | `VALIDATION_ERROR`, `CONFLICT` |
+| `GET` | `/api/tax-profile` | Return active tax-planning profile. | Optional `year`. | `taxProfile` resource. | `NOT_FOUND` |
+
+Example truck request:
 
 ```json
 {
-  "refreshToken": "refresh_token"
+  "plate": "ABC1D23",
+  "renavamLast4": "1234",
+  "state": "GO",
+  "axleCount": 6,
+  "vehicleType": "TRUCK",
+  "fuelType": "DIESEL_S10",
+  "active": true
 }
 ```
 
-Cookie-based web clients may send the refresh session as a secure HTTP-only cookie instead of a JSON `refreshToken`.
-
-Example response:
+Example tax profile response:
 
 ```json
 {
-  "accessToken": "jwt_or_opaque_access_token",
-  "tokenType": "Bearer",
-  "expiresInSeconds": 900,
-  "refreshToken": "rotated_refresh_token_returned_only_when_client_type_allows_it",
-  "principal": {
-    "id": "user_123",
-    "type": "DRIVER",
-    "accountId": "acct_123",
-    "companyId": null,
-    "roles": ["DRIVER"]
+  "taxProfile": {
+    "id": "tax_123",
+    "driverId": "driver_123",
+    "regime": "MEI_CAMINHONEIRO",
+    "planningYear": 2026,
+    "annualGrossLimit": "251600.00",
+    "currency": "BRL",
+    "source": "Receita Federal",
+    "sourceType": "official_guidance",
+    "reviewedAt": "2026-05-10T10:00:00Z",
+    "freshnessStatus": "CURRENT",
+    "advisoryText": "Tax values are planning metadata. Confirm obligations with Receita Federal or an accountant."
   }
 }
 ```
 
-### `POST /api/auth/logout`
+Field semantics:
 
-Revokes the active refresh session. Access tokens remain short-lived and should naturally expire.
+- CPF/CNPJ, RENAVAM, RNTRC, plate, and document identifiers should be stored with minimum necessary exposure and masked in normal responses when full value is not needed.
+- `TaxProfile` reflects planning assumptions. It is not tax filing.
+- Official status fields require source URL or source name plus `reviewedAt` or `retrievedAt`.
 
-Example request:
+## Freight And Trip Decision
 
-```json
-{
-  "refreshToken": "refresh_token_when_not_cookie_based"
-}
-```
+The MVP starts from the driver workflow: "Should I accept this freight/trip?" Freight may become a separate aggregate later, but trip entry owns the first public contract.
 
-Example response:
+| Method | Path | Purpose | Request | Response | Error cases |
+|---|---|---|---|---|---|
+| `POST` | `/api/trips` | Create a trip/freight decision draft. | Route, dates, truck, gross freight, payment timing, load details. | `trip` resource. | `VALIDATION_ERROR`, `NOT_FOUND` |
+| `GET` | `/api/trips/{tripId}` | Return trip and current decision state. | Path `tripId`. | `trip` resource with latest snapshot links. | `NOT_FOUND`, `FORBIDDEN` |
+| `POST` | `/api/trips/{tripId}/profitability-estimate` | Request synchronous estimate from provided or persisted inputs. | Cost assumptions, fuel/toll overrides, reserve policy overrides. | Estimate with trace ID and advisory caveats. | `VALIDATION_ERROR`, `NOT_FOUND`, `CALCULATION_UNAVAILABLE` |
+| `GET` | `/api/trips/{tripId}/profitability-snapshot` | Return latest persisted finance-worker snapshot. | Path `tripId`. | Snapshot and calculation trace. | `NOT_FOUND`, `SNAPSHOT_PENDING` |
+| `POST` | `/api/trips/{tripId}/acceptance-decision` | Record accept, reject, or renegotiate decision. | Decision, reason codes, note. | Decision record. | `VALIDATION_ERROR`, `NOT_FOUND`, `CONFLICT` |
 
-```json
-{
-  "revoked": true
-}
-```
-
-### `GET /api/auth/me`
-
-Returns the authenticated Cofrete principal and linked application profile references.
-
-Example response:
+Example trip creation request:
 
 ```json
 {
-  "principal": {
-    "id": "user_123",
-    "type": "DRIVER",
-    "accountId": "acct_123",
-    "companyId": null,
-    "roles": ["DRIVER"]
+  "truckId": "truck_123",
+  "origin": {
+    "city": "Goiania",
+    "state": "GO"
   },
-  "driverProfileId": "driver_123",
-  "companyId": null
+  "destination": {
+    "city": "Sao Paulo",
+    "state": "SP"
+  },
+  "loadedKm": "920.00",
+  "emptyKm": "80.00",
+  "grossFreight": "8000.00",
+  "currency": "BRL",
+  "advanceAmount": "3000.00",
+  "balanceDueDays": 21,
+  "cargoDescription": "general cargo",
+  "expectedPickupAt": "2026-05-20T12:00:00Z"
 }
 ```
 
-Auth rules:
-
-- Access tokens must be short-lived.
-- Refresh tokens or refresh sessions must be revocable.
-- Logout must revoke the active refresh session.
-- Tokens must carry only authorization metadata, not sensitive driver, vehicle, document, or financial data.
-- Mobile clients should store secrets only in platform secure storage.
-- Web admin should prefer secure, HTTP-only, SameSite cookies when deployment shape allows it.
-- Support and platform-admin access must be auditable.
-- Service-to-service credentials are separate from user login sessions.
-- Workers authenticate as internal services with least privilege, not as users.
-
-Auth error examples:
-
-Missing, expired, malformed, revoked, or invalid credentials should return HTTP `401` with `UNAUTHENTICATED`:
+Example profitability estimate response:
 
 ```json
 {
-  "error": "UNAUTHENTICATED",
-  "message": "Authentication is required.",
-  "details": [],
-  "correlationId": "corr_123"
+  "tripId": "trip_123",
+  "calculationTraceId": "calc_123",
+  "grossFreight": "8000.00",
+  "passThroughAmount": "385.70",
+  "directTripCost": "4900.00",
+  "requiredReserves": "1600.00",
+  "safePersonalWithdrawal": "1100.00",
+  "expectedProfit": "1100.00",
+  "marginPercent": "13.75",
+  "currency": "BRL",
+  "financialHealthStatus": "GOOD",
+  "recommendation": "ACCEPT",
+  "caveats": [
+    "Toll reimbursement and Vale-Pedagio are tracked as pass-through amounts, not profit.",
+    "Fuel estimate uses ANP weekly data and truck consumption assumptions."
+  ],
+  "sourceMetadata": [
+    {
+      "area": "fuel",
+      "source": "ANP",
+      "sourceType": "official_dataset",
+      "sourcePeriodStart": "2026-05-03",
+      "sourcePeriodEnd": "2026-05-09",
+      "retrievedAt": "2026-05-11T12:00:00Z",
+      "freshnessStatus": "CURRENT",
+      "confidence": "official_weekly"
+    }
+  ]
 }
 ```
 
-Valid credentials without the required role, account scope, company scope, or service permission should return HTTP `403` with `FORBIDDEN`:
+Finance semantics:
 
-```json
-{
-  "error": "FORBIDDEN",
-  "message": "You do not have access to this resource.",
-  "details": [],
-  "correlationId": "corr_124"
-}
-```
-
-## Profile And Tax
-
-```http
-POST /api/drivers
-GET /api/drivers/me
-PATCH /api/drivers/me
-POST /api/trucks
-GET /api/trucks
-GET /api/trucks/{truckId}
-PUT /api/trucks/{truckId}
-POST /api/tax-profile
-GET /api/tax-profile
-```
-
-## Freight And Trip
-
-```http
-POST /api/trips
-GET /api/trips/{tripId}
-POST /api/trips/{tripId}/profitability-estimate
-GET /api/trips/{tripId}/profitability-snapshot
-POST /api/trips/{tripId}/acceptance-decision
-```
-
-Profitability estimate responses must include gross freight, direct trip cost, required reserves, safe personal withdrawal, financial health status, currency, and calculation trace ID.
-
-Freight may become a separate aggregate later, but the MVP API starts from trip entry because the driver-facing workflow is "new freight/trip decision."
+- `grossFreight` is customer or shipper freight revenue before costs.
+- `passThroughAmount` is reimbursement or Vale-Pedagio cash flow that must not increase profit.
+- `directTripCost` includes fuel, ARLA, non-reimbursed tolls, meals/lodging, and similar trip costs.
+- `requiredReserves` includes maintenance, tires, taxes, insurance, replacement, emergency, and other configured reserve allocations.
+- `safePersonalWithdrawal` is advisory and must be derived from deterministic calculation inputs.
 
 ## Expenses And Reserves
 
-```http
-POST /api/expenses
-GET /api/expenses?from=&to=&category=
-POST /api/reserve-rules
-GET /api/reserve-wallets
-POST /api/reserve-allocations
-GET /api/financial-health-score
+| Method | Path | Purpose | Request | Response | Error cases |
+|---|---|---|---|---|---|
+| `POST` | `/api/expenses` | Record direct or recurring expense. | Trip optional, category, amount, reimbursable flag, paid-by metadata. | `expense` resource. | `VALIDATION_ERROR`, `NOT_FOUND` |
+| `GET` | `/api/expenses?from=&to=&category=` | List expenses for dashboard and finance inputs. | Date range, optional category. | `expenses[]`, totals. | `VALIDATION_ERROR` |
+| `POST` | `/api/reserve-rules` | Create or update reserve allocation rule. | Bucket, percent/fixed/per-km rule, effective dates. | `reserveRule` resource. | `VALIDATION_ERROR`, `CONFLICT` |
+| `GET` | `/api/reserve-wallets` | Return bucket balances and targets. | Optional `asOf`. | `reserveWallets[]`. | `UNAUTHENTICATED` |
+| `POST` | `/api/reserve-allocations` | Request reserve allocation for freight payment or manual correction. | Payment/trip reference, amount, idempotency key. | Allocation request status. | `VALIDATION_ERROR`, `CONFLICT` |
+| `GET` | `/api/financial-health-score` | Return current financial health summary. | Optional `asOf`. | Score, status, components, trace ID. | `SNAPSHOT_PENDING` |
+
+Example reserve allocation request:
+
+```json
+{
+  "tripId": "trip_123",
+  "freightPaymentId": "pay_123",
+  "grossAmount": "8000.00",
+  "currency": "BRL",
+  "idempotencyKey": "reserve-trip_123-pay_123-v1"
+}
 ```
 
-## Fuel Prices
+Example reserve wallet response:
 
-```http
-GET /api/fuel-prices/latest?fuel=DIESEL_S10&state=GO&city=GOIANIA
-GET /api/fuel-prices/history?fuel=DIESEL_S10&state=GO&city=GOIANIA
-POST /api/fuel-prices/driver-report
-GET /api/trucks/{truckId}/consumption-profile
-POST /api/trips/{tripId}/fuel-estimate
+```json
+{
+  "reserveWallets": [
+    {
+      "bucket": "MAINTENANCE",
+      "currentBalance": "1250.00",
+      "targetBalance": "5000.00",
+      "currency": "BRL",
+      "policy": "percent_of_freight",
+      "lastAllocationAt": "2026-05-11T12:00:00Z"
+    }
+  ]
+}
 ```
 
-Fuel responses must include source, source type, period, confidence, and freshness metadata.
+Reserve semantics:
+
+- Reserve allocations are virtual ledger movements unless a future payment integration explicitly implements real money movement.
+- Manual corrections must be auditable.
+- Repeated allocation requests with the same idempotency key must not double-credit buckets.
+
+## Fuel Prices And Fuel Estimates
+
+| Method | Path | Purpose | Request | Response | Error cases |
+|---|---|---|---|---|---|
+| `GET` | `/api/fuel-prices/latest?fuel=DIESEL_S10&state=GO&city=GOIANIA` | Return latest normalized fuel price. | Fuel type, state, optional city. | Price and source metadata. | `NOT_FOUND`, `SOURCE_STALE` |
+| `GET` | `/api/fuel-prices/history?fuel=DIESEL_S10&state=GO&city=GOIANIA` | Return historical price series. | Fuel type, state, optional city, date range. | `prices[]`. | `VALIDATION_ERROR` |
+| `POST` | `/api/fuel-prices/driver-report` | Record driver-confirmed station price. | Fuel type, station metadata, price, receipt reference optional. | `driverFuelReport`. | `VALIDATION_ERROR` |
+| `GET` | `/api/trucks/{truckId}/consumption-profile` | Return truck consumption assumptions. | Path `truckId`. | Loaded/empty km per liter, source window, confidence. | `NOT_FOUND` |
+| `POST` | `/api/trips/{tripId}/fuel-estimate` | Estimate fuel budget for a trip. | Route km, truck consumption override optional, price override optional. | Fuel estimate with source metadata. | `VALIDATION_ERROR`, `NOT_FOUND` |
 
 Example fuel estimate response:
 
 ```json
 {
-  "routeKm": 850,
+  "tripId": "trip_123",
+  "routeKm": "850.00",
   "truckId": "truck_123",
   "loadStatus": "LOADED",
   "consumptionKmPerLiter": "2.35",
@@ -292,21 +390,28 @@ Example fuel estimate response:
   "recommendedFuelBudget": "2458.84",
   "currency": "BRL",
   "priceSource": "ANP",
-  "priceConfidence": "official_weekly"
+  "priceSourceType": "official_dataset",
+  "priceConfidence": "official_weekly",
+  "freshnessStatus": "CURRENT",
+  "calculationTraceId": "calc_fuel_123"
 }
 ```
 
+Fuel semantics:
+
+- Fuel is a direct trip cost, not a reserve percentage.
+- Driver reports can override app estimates only when the calculation trace records the override.
+- Stale or unknown ANP data must remain visible to the driver.
+
 ## Tolls And Vale-Pedagio
 
-```http
-POST /api/toll-estimates
-GET /api/trips/{tripId}/tolls
-POST /api/trips/{tripId}/tolls/manual-payment
-POST /api/trips/{tripId}/vale-pedagio
-GET /api/toll-data/import-status
-```
-
-Toll records must classify pass-through, driver-paid, included-in-freight, no-toll, and unknown states.
+| Method | Path | Purpose | Request | Response | Error cases |
+|---|---|---|---|---|---|
+| `POST` | `/api/toll-estimates` | Estimate route toll costs. | Origin, destination, route optional, axle count, truck type. | Toll estimate and confidence. | `VALIDATION_ERROR`, `SOURCE_STALE` |
+| `GET` | `/api/trips/{tripId}/tolls` | Return trip toll records. | Path `tripId`. | `tripTolls[]`, classification totals. | `NOT_FOUND` |
+| `POST` | `/api/trips/{tripId}/tolls/manual-payment` | Record manual toll payment. | Plaza/name optional, amount, paid-by, reimbursement classification. | `tripToll`. | `VALIDATION_ERROR`, `NOT_FOUND` |
+| `POST` | `/api/trips/{tripId}/vale-pedagio` | Record Vale-Pedagio proof and classification. | Provider/proof metadata, amount, received status. | `valePedagioRecord`. | `VALIDATION_ERROR`, `NOT_FOUND` |
+| `GET` | `/api/toll-data/import-status` | Return toll dataset freshness and last import audit. | Optional source. | Import status. | `NOT_FOUND` |
 
 Example toll estimate response:
 
@@ -329,48 +434,179 @@ Example toll estimate response:
       "state": "GO",
       "amount": "42.50",
       "currency": "BRL",
-      "confidence": "matched_by_route_buffer"
+      "confidence": "matched_by_route_buffer",
+      "classification": "PASS_THROUGH"
     }
   ],
   "totalEstimatedToll": "385.70",
   "currency": "BRL",
-  "financeTreatment": "pass_through_or_reimbursement_not_profit"
+  "financeTreatment": "pass_through_or_reimbursement_not_profit",
+  "freshnessStatus": "CURRENT"
 }
 ```
 
+Toll classification values:
+
+- `PASS_THROUGH`
+- `DRIVER_PAID_NON_REIMBURSED`
+- `INCLUDED_IN_FREIGHT`
+- `NO_TOLL`
+- `UNKNOWN`
+
+Toll semantics:
+
+- Vale-Pedagio and toll reimbursement are pass-through money, not profit.
+- `DRIVER_PAID_NON_REIMBURSED` tolls reduce profitability.
+- `UNKNOWN` classification must keep the estimate conservative and visible.
+
 ## Compliance
 
-```http
-GET /api/compliance/profile
-PUT /api/compliance/rntrc
-POST /api/compliance/rntrc/check-public-status
-POST /api/compliance/insurance-policies
-GET /api/compliance/insurance-policies
-GET /api/compliance/score
-GET /api/compliance/calendar
-GET /api/documents
-POST /api/documents
+Compliance APIs expose advisory metadata, reminders, and links to official channels. They must distinguish app-maintained metadata from official-source records.
+
+| Method | Path | Purpose | Request | Response | Error cases |
+|---|---|---|---|---|---|
+| `GET` | `/api/compliance/profile` | Return compliance summary for the driver. | None. | RNTRC, CIOT, insurance, document, IPVA/licensing summary. | `UNAUTHENTICATED` |
+| `PUT` | `/api/compliance/rntrc` | Store RNTRC metadata entered or confirmed by driver. | RNTRC number/category/status metadata. | `rntrcProfile`. | `VALIDATION_ERROR` |
+| `POST` | `/api/compliance/rntrc/check-public-status` | Request safe public-status check when available. | RNTRC number/category, consent metadata if required. | Check status or unsupported response. | `SOURCE_UNAVAILABLE`, `NOT_IMPLEMENTED` |
+| `POST` | `/api/compliance/insurance-policies` | Store insurance policy metadata. | Policy type, insurer, dates, annual premium, document reference optional. | `insurancePolicy`. | `VALIDATION_ERROR` |
+| `GET` | `/api/compliance/insurance-policies` | List policy metadata. | Optional `active=true`. | `insurancePolicies[]`. | `UNAUTHENTICATED` |
+| `GET` | `/api/compliance/score` | Return advisory compliance score. | Optional `asOf`. | Score, components, caveats. | `SNAPSHOT_PENDING` |
+| `GET` | `/api/compliance/calendar` | Return compliance reminders. | Date range optional. | `calendarItems[]`. | `VALIDATION_ERROR` |
+| `GET` | `/api/documents` | List stored document metadata. | Optional type/status filters. | `documents[]`. | `UNAUTHENTICATED` |
+| `POST` | `/api/documents` | Create document metadata and upload handoff. | Type, owner reference, expiration, storage metadata. | Document metadata and upload instructions if applicable. | `VALIDATION_ERROR`, `UNSUPPORTED_MEDIA_TYPE` |
+
+Example compliance profile response:
+
+```json
+{
+  "driverId": "driver_123",
+  "rntrc": {
+    "numberMasked": "***1234",
+    "category": "TAC",
+    "status": "UNKNOWN",
+    "source": "driver_entered",
+    "lastCheckedAt": null,
+    "officialActionUrl": "https://www.gov.br/antt",
+    "advisoryText": "Confirm RNTRC status in official ANTT channels."
+  },
+  "ciot": {
+    "required": "UNKNOWN",
+    "latestTripStatus": "NOT_RECORDED",
+    "advisoryText": "CIOT guidance is advisory until confirmed with official or professional sources."
+  },
+  "score": {
+    "value": 72,
+    "status": "ATTENTION",
+    "components": [
+      {
+        "name": "insurance",
+        "status": "CURRENT",
+        "weight": "25.00"
+      }
+    ]
+  }
+}
 ```
 
-Compliance responses must use advisory wording and official-source links.
+Compliance semantics:
+
+- `source=driver_entered` means Cofrete is storing app metadata, not asserting official truth.
+- Public checks must not require or store gov.br credentials.
+- Unsupported automation should return a clear advisory response instead of fake precision.
 
 ## Customers And Receivables
 
-```http
-POST /api/customers
-GET /api/customers/{customerId}/profitability
-POST /api/receivables
-GET /api/receivables?status=overdue
-PUT /api/receivables/{receivableId}/mark-paid
+| Method | Path | Purpose | Request | Response | Error cases |
+|---|---|---|---|---|---|
+| `POST` | `/api/customers` | Create freight payer/customer profile. | Name, tax ID metadata optional, contact, payment terms. | `customer`. | `VALIDATION_ERROR`, `CONFLICT` |
+| `GET` | `/api/customers/{customerId}/profitability` | Return customer-level profitability and payment behavior. | Path `customerId`, optional date range. | Margin, delay, toll/CIOT quality, caveats. | `NOT_FOUND`, `SNAPSHOT_PENDING` |
+| `POST` | `/api/receivables` | Create receivable for freight payment. | Customer, trip, amount, due date, method, advance/balance type. | `receivable`. | `VALIDATION_ERROR`, `NOT_FOUND` |
+| `GET` | `/api/receivables?status=overdue` | List receivables by status and date filters. | Status, date range optional. | `receivables[]`, totals. | `VALIDATION_ERROR` |
+| `PUT` | `/api/receivables/{receivableId}/mark-paid` | Mark receivable paid. | Paid amount, paid date, method, note optional. | Updated `receivable`. | `VALIDATION_ERROR`, `NOT_FOUND`, `CONFLICT` |
+
+Example receivable request:
+
+```json
+{
+  "customerId": "cust_123",
+  "tripId": "trip_123",
+  "type": "BALANCE",
+  "amount": "5000.00",
+  "currency": "BRL",
+  "dueDate": "2026-06-10",
+  "paymentMethod": "PIX",
+  "note": "Balance due after delivery."
+}
 ```
 
-## Error Shape
+Example customer profitability response:
+
+```json
+{
+  "customerId": "cust_123",
+  "periodStart": "2026-01-01",
+  "periodEnd": "2026-05-31",
+  "grossFreight": "32000.00",
+  "expectedProfit": "5200.00",
+  "averagePaymentDelayDays": "8.50",
+  "lateReceivables": "2400.00",
+  "currency": "BRL",
+  "qualitySignals": {
+    "ciotStatus": "MIXED",
+    "valePedagioStatus": "MIXED",
+    "loadingDelayStatus": "ATTENTION"
+  },
+  "advisoryText": "Customer profitability is based on Cofrete records and may not include all external obligations."
+}
+```
+
+Receivable semantics:
+
+- Receivables are tracking records, not bank integrations.
+- Late payment affects cash-flow risk and customer profitability.
+- Marking a receivable paid may trigger reserve allocation if the payment becomes allocatable.
+
+## Validation And Error Conventions
+
+All validation failures use HTTP `400` and this shape:
 
 ```json
 {
   "error": "VALIDATION_ERROR",
-  "message": "Human-readable summary",
-  "details": [],
+  "message": "Request contains invalid fields.",
+  "details": [
+    {
+      "field": "grossFreight",
+      "code": "MUST_BE_POSITIVE_DECIMAL",
+      "message": "grossFreight must be greater than zero."
+    }
+  ],
   "correlationId": "corr_123"
 }
 ```
+
+Common error codes:
+
+| HTTP | Error | Meaning |
+|---|---|---|
+| `400` | `VALIDATION_ERROR` | Request shape, enum, date, decimal, or required-field problem. |
+| `401` | `UNAUTHENTICATED` | Missing, expired, malformed, revoked, or invalid credentials. |
+| `403` | `FORBIDDEN` | Valid credentials but missing role, account scope, company scope, or service permission. |
+| `404` | `NOT_FOUND` | Resource does not exist or is not visible to the principal. |
+| `409` | `CONFLICT` | Idempotency, duplicate, stale write, or invalid state transition conflict. |
+| `415` | `UNSUPPORTED_MEDIA_TYPE` | Document upload metadata references unsupported content type. |
+| `422` | `CALCULATION_UNAVAILABLE` | Valid request, but finance estimate cannot be produced with current inputs. |
+| `422` | `SOURCE_STALE` | Source-backed result cannot be treated as current. |
+| `422` | `SOURCE_UNAVAILABLE` | External source is unavailable or unsupported. |
+| `425` | `SNAPSHOT_PENDING` | Async worker output has not arrived yet. |
+| `429` | `RATE_LIMITED` | Caller exceeded rate limits. |
+| `500` | `INTERNAL_ERROR` | Unexpected server failure. |
+
+Validation rules:
+
+- Unknown JSON fields should be rejected for write endpoints until compatibility policy is introduced.
+- Decimal strings must use `.` as the decimal separator and must not include currency symbols.
+- Enums are uppercase strings unless an external source requires another exact value.
+- Date-only values use `YYYY-MM-DD`.
+- Every response should include or propagate `correlationId` through logs and events.
+- Write endpoints that can be retried by clients should accept an idempotency key in the request body or `Idempotency-Key` header when implementation reaches that endpoint.

@@ -25,12 +25,20 @@ public class TollDataImportJob {
             DataImportEventNames.TOLL_DATA_IMPORT_COMPLETED,
             1,
             "evt_" + UUID.randomUUID(),
+            "toll-data:ANTT_DADOS_ABERTOS:unknown:unknown:no-file",
             "ANTT_DADOS_ABERTOS",
+            "open-data-stub",
+            null,
+            null,
+            Instant.now(clock),
             0,
             List.of("CSV", "JSON"),
             FreshnessStatus.UNKNOWN.name(),
+            "open_data_stub",
             "import_" + UUID.randomUUID(),
+            null,
             correlationId,
+            "data-importer-worker",
             Instant.now(clock)
         );
 

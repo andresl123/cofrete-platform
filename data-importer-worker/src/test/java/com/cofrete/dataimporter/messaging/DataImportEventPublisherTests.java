@@ -62,14 +62,20 @@ class DataImportEventPublisherTests {
             eventType,
             1,
             "evt_126",
+            "fuel-price:ANP:2026-05-03:2026-05-09:sha256-example",
             "ANP",
+            "diesel_prices",
             List.of("DIESEL_S10"),
             LocalDate.parse("2026-05-03"),
             LocalDate.parse("2026-05-09"),
+            Instant.parse("2026-05-11T11:59:00Z"),
             12345,
             "CURRENT",
+            "official_weekly",
             "import_123",
+            "sha256-example",
             "corr_123",
+            "data-importer-worker",
             Instant.parse("2026-05-11T12:00:20Z")
         );
     }
@@ -79,12 +85,20 @@ class DataImportEventPublisherTests {
             eventType,
             1,
             "evt_127",
+            "toll-data:ANTT_DADOS_ABERTOS:2026-05-01:2026-05-31:sha256-example",
             "ANTT_DADOS_ABERTOS",
+            "toll_plazas_and_tariffs",
+            LocalDate.parse("2026-05-01"),
+            LocalDate.parse("2026-05-31"),
+            Instant.parse("2026-05-11T11:58:00Z"),
             500,
             List.of("CSV", "JSON"),
             "CURRENT",
+            "official_or_open_dataset",
             "import_124",
+            "sha256-example",
             "corr_123",
+            "data-importer-worker",
             Instant.parse("2026-05-11T12:00:30Z")
         );
     }
