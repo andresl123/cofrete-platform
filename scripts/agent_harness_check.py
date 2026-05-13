@@ -26,6 +26,8 @@ DOC_DIRS = (
 )
 
 REQUIRED_DIRS = (
+    ".github",
+    ".github/workflows",
     "docs",
     "scripts",
     *SERVICE_DIRS,
@@ -38,6 +40,8 @@ REQUIRED_FILES = (
     ".editorconfig",
     ".gitattributes",
     ".gitignore",
+    ".github/pull_request_template.md",
+    ".github/workflows/pr-checks.yml",
     "docs/README.md",
     "docs/product/brazil-trucker-finance-blueprint.md",
     "docs/product/mvp-scope.md",
@@ -76,6 +80,7 @@ REQUIRED_FILES = (
     "docs/agent-harness/golden-principles.md",
     "docs/agent-harness/observability.md",
     "docs/agent-harness/risk-register.md",
+    "docs/agent-harness/ci-pr-harness-explainer.html",
     "docs/runbooks/local-development.md",
     "docs/runbooks/demo-seed.md",
     "docs/runbooks/data-import-failure.md",
@@ -96,12 +101,39 @@ REQUIRED_TEXT = {
         "python scripts/agent_harness_check.py",
         "task-specific HTML explainer",
     ),
+    ".github/pull_request_template.md": (
+        "Validation",
+        "Docs Impact",
+        "Finance / Compliance Caveats",
+        "Screenshots or recordings attached for UI changes",
+        "python scripts/agent_harness_check.py",
+    ),
+    ".github/workflows/pr-checks.yml": (
+        "python scripts/agent_harness_check.py",
+        "mvn -q validate test",
+        "npm run test:ci",
+        "npm run build",
+        "docker compose config",
+    ),
     "docs/agent-harness/workflow.md": (
         "task-specific HTML explainer",
+    ),
+    "docs/agent-harness/validation.md": (
+        "CI Validation Matrix",
+        "python scripts/agent_harness_check.py",
+        "mvn -q validate test",
+        "npm run test:ci",
+        "docker compose config",
+    ),
+    "scripts/ci/README.md": (
+        ".github/workflows/pr-checks.yml",
+        "pull_request",
+        "python scripts/agent_harness_check.py",
     ),
     "README.md": (
         "not an official government, legal, tax, accounting, or insurance channel",
         "docs/architecture/api-contracts.md",
+        ".github/workflows/pr-checks.yml",
     ),
     "docs/compliance/official-source-register.md": (
         "ANTT",

@@ -6,7 +6,23 @@ Run from the repository root:
 python scripts/agent_harness_check.py
 ```
 
-## Future Service Checks
+## CI Validation Matrix
+
+GitHub Actions runs `.github/workflows/pr-checks.yml` for pull requests, pushes to `main`, and manual dispatches.
+
+| Area | CI behavior | Required command when scaffold exists |
+|---|---|---|
+| Repository harness | Always run | `python scripts/agent_harness_check.py` |
+| Core API | Run when `core-api/pom.xml` exists | `cd core-api && mvn -q validate test` |
+| Finance worker | Run when `finance-worker/pom.xml` exists | `cd finance-worker && mvn -q validate test` |
+| Data importer worker | Run when `data-importer-worker/pom.xml` exists | `cd data-importer-worker && mvn -q validate test` |
+| Mobile app | Run when `mobile-app/package.json` exists | `cd mobile-app && npm ci && npm run typecheck && npm run lint && npm run test:ci` |
+| Web app | Run when `web-app/package.json` exists | `cd web-app && npm ci && npm run lint && npm run test && npm run build` |
+| Local infrastructure | Run when `docker-compose.yml` exists | `docker compose config` |
+
+CI skips service checks until the corresponding scaffold file exists. The skip is intentional for M0 because this repository currently contains service ownership placeholders before service source code lands.
+
+## Local Service Checks
 
 These commands become required once the corresponding service scaffold exists.
 
