@@ -6,7 +6,7 @@ Backend API service for Cofrete Platform.
 
 Core API owns authenticated product APIs and primary PostgreSQL persistence for driver profile, trip, advisory finance, reserve, compliance, receivables, imports, auth, and audit data.
 
-The service is intentionally scaffolded without product controllers. Contracted routes under `/api/*` are reserved for implementation issues documented in `../docs/architecture/api-contracts.md`.
+The service now implements the first profile-domain product controllers. Remaining contracted routes under `/api/*` are reserved for implementation issues documented in `../docs/architecture/api-contracts.md`.
 
 Compliance and finance behavior must remain advisory. Do not present Core API responses as official ANTT, ANP, SUSEP, Receita Federal, DETRAN, SEFAZ, insurer, legal, tax, accounting, or government authority.
 
@@ -41,6 +41,16 @@ GET /actuator/health
 ```
 
 Only the health endpoint is public. Product APIs under `/api/*` are reserved for authenticated Cofrete principals.
+
+## Profile Domain
+
+ROU-213 / COF-009 implements the first authenticated Core API profile model:
+
+- `POST /api/drivers`, `GET /api/drivers/me`, and `PATCH /api/drivers/me`
+- `POST /api/trucks`, `GET /api/trucks`, `GET /api/trucks/{truckId}`, and `PUT /api/trucks/{truckId}`
+- `POST /api/tax-profile` and `GET /api/tax-profile`
+
+The backing migration creates app identity, driver, truck, trailer, tax profile, tax rule year, IPVA rule, compliance profile, and insurance policy metadata tables. CPF/CNPJ, RNTRC, RENAVAM, and plate identifiers are treated as app-maintained metadata and masked in normal responses.
 
 ## Validation
 

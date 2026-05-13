@@ -1,6 +1,6 @@
 # Data Model
 
-This document records the first implementation target. Exact table names and migrations will be defined in service scaffolding issues.
+This document records the first implementation target. Profile-domain table names are now defined by Core API Flyway migrations; later domain tables will be defined by their implementation issues.
 
 ## Identity And Profile
 
@@ -64,7 +64,19 @@ This document records the first implementation target. Exact table names and mig
 
 ## First SQL Targets
 
-The first migration set should include tables equivalent to:
+The implemented Core API profile migration includes:
+
+- `app_users`
+- `drivers`
+- `trucks`
+- `trailers`
+- `tax_profiles`
+- `tax_rule_years`
+- `ipva_rules`
+- `compliance_profiles`
+- `insurance_policies`
+
+Follow-up migration sets should include tables equivalent to:
 
 - `fuel_prices`
 - `fuel_station_prices`
@@ -72,11 +84,7 @@ The first migration set should include tables equivalent to:
 - `toll_plaza`
 - `toll_tariff`
 - `trip_toll`
-- `compliance_profiles`
-- `insurance_policies`
 - `trip_profitability_snapshots`
-- `tax_rule_year`
-- `ipva_rule`
 - `freight_floor_checks`
 - `waiting_time_records`
 
