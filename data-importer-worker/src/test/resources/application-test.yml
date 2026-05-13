@@ -1,0 +1,17 @@
+spring:
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+      direct:
+        auto-startup: false
+
+cofrete:
+  data-importer:
+    scheduler:
+      enabled: false
+
+management:
+  health:
+    rabbit:
+      enabled: false

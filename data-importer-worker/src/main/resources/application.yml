@@ -1,0 +1,33 @@
+server:
+  port: ${COFRETE_DATA_IMPORTER_WORKER_PORT:8082}
+
+spring:
+  application:
+    name: cofrete-data-importer-worker
+  profiles:
+    default: local
+  rabbitmq:
+    addresses: ${COFRETE_DATA_IMPORTER_AMQP_URL:amqp://cofrete:cofrete_local_password@localhost:5672/cofrete}
+
+cofrete:
+  data-importer:
+    rabbitmq:
+      exchange: ${COFRETE_DATA_IMPORTER_EVENTS_EXCHANGE:cofrete.import.events}
+      fuel-price-import-completed-routing-key: fuel-price.import.completed
+      toll-data-import-completed-routing-key: toll-data.import.completed
+    scheduler:
+      enabled: ${COFRETE_DATA_IMPORTER_SCHEDULER_ENABLED:false}
+      anp-diesel-cron: ${COFRETE_DATA_IMPORTER_ANP_DIESEL_CRON:0 0 3 * * *}
+    anp:
+      fixture: ${COFRETE_DATA_IMPORTER_ANP_FIXTURE:classpath:fixtures/anp-diesel-prices-synthetic.csv}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never

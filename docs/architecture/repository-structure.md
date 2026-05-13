@@ -26,7 +26,7 @@ cofrete-platform/
   scripts/
 ```
 
-`core-api/` now contains a Java 21 Spring Boot service scaffold with Maven, Dockerfile, source tree, tests, Flyway migrations, and service documentation. `finance-worker/` now contains a Java 21 Spring Boot worker scaffold with Maven, RabbitMQ messaging stubs, tests, and a Dockerfile. Other unscaffolded service directories currently contain `AGENTS.md` and `README.md` only. Remaining service source code, Dockerfiles, package files, and test folders are introduced by service scaffold issues.
+`core-api/` now contains a Java 21 Spring Boot service scaffold with Maven, Dockerfile, source tree, tests, Flyway migrations, and service documentation. `finance-worker/` now contains a Java 21 Spring Boot worker scaffold with Maven, RabbitMQ messaging stubs, tests, and a Dockerfile. `data-importer-worker/` now contains a Java 21 Spring Boot worker scaffold with Maven, Dockerfile, source tree, tests, scheduler/import stubs, synthetic ANP fixture loading, and RabbitMQ publisher stubs. Other unscaffolded service directories currently contain `AGENTS.md` and `README.md` only. Remaining service source code, Dockerfiles, package files, and test folders are introduced by service scaffold issues.
 
 `docker-compose.yml` and `.env.example` define the local-only PostgreSQL, RabbitMQ, and MinIO infrastructure used by upcoming backend and worker scaffolds.
 
@@ -137,8 +137,18 @@ finance-worker/
 
 data-importer-worker/
   pom.xml
-  src/
   Dockerfile
+  src/
+    main/
+      java/com/cofrete/dataimporter/
+        anp/
+        imports/
+        messaging/
+        scheduling/
+      resources/
+        fixtures/
+    test/
+      java/com/cofrete/dataimporter/
 
 mobile-app/
   package.json
@@ -157,6 +167,12 @@ Service scaffolding issues must update local `README.md` and `AGENTS.md` files w
 
 ```sh
 cd core-api && mvn -q validate test
+```
+
+The Data Importer Worker service validation command is:
+
+```sh
+cd data-importer-worker && mvn -q validate test
 ```
 
 The Finance Worker service validation command is:
