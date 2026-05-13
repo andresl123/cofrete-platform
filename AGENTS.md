@@ -47,7 +47,7 @@ This file is intentionally short. Durable project knowledge belongs in versioned
 - Do not commit, push, open a PR, or update an existing PR until the user has reviewed the local changes and confirmed validation is complete.
 - Do not commit secrets, local environment files, dependency caches, or build artifacts.
 - Update docs when architecture, contracts, validation commands, compliance wording, or risk boundaries change.
-- At the end of every task, create or update a task-specific HTML explainer that summarizes what changed, why it changed, the affected files or areas, validation run, and the next task it unblocks when relevant.
+- At the end of every task, create or update a task-specific HTML explainer under `docs/explainers/`. Explainers summarize what changed, why it changed, affected files or areas, validation run, and the next task it unblocks when relevant. They are derived handoff aids, not source-of-truth docs.
 - Finance math must be deterministic, auditable, and tested with exact expected values.
 - Toll reimbursement and Vale-Pedagio are pass-through money and must not be counted as profit.
 - Cofrete is not an official government, legal, tax, accounting, or insurance channel.

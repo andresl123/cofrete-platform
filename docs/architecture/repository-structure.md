@@ -39,9 +39,12 @@ docs/
   compliance/
   agent-harness/
   runbooks/
+  explainers/
 ```
 
 The docs are source-of-truth files, not generated artifacts. Changes to contracts, service ownership, validation commands, deployment assumptions, or compliance wording must update these docs.
+
+`docs/explainers/` contains manually maintained derived HTML summaries for orientation and task handoff. Explainers are not source-of-truth docs; update canonical markdown first, then realign any relevant explainer.
 
 The canonical RNTRC/ANTT filename is `docs/compliance/rntrc-antt.md`. If a planning note refers to `rntrc-anttt.md`, treat that as a typo and keep the existing corrected filename.
 
@@ -69,7 +72,7 @@ COF-003 adds the local development infrastructure:
 ```text
 .env.example
 docker-compose.yml
-docs/runbooks/local-infrastructure-explainer.html
+docs/explainers/local-infrastructure-explainer.html
 .github/
   workflows/
     docker-publish.yml
