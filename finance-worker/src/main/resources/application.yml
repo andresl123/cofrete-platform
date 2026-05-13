@@ -1,0 +1,31 @@
+server:
+  port: ${COFRETE_FINANCE_WORKER_PORT:8081}
+
+spring:
+  application:
+    name: cofrete-finance-worker
+  profiles:
+    default: local
+  rabbitmq:
+    addresses: ${COFRETE_FINANCE_WORKER_AMQP_URL:amqp://cofrete:cofrete_local_password@localhost:5672/cofrete}
+
+cofrete:
+  finance-worker:
+    rabbitmq:
+      exchange: ${COFRETE_FINANCE_WORKER_EVENTS_EXCHANGE:cofrete.finance.events}
+      trip-recalculation-queue: ${COFRETE_FINANCE_WORKER_TRIP_RECALCULATION_QUEUE:finance-worker.trip-recalculation.requested}
+      reserve-allocation-queue: ${COFRETE_FINANCE_WORKER_RESERVE_ALLOCATION_QUEUE:finance-worker.reserve-allocation.requested}
+      trip-recalculation-requested-routing-key: trip.recalculation.requested
+      reserve-allocation-requested-routing-key: reserve.allocation.requested
+      trip-finance-recalculated-routing-key: trip.finance.recalculated
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never

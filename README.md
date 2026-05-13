@@ -63,12 +63,13 @@ Working now:
 - Harness validation script.
 - GitHub PR checks and pull request template.
 - Docker Compose local infrastructure and `.env.example`.
+- Finance Worker Java/Spring Boot scaffold with RabbitMQ event stubs.
 - Worktree helper script for task branches.
 
 Planned in follow-up issues:
 
 - Image publishing workflow.
-- Java/Spring Boot service scaffolds.
+- Remaining Java/Spring Boot service scaffolds.
 - Expo mobile app scaffold.
 - React/Vite web app scaffold.
 - Runtime smoke scripts and demo seed/reset scripts.

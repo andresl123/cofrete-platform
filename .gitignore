@@ -17,6 +17,9 @@ Thumbs.db
 *.log
 logs/
 
+# Java and Maven tooling
+target/
+
 # Python
 __pycache__/
 *.py[cod]

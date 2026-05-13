@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finance Worker Scaffold Explainer</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #5a6573;
+      --page: #f7f6f2;
+      --panel: #ffffff;
+      --line: #d7dde4;
+      --green: #24765b;
+      --blue: #285c8f;
+      --amber: #9b681d;
+      --red: #9d3c3c;
+      --soft-green: #e1f1eb;
+      --soft-blue: #e5edf7;
+      --soft-amber: #fff1d9;
+      --soft-red: #f7e2e2;
+      --shadow: 0 18px 42px rgba(23, 32, 42, 0.10);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 56px 0 34px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--green);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 850px;
+      margin: 0 0 18px;
+      font-size: clamp(2.35rem, 6vw, 4.8rem);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 780px;
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(1.05rem, 2vw, 1.28rem);
+    }
+
+    main {
+      padding: 34px 0 56px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    section,
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    section.wide {
+      grid-column: span 12;
+    }
+
+    section.half {
+      grid-column: span 6;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 1.22rem;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1.15rem;
+    }
+
+    li {
+      margin: 0 0 8px;
+    }
+
+    code {
+      background: #eef1f4;
+      border: 1px solid #dde3e9;
+      border-radius: 5px;
+      padding: 0.1rem 0.32rem;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .pill {
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 6px 10px;
+      background: #f9fafb;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .flow .card {
+      box-shadow: none;
+      min-height: 130px;
+    }
+
+    .label {
+      display: inline-block;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      padding: 4px 7px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .green {
+      background: var(--soft-green);
+      color: var(--green);
+    }
+
+    .blue {
+      background: var(--soft-blue);
+      color: var(--blue);
+    }
+
+    .amber {
+      background: var(--soft-amber);
+      color: var(--amber);
+    }
+
+    .red {
+      background: var(--soft-red);
+      color: var(--red);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .commands {
+      display: grid;
+      gap: 10px;
+    }
+
+    .command {
+      margin: 0;
+      overflow-x: auto;
+      border: 1px solid #d9e0e7;
+      border-radius: 8px;
+      background: #101820;
+      color: #eef6ff;
+      padding: 13px 14px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 760px) {
+      section.half {
+        grid-column: span 12;
+      }
+
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        padding-top: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <p class="eyebrow">ROU-210 / COF-006</p>
+      <h1>Finance Worker service scaffold</h1>
+      <p class="lead">
+        This task creates the Java 21 Spring Boot worker shell for asynchronous finance processing, wires RabbitMQ event boundaries, and keeps all deterministic finance algorithms out of scope for later dedicated issues.
+      </p>
+      <div class="pill-row" aria-label="Task tags">
+        <span class="pill">Java 21</span>
+        <span class="pill">Spring Boot</span>
+        <span class="pill">RabbitMQ</span>
+        <span class="pill">Actuator health</span>
+        <span class="pill">Scaffold only</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="grid">
+        <section class="wide">
+          <h2>What changed</h2>
+          <div class="flow">
+            <div class="card">
+              <span class="label green">Runtime</span>
+              <p>Added <code>finance-worker/pom.xml</code>, Spring Boot application entrypoint, local/test configuration, and a Dockerfile with a container health check.</p>
+            </div>
+            <div class="card">
+              <span class="label blue">Messaging</span>
+              <p>Added durable RabbitMQ exchange, queue, and binding configuration for the canonical finance events.</p>
+            </div>
+            <div class="card">
+              <span class="label amber">Boundary</span>
+              <p>Added listener and publisher stubs that validate event names while intentionally avoiding profitability or reserve allocation logic.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="half">
+          <h2>Canonical events</h2>
+          <p>The worker uses event names from <code>docs/architecture/event-contracts.md</code> exactly.</p>
+          <h3>Consumed</h3>
+          <ul>
+            <li><code>trip.recalculation.requested</code></li>
+            <li><code>reserve.allocation.requested</code></li>
+          </ul>
+          <h3>Published</h3>
+          <ul>
+            <li><code>trip.finance.recalculated</code></li>
+          </ul>
+        </section>
+
+        <section class="half">
+          <h2>What did not change</h2>
+          <ul>
+            <li>No deterministic trip finance engine was implemented.</li>
+            <li>No reserve allocation algorithm was implemented.</li>
+            <li>No Core API or Data Importer Worker source was changed.</li>
+            <li>No Linear status, priority, labels, or comments were updated.</li>
+          </ul>
+        </section>
+
+        <section class="wide">
+          <h2>Affected files and areas</h2>
+          <ul>
+            <li><code>finance-worker/</code>: Maven project, application code, AMQP configuration, event records, tests, Dockerfile, README, and service agent guide.</li>
+            <li><code>docker-compose.yml</code>: optional <code>services</code> profile entry for running the worker against local RabbitMQ.</li>
+            <li><code>.env.example</code>: added <code>COFRETE_FINANCE_WORKER_PORT</code>.</li>
+            <li><code>README.md</code> and <code>docs/architecture/repository-structure.md</code>: updated repository status to mention the Finance Worker scaffold.</li>
+          </ul>
+        </section>
+
+        <section class="half">
+          <h2>Finance and compliance caveats</h2>
+          <ul>
+            <li>Finance output remains advisory product software, not official legal, tax, accounting, insurance, or government guidance.</li>
+            <li>Monetary values stay as decimal strings with explicit currency in event payload records.</li>
+            <li>Toll reimbursement and Vale-Pedagio remain pass-through money and must not be counted as profit in later finance implementation.</li>
+          </ul>
+        </section>
+
+        <section class="half">
+          <h2>Follow-up tasks unblocked</h2>
+          <ul>
+            <li><code>ROU-216 / COF-012</code>: deterministic finance engine.</li>
+            <li><code>ROU-217 / COF-013</code>: reserve allocation.</li>
+            <li><code>ROU-214 / COF-010</code>: API and event contract hardening before deeper cross-service behavior.</li>
+          </ul>
+        </section>
+
+        <section class="wide">
+          <h2>Validation run</h2>
+          <div class="commands">
+            <pre class="command">cd finance-worker && mvn -q validate test</pre>
+            <pre class="command">cd finance-worker && mvn -q -DskipTests package</pre>
+            <pre class="command">docker compose config</pre>
+            <pre class="command">docker compose --profile services config</pre>
+            <pre class="command">python scripts\agent_harness_check.py</pre>
+            <pre class="command">git diff --check</pre>
+          </div>
+          <p class="muted">All listed commands passed during handoff validation.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

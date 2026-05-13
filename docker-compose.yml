@@ -105,6 +105,24 @@ services:
     networks:
       - cofrete-local
 
+  finance-worker:
+    build:
+      context: ./finance-worker
+    container_name: cofrete-finance-worker
+    profiles:
+      - services
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      COFRETE_FINANCE_WORKER_AMQP_URL: ${COFRETE_FINANCE_WORKER_AMQP_URL:-amqp://cofrete:cofrete_local_password@rabbitmq:5672/cofrete}
+      COFRETE_FINANCE_WORKER_PORT: 8081
+      SPRING_PROFILES_ACTIVE: local
+    ports:
+      - "${COFRETE_FINANCE_WORKER_PORT:-8081}:8081"
+    networks:
+      - cofrete-local
+
 volumes:
   cofrete-postgres-data:
     name: cofrete-postgres-data

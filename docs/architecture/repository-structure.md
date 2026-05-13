@@ -26,7 +26,7 @@ cofrete-platform/
   scripts/
 ```
 
-Each service directory currently contains `AGENTS.md` and `README.md` only. Service source code, Dockerfiles, package files, and test folders are introduced by service scaffold issues.
+`finance-worker/` now contains the first worker scaffold with Maven, Spring Boot source, tests, and a Dockerfile. Other unscaffolded service directories currently contain `AGENTS.md` and `README.md` only. Remaining service source code, Dockerfiles, package files, and test folders are introduced by service scaffold issues.
 
 `docker-compose.yml` and `.env.example` define the local-only PostgreSQL, RabbitMQ, and MinIO infrastructure used by upcoming backend and worker scaffolds.
 
