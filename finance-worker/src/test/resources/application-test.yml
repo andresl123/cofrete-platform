@@ -1,0 +1,12 @@
+spring:
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+      direct:
+        auto-startup: false
+
+management:
+  health:
+    rabbit:
+      enabled: false

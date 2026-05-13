@@ -3,11 +3,15 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+import re
+import subprocess
 import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
+TASK_ID_PATTERN = re.compile(r"\b(?:ROU|COF)-\d+\b", re.IGNORECASE)
 
 SERVICE_DIRS = (
     "core-api",
@@ -36,6 +40,7 @@ REQUIRED_DIRS = (
 
 REQUIRED_FILES = (
     "AGENTS.md",
+    "CONTEXT.md",
     "README.md",
     ".env.example",
     ".editorconfig",
@@ -45,6 +50,7 @@ REQUIRED_FILES = (
     ".github/pull_request_template.md",
     ".github/workflows/pr-checks.yml",
     "docs/README.md",
+    "docs/application-explainer.html",
     "docs/product/brazil-trucker-finance-blueprint.md",
     "docs/product/mvp-scope.md",
     "docs/product/product-principles.md",
@@ -52,6 +58,7 @@ REQUIRED_FILES = (
     "docs/product/glossary-pt-br.md",
     "docs/product/roadmap.md",
     "docs/architecture/system-overview.md",
+    "docs/architecture/architecture-explainer.html",
     "docs/architecture/repository-structure.md",
     "docs/architecture/service-boundaries.md",
     "docs/architecture/data-model.md",
@@ -102,6 +109,7 @@ REQUIRED_FILES = (
 
 REQUIRED_TEXT = {
     "AGENTS.md": (
+        "CONTEXT.md",
         "docs/agent-harness/README.md",
         "python scripts/agent_harness_check.py",
         "task-specific HTML explainer",
@@ -154,6 +162,16 @@ REQUIRED_TEXT = {
         "rabbitmq:3.13-management-alpine",
         "minio/minio",
         "cofrete-local",
+    ),
+    "CONTEXT.md": (
+        "Canonical Markdown Doc",
+        "Explainer Page",
+        "Derived Entry Point",
+    ),
+    "docs/README.md": (
+        "derived entry points",
+        "application-explainer.html",
+        "architecture/architecture-explainer.html",
     ),
     "docs/compliance/official-source-register.md": (
         "ANTT",
@@ -232,6 +250,12 @@ REQUIRED_TEXT = {
         "Kubernetes Secrets",
         "IngressClass",
     ),
+    "docs/application-explainer.html": (
+        "manually maintained derived summary",
+    ),
+    "docs/architecture/architecture-explainer.html": (
+        "manually maintained derived summary",
+    ),
     "docs/architecture/core-api-scaffold-explainer.html": (
         "ROU-209 / COF-005",
         "Core API service scaffold",
@@ -293,12 +317,61 @@ def _content_failures(required_text: dict[str, tuple[str, ...]]) -> list[str]:
     return failures
 
 
+def _current_branch_name() -> str:
+    github_branch = os.environ.get("GITHUB_HEAD_REF") or os.environ.get("GITHUB_REF_NAME")
+    if github_branch:
+        return github_branch
+
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return ""
+
+    return result.stdout.strip()
+
+
+def _task_ids_from_branch(branch_name: str) -> tuple[str, ...]:
+    task_ids = {match.group(0).upper() for match in TASK_ID_PATTERN.finditer(branch_name)}
+    return tuple(sorted(task_ids))
+
+
+def _task_explainer_failures(task_ids: tuple[str, ...]) -> list[str]:
+    if not task_ids:
+        return []
+
+    candidates = sorted(ROOT.glob("docs/**/*explainer.html"))
+    matching_explainers: list[str] = []
+
+    for path in candidates:
+        text = path.read_text(encoding="utf-8")
+        if all(task_id in text.upper() for task_id in task_ids):
+            matching_explainers.append(str(path.relative_to(ROOT)))
+
+    if matching_explainers:
+        return []
+
+    return [
+        "task branch contains issue ID(s) "
+        + ", ".join(task_ids)
+        + " but no docs/**/*explainer.html file includes all of them"
+    ]
+
+
 def main() -> int:
     missing_dirs = _missing_paths(REQUIRED_DIRS, "directory")
     missing_files = _missing_paths(REQUIRED_FILES, "file")
     content_failures = _content_failures(REQUIRED_TEXT)
+    branch_name = _current_branch_name()
+    task_ids = _task_ids_from_branch(branch_name)
+    task_explainer_failures = _task_explainer_failures(task_ids)
 
-    if missing_dirs or missing_files or content_failures:
+    if missing_dirs or missing_files or content_failures or task_explainer_failures:
         print("agent harness check failed", file=sys.stderr)
         for path in missing_dirs:
             print(f"missing directory: {path}", file=sys.stderr)
@@ -306,11 +379,15 @@ def main() -> int:
             print(f"missing file: {path}", file=sys.stderr)
         for failure in content_failures:
             print(f"content failure: {failure}", file=sys.stderr)
+        for failure in task_explainer_failures:
+            print(f"task explainer failure: {failure}", file=sys.stderr)
         return 1
 
     print("agent harness check passed")
     print(f"checked {len(REQUIRED_DIRS)} directories and {len(REQUIRED_FILES)} files")
     print(f"checked {sum(len(values) for values in REQUIRED_TEXT.values())} required text markers")
+    if task_ids:
+        print(f"checked task explainer for {', '.join(task_ids)}")
     return 0
 
 

@@ -63,6 +63,19 @@ npm run build
 docker compose config
 ```
 
+## Task Explainer Check
+
+Every task branch with a recognizable issue ID in its branch name, such as `ROU-210` or `COF-006`, must include or update a task-specific HTML explainer under `docs/`.
+
+The explainer filename should end with `explainer.html`, and the file contents must include every issue ID found in the branch name. This lets `python scripts/agent_harness_check.py` verify that handoff documentation exists without forcing generic branches or `main` to create task-only files.
+
+Create or update the explainer before the final validation pass, then run:
+
+```sh
+python scripts/agent_harness_check.py
+git diff --check
+```
+
 ## Future Kubernetes Checks
 
 These commands become required once Kubernetes manifests or deployment tooling exist.
