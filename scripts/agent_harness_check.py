@@ -34,11 +34,13 @@ REQUIRED_DIRS = (
 
 REQUIRED_FILES = (
     "AGENTS.md",
+    "CONTEXT.md",
     "README.md",
     ".editorconfig",
     ".gitattributes",
     ".gitignore",
     "docs/README.md",
+    "docs/application-explainer.html",
     "docs/product/brazil-trucker-finance-blueprint.md",
     "docs/product/mvp-scope.md",
     "docs/product/product-principles.md",
@@ -46,6 +48,7 @@ REQUIRED_FILES = (
     "docs/product/glossary-pt-br.md",
     "docs/product/roadmap.md",
     "docs/architecture/system-overview.md",
+    "docs/architecture/architecture-explainer.html",
     "docs/architecture/repository-structure.md",
     "docs/architecture/service-boundaries.md",
     "docs/architecture/data-model.md",
@@ -92,12 +95,23 @@ REQUIRED_FILES = (
 
 REQUIRED_TEXT = {
     "AGENTS.md": (
+        "CONTEXT.md",
         "docs/agent-harness/README.md",
         "python scripts/agent_harness_check.py",
     ),
     "README.md": (
         "not an official government, legal, tax, accounting, or insurance channel",
         "docs/architecture/api-contracts.md",
+    ),
+    "CONTEXT.md": (
+        "Canonical Markdown Doc",
+        "Explainer Page",
+        "Derived Entry Point",
+    ),
+    "docs/README.md": (
+        "derived entry points",
+        "application-explainer.html",
+        "architecture/architecture-explainer.html",
     ),
     "docs/compliance/official-source-register.md": (
         "ANTT",
@@ -155,6 +169,12 @@ REQUIRED_TEXT = {
         "Current Cluster Access Status",
         "Kubernetes Secrets",
         "IngressClass",
+    ),
+    "docs/application-explainer.html": (
+        "manually maintained derived summary",
+    ),
+    "docs/architecture/architecture-explainer.html": (
+        "manually maintained derived summary",
     ),
     "docs/compliance/diesel-anp.md": (
         "driver_confirmed",

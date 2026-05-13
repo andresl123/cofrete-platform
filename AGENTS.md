@@ -5,9 +5,10 @@ This file is intentionally short. Durable project knowledge belongs in versioned
 ## Start Here
 
 1. Read `README.md`.
-2. Read `docs/agent-harness/README.md`.
-3. Read the nearest service `AGENTS.md` before editing service code.
-4. Run `python scripts/agent_harness_check.py` before opening a PR or handing work back.
+2. Read `CONTEXT.md`.
+3. Read `docs/agent-harness/README.md`.
+4. Read the nearest service `AGENTS.md` before editing service code.
+5. Run `python scripts/agent_harness_check.py` before opening a PR or handing work back.
 
 ## Repo Layout
 
