@@ -211,6 +211,8 @@ Finance caveats:
 
 Published when reserve allocation should be recalculated after freight payment, policy changes, or manual correction.
 
+ROU-217 stages the worker-side allocation logic but keeps Core API as the temporary synchronous allocation owner so reserve wallets and transaction history are immediately durable for MVP mobile/dashboard work. ROU-253 owns the final async path: Core API publishes this request event, Finance Worker calculates the allocation result, and Core API persists the worker result without double-crediting buckets.
+
 Contract metadata:
 
 | Property | Value |

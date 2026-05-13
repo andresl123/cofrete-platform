@@ -6,7 +6,9 @@ Backend API service for Cofrete Platform.
 
 Core API owns authenticated product APIs and primary PostgreSQL persistence for driver profile, trip, advisory finance, reserve, compliance, receivables, imports, auth, and audit data.
 
-The service now implements the first profile-domain product controllers. Remaining contracted routes under `/api/*` are reserved for implementation issues documented in `../docs/architecture/api-contracts.md`.
+The service now implements the first profile-domain product controllers plus ROU-217 reserve wallet/allocation endpoints. Remaining contracted routes under `/api/*` are reserved for implementation issues documented in `../docs/architecture/api-contracts.md`.
+
+ROU-217 keeps reserve allocation synchronous in Core API as a temporary MVP persistence path. ROU-253 owns the final async integration where Finance Worker allocation results are persisted back into Core API reserve wallets and transactions.
 
 Compliance and finance behavior must remain advisory. Do not present Core API responses as official ANTT, ANP, SUSEP, Receita Federal, DETRAN, SEFAZ, insurer, legal, tax, accounting, or government authority.
 

@@ -325,9 +325,9 @@ Finance semantics:
 | `POST` | `/api/expenses` | Record direct or recurring expense. | Trip optional, category, amount, reimbursable flag, paid-by metadata. | `expense` resource. | `VALIDATION_ERROR`, `NOT_FOUND` |
 | `GET` | `/api/expenses?from=&to=&category=` | List expenses for dashboard and finance inputs. | Date range, optional category. | `expenses[]`, totals. | `VALIDATION_ERROR` |
 | `POST` | `/api/reserve-rules` | Create or update reserve allocation rule. | Bucket, percent/fixed/per-km rule, effective dates. | `reserveRule` resource. | `VALIDATION_ERROR`, `CONFLICT` |
-| `GET` | `/api/reserve-wallets` | Return bucket balances and targets. | Optional `asOf`. | `reserveWallets[]`. | `UNAUTHENTICATED` |
+| `GET` | `/api/reserve-wallets` | Return bucket balances, targets, and recent transactions. | None in ROU-217; `asOf` is reserved for later snapshots. | `reserveWallets[]`. | `UNAUTHENTICATED` |
 | `POST` | `/api/reserve-allocations` | Request reserve allocation for freight payment or manual correction. | Payment/trip reference, amount, idempotency key. | Allocation request status. | `VALIDATION_ERROR`, `CONFLICT` |
-| `GET` | `/api/financial-health-score` | Return current financial health summary. | Optional `asOf`. | Score, status, components, trace ID. | `SNAPSHOT_PENDING` |
+| `GET` | `/api/financial-health-score` | Return current financial health summary. | None in ROU-217; `asOf` is reserved for later snapshots. | Score, status, components, trace ID. | `SNAPSHOT_PENDING` |
 
 Example reserve allocation request:
 
@@ -335,9 +335,58 @@ Example reserve allocation request:
 {
   "tripId": "trip_123",
   "freightPaymentId": "pay_123",
+  "allocationSubjectId": "pay_123",
+  "allocationRevision": 3,
   "grossAmount": "8000.00",
+  "passThroughAmount": "600.00",
+  "distanceKm": "1000.00",
   "currency": "BRL",
-  "idempotencyKey": "reserve-trip_123-pay_123-v1"
+  "idempotencyKey": "reserve-trip_123-pay_123-v1",
+  "reason": "FREIGHT_PAYMENT_RECEIVED",
+  "requestedAt": "2026-05-11T12:00:10Z"
+}
+```
+
+Example reserve allocation response:
+
+```json
+{
+  "reserveAllocation": {
+    "id": "reserve_alloc_123",
+    "status": "ALLOCATED",
+    "requestStatus": "ALLOCATED",
+    "duplicate": false,
+    "idempotencyKey": "reserve-trip_123-pay_123-v1",
+    "grossAmount": "8000.00",
+    "passThroughAmount": "600.00",
+    "allocatableAmount": "7400.00",
+    "requiredReserveAmount": "1110.00",
+    "safePersonalWithdrawal": "1110.00",
+    "currency": "BRL",
+    "reason": "FREIGHT_PAYMENT_RECEIVED",
+    "requestedAt": "2026-05-11T12:00:10Z",
+    "bucketAllocations": {
+      "MAINTENANCE": "592.00",
+      "TIRES": "296.00",
+      "TAXES_AND_DOCUMENTS": "222.00",
+      "DRIVER_SALARY": "1110.00"
+    },
+    "transactions": [
+      {
+        "id": "reserve_txn_123",
+        "bucket": "MAINTENANCE",
+        "type": "CREDIT",
+        "amount": "592.00",
+        "balanceAfter": "1250.00",
+        "currency": "BRL",
+        "sourceType": "RESERVE_ALLOCATION",
+        "sourceReference": "reserve-trip_123-pay_123-v1",
+        "note": "Virtual reserve ledger movement. Not a real money transfer.",
+        "createdAt": "2026-05-11T12:00:10Z"
+      }
+    ],
+    "advisoryText": "Reserve allocations are virtual ledger movements, not real money transfers or legal/accounting advice."
+  }
 }
 ```
 
@@ -351,8 +400,22 @@ Example reserve wallet response:
       "currentBalance": "1250.00",
       "targetBalance": "5000.00",
       "currency": "BRL",
-      "policy": "percent_of_freight",
-      "lastAllocationAt": "2026-05-11T12:00:00Z"
+      "policy": "PERCENT_OF_AMOUNT",
+      "lastAllocationAt": "2026-05-11T12:00:00Z",
+      "transactions": [
+        {
+          "id": "reserve_txn_123",
+          "bucket": "MAINTENANCE",
+          "type": "CREDIT",
+          "amount": "592.00",
+          "balanceAfter": "1250.00",
+          "currency": "BRL",
+          "sourceType": "RESERVE_ALLOCATION",
+          "sourceReference": "reserve-trip_123-pay_123-v1",
+          "note": "Virtual reserve ledger movement. Not a real money transfer.",
+          "createdAt": "2026-05-11T12:00:10Z"
+        }
+      ]
     }
   ]
 }
@@ -361,8 +424,17 @@ Example reserve wallet response:
 Reserve semantics:
 
 - Reserve allocations are virtual ledger movements unless a future payment integration explicitly implements real money movement.
-- Manual corrections must be auditable.
-- Repeated allocation requests with the same idempotency key must not double-credit buckets.
+- ROU-217 allocates synchronously in Core API as a temporary MVP persistence path. ROU-253 will wire the documented async flow where Core API publishes `reserve.allocation.requested`, Finance Worker owns the allocation calculation, and Core API persists worker allocation results idempotently.
+- Manual corrections are auditable positive credit allocations in ROU-217. Debit or adjustment corrections require a later documented request shape before implementation.
+- Repeated allocation requests with the same idempotency key must not double-credit buckets. Duplicate calls return `requestStatus: DUPLICATE_IGNORED` while the stored allocation remains `status: ALLOCATED`.
+- Each account can have at most one active reserve rule per bucket; inactive rules are historical and do not participate in allocation.
+- Reserve rule policy inputs are mutually exclusive: `PERCENT_OF_AMOUNT` accepts `rate`, `FIXED_AMOUNT` accepts `fixedAmount`, and `PER_KM` accepts `perKmAmount`.
+- Active `PER_KM` reserve rules require `distanceKm` on allocation requests; missing distance must fail rather than silently allocate zero.
+- ROU-217 stores `tripId`, `freightPaymentId`, and `allocationSubjectId` as references without foreign-key validation until ROU-215 introduces durable trip/profitability records.
+- `allocationSubjectId` is required for every reserve allocation request and is the stable domain subject used for audit and future async event idempotency.
+- Monetary request fields use decimal strings with at most 2 fraction digits; reserve rule `perKmAmount` uses at most 4 fraction digits and `rate` uses at most 6 fraction digits.
+- `passThroughAmount` is excluded before bucket allocation and safe-withdrawal calculation.
+- `safePersonalWithdrawal` is advisory and excludes required reserve buckets and pass-through cash flow.
 
 ## Fuel Prices And Fuel Estimates
 

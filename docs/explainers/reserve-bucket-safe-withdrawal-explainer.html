@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ROU-217 / COF-013 Reserve Bucket And Safe Withdrawal Explainer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      margin: 0;
+      color: #172026;
+      background: #f7f9fb;
+    }
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+    h1, h2 {
+      color: #102a43;
+    }
+    section {
+      background: #ffffff;
+      border: 1px solid #d8e2ec;
+      border-radius: 8px;
+      margin: 16px 0;
+      padding: 18px;
+    }
+    code {
+      background: #eef2f7;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    ul {
+      padding-left: 22px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>ROU-217 / COF-013 Reserve Bucket And Safe Withdrawal</h1>
+    <p>
+      This manually maintained derived explainer summarizes the ROU-217 / COF-013 implementation.
+      Canonical product and contract wording remains in the Markdown docs under <code>docs/</code>.
+    </p>
+
+    <section>
+      <h2>What Changed</h2>
+      <ul>
+        <li>Core API now persists reserve rules, reserve wallets, reserve allocations, and reserve transactions.</li>
+        <li>Core API exposes <code>POST /api/reserve-rules</code>, <code>GET /api/reserve-wallets</code>, <code>POST /api/reserve-allocations</code>, and <code>GET /api/financial-health-score</code>.</li>
+        <li>Reserve wallet responses include recent transaction history so mobile can render an auditable ledger.</li>
+        <li>Finance Worker now has deterministic reserve allocation logic and handles <code>reserve.allocation.requested</code> through an idempotent service.</li>
+        <li>Core API is documented as the temporary synchronous reserve allocation owner for ROU-217; ROU-253 owns the final async worker result persistence path.</li>
+        <li>Duplicate idempotency calls are reported in response metadata without changing the stored allocation status.</li>
+        <li>ROU-217 manual corrections are positive credit allocations only; debit and adjustment corrections require a later contract.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Why</h2>
+      <p>
+        ROU-217 / COF-013 builds on the deterministic finance engine by allocating freight payment money into virtual
+        reserve buckets and keeping pass-through cash flow out of safe personal withdrawal.
+      </p>
+    </section>
+
+    <section>
+      <h2>Affected Areas</h2>
+      <ul>
+        <li><code>core-api/src/main/java/com/cofrete/coreapi/reserve</code></li>
+        <li><code>core-api/src/main/resources/db/migration/V3__reserve_wallet_allocation_model.sql</code></li>
+        <li><code>finance-worker/src/main/java/com/cofrete/financeworker/reserve</code></li>
+        <li><code>finance-worker/src/main/java/com/cofrete/financeworker/messaging/FinanceEventListeners.java</code></li>
+        <li><code>docs/architecture/api-contracts.md</code></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Validation</h2>
+      <ul>
+        <li><code>cd core-api &amp;&amp; mvn -q validate test</code></li>
+        <li><code>cd finance-worker &amp;&amp; mvn -q validate test</code></li>
+        <li><code>python scripts/agent_harness_check.py</code></li>
+        <li><code>git diff --check</code></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Unblocks</h2>
+      <ul>
+        <li>ROU-225 financial health dashboard.</li>
+        <li>ROU-223 mobile reserve wallet and safe-withdrawal screens.</li>
+        <li>ROU-219 toll and Vale-Pedagio classification can refine pass-through treatment.</li>
+        <li>ROU-253 async reserve allocation event/result persistence.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Caveats</h2>
+      <p>
+        Reserve allocations are virtual ledger movements. They are advisory planning output, not real money movement
+        and not legal, tax, accounting, insurance, or government guidance.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

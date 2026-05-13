@@ -10,6 +10,7 @@ Owns:
 - Compliance metadata, CIOT/freight-floor inputs, waiting-time records, IPVA/licensing reminders, and mobile/web authentication.
 - Auth endpoints, Spring Security configuration, session issuance/revocation, user role authorization, account scoping, API request validation, and persistence.
 - Audit logging for user/admin/support HTTP actions and internal service writes that land in Core API.
+- Temporary MVP synchronous reserve allocation through ROU-217, so mobile and dashboard work can consume durable reserve wallets before the async worker result path lands in ROU-253.
 
 Internal implementation rule:
 
@@ -32,6 +33,7 @@ Does not own:
 - Long-running external imports.
 - Heavy financial recalculation loops.
 - Frontend-specific business math.
+- Long-term reserve allocation math after ROU-253 wires worker-owned async allocation result persistence.
 
 ## Finance Worker
 
@@ -44,6 +46,8 @@ Owns:
 - Waiting-time financial impact and customer profitability recalculation.
 - Financial health scoring.
 - Idempotent handling of finance events.
+
+ROU-217 introduces deterministic reserve allocation logic in the worker and a temporary synchronous Core API allocation path for MVP persistence. ROU-253 is the follow-up that makes the documented async ownership fully effective by persisting worker allocation results back into Core API wallets and transactions.
 
 Does not own:
 
