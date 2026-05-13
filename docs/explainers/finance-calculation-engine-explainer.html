@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ROU-216 Finance Calculation Engine</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fa;
+      --panel: #ffffff;
+      --text: #18232d;
+      --muted: #5c6a78;
+      --border: #d7e0ea;
+      --accent: #256d85;
+      --soft: #eef6f8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    header,
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+
+    h1,
+    h2 {
+      margin: 0 0 10px;
+      line-height: 1.2;
+    }
+
+    h1 {
+      font-size: 30px;
+    }
+
+    h2 {
+      font-size: 20px;
+    }
+
+    p {
+      margin: 0 0 10px;
+    }
+
+    ul {
+      margin: 10px 0 0;
+      padding-left: 22px;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    code {
+      background: var(--soft);
+      border: 1px solid #d5e8ee;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: Consolas, monospace;
+      font-size: 0.95em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--border);
+      padding: 8px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .note {
+      color: var(--muted);
+    }
+
+    .formula {
+      border-left: 4px solid var(--accent);
+      background: var(--soft);
+      padding: 12px 14px;
+      margin-top: 10px;
+      font-family: Consolas, monospace;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>ROU-216 / COF-012 Finance Calculation Engine</h1>
+      <p>Implemented a deterministic Finance Worker engine that turns an explicit trip finance snapshot into advisory money outputs for a Brazilian truck driver.</p>
+      <p class="note">Canonical details live in <code>docs/architecture/finance-calculation-engine.md</code>. This page is the concise handoff.</p>
+    </header>
+
+    <section>
+      <h2>What Was Added</h2>
+      <ul>
+        <li>A pure calculator: <code>TripFinanceCalculator.calculate(input)</code>.</li>
+        <li>Input and output records for trip finance snapshots, reserve policy, trace entries, and health impact.</li>
+        <li>Event handling for <code>trip.recalculation.requested</code>.</li>
+        <li>Publication of <code>trip.finance.recalculated</code> with decimal-string monetary values, correlation ID, idempotency key, and source freshness.</li>
+        <li>Fixture-based tests proving stable output for fixed inputs.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Calculation Logic</h2>
+      <p>The calculator uses only the input snapshot. It does not read time, database state, environment variables, network services, or random values.</p>
+      <div class="formula">fuelCost = totalDistanceKm / dieselConsumptionKmPerLiter * dieselPricePerLiter
+passThroughAmount = tollReimbursement + valePedagio + otherPassThrough
+reserveBase = grossFreight - passThroughAmount
+directTripCost = fuel + arla + nonReimbursedToll + mealsAndLodging + otherDirect
+requiredReserves = reserveBase * each configured reserve rate, rounded per bucket
+expectedProfit = grossFreight - passThroughAmount - directTripCost - requiredReserves - financingAllocation
+safePersonalWithdrawal = max(expectedProfit, 0.00)</div>
+      <p class="note">Toll reimbursement and Vale-Pedagio are pass-through money. They are visible in the output but excluded from profit.</p>
+    </section>
+
+    <section>
+      <h2>Example Fixture Result</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Output</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Gross freight</td><td><code>8000.00</code></td></tr>
+          <tr><td>Pass-through amount</td><td><code>600.00</code></td></tr>
+          <tr><td>Direct trip cost</td><td><code>3000.00</code></td></tr>
+          <tr><td>Required reserves</td><td><code>1776.00</code></td></tr>
+          <tr><td>Safe personal withdrawal</td><td><code>1974.00</code></td></tr>
+          <tr><td>Expected profit</td><td><code>1974.00</code></td></tr>
+          <tr><td>Financial health impact</td><td><code>GOOD</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Event Flow</h2>
+      <ul>
+        <li>Listener receives <code>trip.recalculation.requested</code>.</li>
+        <li>Service validates event type, version, required IDs, producer, correlation ID, and timestamp.</li>
+        <li>Duplicate requests are suppressed by <code>idempotencyKey</code>.</li>
+        <li>The service loads a matching <code>TripFinanceInputSnapshot</code>.</li>
+        <li>The pure calculator produces the result.</li>
+        <li>Publisher sends <code>trip.finance.recalculated</code>.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Important Boundary</h2>
+      <p><code>trip.recalculation.requested</code> contains IDs and <code>inputRevision</code>, not full money inputs. The worker now exposes <code>TripFinanceInputSnapshotProvider</code> for a future Core API or read-model integration.</p>
+      <p>The default provider fails explicitly. That is intentional: production must not fabricate finance results without authoritative trip inputs.</p>
+    </section>
+
+    <section>
+      <h2>Main Files</h2>
+      <ul>
+        <li><code>finance-worker/src/main/java/com/cofrete/financeworker/calculation/TripFinanceCalculator.java</code></li>
+        <li><code>finance-worker/src/main/java/com/cofrete/financeworker/recalculation/TripFinanceRecalculationService.java</code></li>
+        <li><code>finance-worker/src/main/java/com/cofrete/financeworker/messaging/FinanceEventListeners.java</code></li>
+        <li><code>finance-worker/src/test/resources/fixtures/finance-calculation-trip-profit.json</code></li>
+        <li><code>docs/architecture/finance-calculation-engine.md</code></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Validation Run</h2>
+      <ul>
+        <li><code>cd finance-worker &amp;&amp; mvn -q validate test</code> passed.</li>
+        <li><code>python scripts/agent_harness_check.py</code> passed.</li>
+        <li><code>git diff --check</code> passed.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>What This Unblocks</h2>
+      <ul>
+        <li>ROU-217 reserve bucket and safe withdrawal allocation.</li>
+        <li>ROU-225 financial health dashboard.</li>
+        <li>Later profitability APIs once fuel and toll source blockers are complete.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

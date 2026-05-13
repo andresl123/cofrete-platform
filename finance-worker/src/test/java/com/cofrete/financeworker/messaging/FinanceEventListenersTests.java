@@ -2,17 +2,24 @@ package com.cofrete.financeworker.messaging;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.cofrete.financeworker.calculation.ReservePolicy;
+import com.cofrete.financeworker.calculation.TripFinanceCalculator;
+import com.cofrete.financeworker.calculation.TripFinanceInputSnapshot;
 import com.cofrete.financeworker.messaging.events.ReserveAllocationRequestedEvent;
 import com.cofrete.financeworker.messaging.events.TripRecalculationRequestedEvent;
+import com.cofrete.financeworker.recalculation.ProcessedRecalculationRegistry;
+import com.cofrete.financeworker.recalculation.TripFinanceRecalculationService;
 import java.time.Instant;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 class FinanceEventListenersTests {
 
-    private final FinanceEventListeners listeners = new FinanceEventListeners();
+    private final FinanceEventListeners listeners = new FinanceEventListeners(recalculationService());
 
     @Test
-    void acceptsTripRecalculationRequestedEventStubWithoutCalculating() {
+    void acceptsTripRecalculationRequestedEventAndCalculates() {
         listeners.handleTripRecalculationRequested(new TripRecalculationRequestedEvent(
             FinanceEventNames.TRIP_RECALCULATION_REQUESTED,
             1,
@@ -71,5 +78,52 @@ class FinanceEventListenersTests {
         assertThatThrownBy(() -> listeners.handleTripRecalculationRequested(event))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining(FinanceEventNames.TRIP_RECALCULATION_REQUESTED);
+    }
+
+    private static TripFinanceRecalculationService recalculationService() {
+        FinanceWorkerRabbitProperties properties = new FinanceWorkerRabbitProperties();
+        FinanceEventPublisher publisher = new FinanceEventPublisher(new CapturingRabbitTemplate(), properties);
+        return new TripFinanceRecalculationService(
+            ignored -> snapshot(),
+            new TripFinanceCalculator(),
+            publisher,
+            new ProcessedRecalculationRegistry()
+        );
+    }
+
+    private static final class CapturingRabbitTemplate extends RabbitTemplate {
+
+        @Override
+        public void convertAndSend(String exchange, String routingKey, Object message) {
+        }
+    }
+
+    private static TripFinanceInputSnapshot snapshot() {
+        return new TripFinanceInputSnapshot(
+            "TRIP-001",
+            "DRIVER-001",
+            "TRUCK-001",
+            1,
+            "BRL",
+            "8000.00",
+            "1000.00",
+            "2.50",
+            "5.25",
+            "120.00",
+            "300.00",
+            "385.70",
+            "214.30",
+            "0.00",
+            "280.00",
+            "200.00",
+            "650.00",
+            new ReservePolicy("0.0800", "0.0400", "0.0300", "0.0200", "0.0500", "0.0200"),
+            Map.of(
+                "fuel", "CURRENT",
+                "toll", "CURRENT",
+                "tax", "CURRENT",
+                "compliance", "UNKNOWN"
+            )
+        );
     }
 }
