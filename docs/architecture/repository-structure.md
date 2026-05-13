@@ -26,7 +26,7 @@ cofrete-platform/
   scripts/
 ```
 
-`core-api/` now contains a Java 21 Spring Boot service scaffold with Maven, Dockerfile, source tree, tests, Flyway migrations, and service documentation. Other service directories currently contain `AGENTS.md` and `README.md` only. Their source code, Dockerfiles, package files, and test folders are introduced by their service scaffold issues.
+`core-api/` now contains a Java 21 Spring Boot service scaffold with Maven, Dockerfile, source tree, tests, Flyway migrations, and service documentation. `finance-worker/` now contains a Java 21 Spring Boot worker scaffold with Maven, RabbitMQ messaging stubs, tests, and a Dockerfile. Other unscaffolded service directories currently contain `AGENTS.md` and `README.md` only. Remaining service source code, Dockerfiles, package files, and test folders are introduced by service scaffold issues.
 
 `docker-compose.yml` and `.env.example` define the local-only PostgreSQL, RabbitMQ, and MinIO infrastructure used by upcoming backend and worker scaffolds.
 
@@ -157,6 +157,12 @@ Service scaffolding issues must update local `README.md` and `AGENTS.md` files w
 
 ```sh
 cd core-api && mvn -q validate test
+```
+
+The Finance Worker service validation command is:
+
+```sh
+cd finance-worker && mvn -q validate test
 ```
 
 The `core-api` package names above are implementation targets, not a requirement to use that exact Java base package path. The important rule is that the Core API starts as an internally modular service with explicit domain boundaries for profile, trip, finance, reserve, compliance, receivables, and imports. Cross-module calls should go through clear application/service interfaces rather than sharing ad hoc persistence or business logic.
