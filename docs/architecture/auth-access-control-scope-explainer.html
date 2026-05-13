@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cofrete Auth Access-Control Scope Explainer</title>
+  <style>
+    :root {
+      --ink: #18202a;
+      --muted: #5a6472;
+      --line: #d8dee8;
+      --paper: #f6f3ed;
+      --panel: #ffffff;
+      --dark: #1f2a36;
+      --green: #21745a;
+      --blue: #285b93;
+      --amber: #a76516;
+      --red: #a63b3b;
+      --soft-green: #dff0eb;
+      --soft-blue: #e4edf8;
+      --soft-amber: #fff0d9;
+      --soft-red: #f8e2e2;
+      --shadow: 0 18px 42px rgba(24, 32, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: 78vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 460px);
+      gap: 44px;
+      align-items: center;
+      padding: 54px 0 38px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--green);
+      font-size: 0.82rem;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 790px;
+      margin-bottom: 22px;
+      font-size: clamp(2.55rem, 7vw, 5.3rem);
+      line-height: 0.97;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      font-size: clamp(1.8rem, 3.1vw, 2.7rem);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin-bottom: 8px;
+      font-size: 1.06rem;
+    }
+
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    .lead {
+      max-width: 720px;
+      margin-bottom: 26px;
+      color: #384453;
+      font-size: clamp(1.07rem, 2vw, 1.28rem);
+    }
+
+    .quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .quick-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 13px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #33404f;
+      font-size: 0.92rem;
+      font-weight: 760;
+      text-decoration: none;
+    }
+
+    .decision-panel {
+      background: var(--dark);
+      color: white;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .decision-top {
+      padding: 22px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .decision-top strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 1.22rem;
+    }
+
+    .decision-top p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .flow {
+      display: grid;
+      gap: 1px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .flow-step {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 13px;
+      align-items: start;
+      padding: 16px 18px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .number {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.14);
+      font-weight: 900;
+    }
+
+    .flow-step p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.92rem;
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    section {
+      padding: 56px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.72fr) minmax(280px, 1fr);
+      gap: 32px;
+      align-items: end;
+      margin-bottom: 26px;
+    }
+
+    .section-head p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card {
+      min-height: 176px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 10px 24px rgba(24, 32, 42, 0.06);
+    }
+
+    .card p {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      margin-bottom: 14px;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 0.78rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .tag.green {
+      background: var(--soft-green);
+      color: #125c43;
+    }
+
+    .tag.blue {
+      background: var(--soft-blue);
+      color: #204e82;
+    }
+
+    .tag.amber {
+      background: var(--soft-amber);
+      color: #7d4a0f;
+    }
+
+    .tag.red {
+      background: var(--soft-red);
+      color: #842929;
+    }
+
+    .matrix {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 10px 24px rgba(24, 32, 42, 0.06);
+    }
+
+    .matrix-row {
+      display: grid;
+      grid-template-columns: 210px 1fr 1fr;
+      border-top: 1px solid var(--line);
+    }
+
+    .matrix-row:first-child {
+      border-top: 0;
+      background: #eef3f8;
+      font-weight: 850;
+    }
+
+    .matrix-row > div {
+      padding: 14px 16px;
+      border-left: 1px solid var(--line);
+    }
+
+    .matrix-row > div:first-child {
+      border-left: 0;
+      font-weight: 800;
+    }
+
+    .source-links {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .source-link {
+      min-height: 98px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: #293645;
+      text-decoration: none;
+      box-shadow: 0 10px 24px rgba(24, 32, 42, 0.05);
+    }
+
+    .source-link strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .source-link span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .callout {
+      padding: 22px;
+      border: 1px solid #c7d9d1;
+      border-radius: 8px;
+      background: var(--soft-green);
+      color: #173d31;
+    }
+
+    .callout p {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .section-head,
+      .grid,
+      .grid.two,
+      .source-links {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      .matrix-row {
+        grid-template-columns: 1fr;
+      }
+
+      .matrix-row > div {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .matrix-row > div:first-child {
+        border-top: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">ROU-245 / COF-010A</p>
+        <h1>Authentication and access-control scope is now explicit.</h1>
+        <p class="lead">
+          The docs now tell the Core API scaffold exactly how Cofrete login, roles, account scoping,
+          service credentials, audit logging, and auth errors should behave.
+        </p>
+        <nav class="quick-links" aria-label="Page sections">
+          <a href="#decision">Decision</a>
+          <a href="#contracts">Contracts</a>
+          <a href="#access">Access model</a>
+          <a href="#sources">Source docs</a>
+        </nav>
+      </div>
+
+      <aside class="decision-panel" aria-label="Implementation flow summary">
+        <div class="decision-top">
+          <strong>Selected MVP path</strong>
+          <p>Core API owns Cofrete auth first, with clean room for a future identity provider.</p>
+        </div>
+        <div class="flow">
+          <div class="flow-step">
+            <div class="number">1</div>
+            <div>
+              <strong>Email/password behind Core API</strong>
+              <p>Spring Security is the scaffold target. Passwords are hashed if Cofrete stores them.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="number">2</div>
+            <div>
+              <strong>Short-lived API access</strong>
+              <p>Access tokens carry authorization metadata only. Sensitive domain data stays out.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="number">3</div>
+            <div>
+              <strong>Revocable refresh sessions</strong>
+              <p>Logout, password reset, suspicious access, and role changes revoke refresh sessions.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="number">4</div>
+            <div>
+              <strong>Separate service credentials</strong>
+              <p>Workers authenticate as internal services, not as users or admin sessions.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </header>
+
+    <section id="decision">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Decision</p>
+          <h2>What changed</h2>
+        </div>
+        <p>
+          The previous docs had good guardrails, but Core API still had to infer the implementation shape.
+          ROU-245 now pins down the first auth model and the security boundaries for follow-up scaffold work.
+        </p>
+      </div>
+
+      <div class="grid">
+        <article class="card">
+          <span class="tag green">Auth boundary</span>
+          <h3>Core API owns app login</h3>
+          <p>
+            Cofrete starts with Core API auth endpoints and Spring Security. A future identity provider can replace
+            credential verification without changing the public auth contract.
+          </p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Session shape</span>
+          <h3>Short access, revocable refresh</h3>
+          <p>
+            API calls use short-lived bearer access tokens. Refresh sessions must be rotation-capable or server-side
+            records that can be revoked per session.
+          </p>
+        </article>
+        <article class="card">
+          <span class="tag red">Official portals</span>
+          <h3>No gov.br credential reuse</h3>
+          <p>
+            Cofrete login remains separate from gov.br, ANTT, RNTRC Digital, Receita Federal, ANP, SUSEP,
+            insurer, DETRAN, SEFAZ, and state systems.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="contracts">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Contracts</p>
+          <h2>The auth API is now concrete.</h2>
+        </div>
+        <p>
+          The updated API contract gives COF-005 enough shape to scaffold controllers, DTOs,
+          token/session behavior, and standard error responses without guessing.
+        </p>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <span class="tag green">Endpoints</span>
+          <h3>Defined Core API surface</h3>
+          <p>
+            <code>POST /api/auth/register</code>, <code>POST /api/auth/login</code>,
+            <code>POST /api/auth/refresh</code>, <code>POST /api/auth/logout</code>, and
+            <code>GET /api/auth/me</code> now include request/response examples and endpoint rules.
+          </p>
+        </article>
+        <article class="card">
+          <span class="tag amber">Errors</span>
+          <h3>401 and 403 are separated</h3>
+          <p>
+            Missing, expired, malformed, revoked, or invalid credentials return <code>UNAUTHENTICATED</code>.
+            Valid credentials without the required scope return <code>FORBIDDEN</code>.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="access">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Access Model</p>
+          <h2>Roles now have implementation boundaries.</h2>
+        </div>
+        <p>
+          User roles, service roles, and account scoping were expanded so Core API, workers,
+          and client apps can use the same principal semantics. Company mode is documented as
+          a reserved post-MVP path, not an active single-driver MVP capability.
+        </p>
+      </div>
+
+      <div class="matrix" role="table" aria-label="Role and service access matrix">
+        <div class="matrix-row" role="row">
+          <div role="columnheader">Principal</div>
+          <div role="columnheader">Allowed scope</div>
+          <div role="columnheader">Restriction</div>
+        </div>
+        <div class="matrix-row" role="row">
+          <div role="cell"><code>DRIVER</code></div>
+          <div role="cell">Own account, profile, trucks, trips, documents, receivables, reserves, and compliance records.</div>
+          <div role="cell">Cannot read or mutate another account or company record.</div>
+        </div>
+        <div class="matrix-row" role="row">
+          <div role="cell"><code>COMPANY_ADMIN</code></div>
+          <div role="cell">Reserved for post-MVP company mode and company-account records after a future issue enables that workflow.</div>
+          <div role="cell">Must not be active or assignable during the single-driver MVP.</div>
+        </div>
+        <div class="matrix-row" role="row">
+          <div role="cell"><code>SUPPORT</code></div>
+          <div role="cell">Restricted support reads and explicitly allowed support actions.</div>
+          <div role="cell">Must target an account and produce audit entries.</div>
+        </div>
+        <div class="matrix-row" role="row">
+          <div role="cell"><code>PLATFORM_ADMIN</code></div>
+          <div role="cell">Operational configuration and elevated support workflows.</div>
+          <div role="cell">Elevated access must be logged and should not bypass account-scoped APIs silently.</div>
+        </div>
+        <div class="matrix-row" role="row">
+          <div role="cell"><code>SERVICE_FINANCE_WORKER</code></div>
+          <div role="cell">Finance event consumption and calculation result writes.</div>
+          <div role="cell">No broad document, profile, or admin permissions.</div>
+        </div>
+        <div class="matrix-row" role="row">
+          <div role="cell"><code>SERVICE_DATA_IMPORTER_WORKER</code></div>
+          <div role="cell">Imported datasets, import audit records, and freshness status.</div>
+          <div role="cell">Cannot act as a driver or mutate driver-entered finance data.</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Security</p>
+          <h2>Audit and credential rules were tightened.</h2>
+        </div>
+        <p>
+          The docs now spell out what must be auditable, what credentials each service should use,
+          and where client auth material belongs.
+        </p>
+      </div>
+
+      <div class="grid">
+        <article class="card">
+          <span class="tag blue">Audit</span>
+          <h3>Elevated and sensitive actions</h3>
+          <p>
+            Support/admin access, financial changes, document access, compliance changes, auth-sensitive
+            changes, and internal worker writes require audit records.
+          </p>
+        </article>
+        <article class="card">
+          <span class="tag amber">Infrastructure</span>
+          <h3>Separate service credentials</h3>
+          <p>
+            Core API, finance worker, data importer worker, PostgreSQL, RabbitMQ, and object storage should
+            use distinct least-privilege credentials.
+          </p>
+        </article>
+        <article class="card">
+          <span class="tag green">Clients</span>
+          <h3>Storage guidance is explicit</h3>
+          <p>
+            Mobile tokens belong in platform secure storage. Web admin should prefer secure, HTTP-only,
+            SameSite cookies when deployment allows it.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Handoff</p>
+          <h2>Validation and task output</h2>
+        </div>
+        <p>
+          The task produced documentation changes only, so validation focused on repository harness checks
+          and Markdown/HTML diff hygiene rather than application tests. It also clarified that
+          `COMPANY_ADMIN` is reserved for post-MVP company mode.
+        </p>
+      </div>
+
+      <div class="grid">
+        <article class="card">
+          <span class="tag green">Validation</span>
+          <h3>Checks run</h3>
+          <p>
+            <code>git diff --check</code> and <code>python scripts\agent_harness_check.py</code>
+            passed after the documentation and explainer changes.
+          </p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Affected areas</span>
+          <h3>Docs only</h3>
+          <p>
+            The task changed architecture docs, the docs index, and this HTML explainer. It did not scaffold
+            runtime services or change application behavior.
+          </p>
+        </article>
+        <article class="card">
+          <span class="tag amber">Unblocked</span>
+          <h3>Core API scaffold</h3>
+          <p>
+            COF-005 can use these decisions to scaffold Core API security packages, principal resolution,
+            session handling, and account-scoped authorization.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="sources">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Source Docs</p>
+          <h2>Where the changes landed</h2>
+        </div>
+        <p>
+          This page is only an explainer. These Markdown files remain the implementation source of truth
+          for follow-up Core API and worker tasks.
+        </p>
+      </div>
+
+      <div class="source-links">
+        <a class="source-link" href="./auth.md">
+          <strong>auth.md</strong>
+          <span>Selected login model, roles, principal scope, audit requirements, and service access.</span>
+        </a>
+        <a class="source-link" href="./api-contracts.md">
+          <strong>api-contracts.md</strong>
+          <span>Auth endpoint request/response shapes and auth error behavior.</span>
+        </a>
+        <a class="source-link" href="./security.md">
+          <strong>security.md</strong>
+          <span>Security rules for auth, session storage, access scope, service credentials, and audit logs.</span>
+        </a>
+        <a class="source-link" href="./service-boundaries.md">
+          <strong>service-boundaries.md</strong>
+          <span>Core API ownership and boundaries for workers, clients, and shared infrastructure.</span>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="callout">
+        <h2>What this unlocks next</h2>
+        <p>
+          COF-005 can now scaffold <code>core-api</code> security packages, DTOs, controller routes,
+          principal resolution, account-scoped authorization, and service credential boundaries without
+          inventing auth behavior during implementation.
+        </p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

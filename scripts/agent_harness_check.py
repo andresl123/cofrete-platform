@@ -94,6 +94,10 @@ REQUIRED_TEXT = {
     "AGENTS.md": (
         "docs/agent-harness/README.md",
         "python scripts/agent_harness_check.py",
+        "task-specific HTML explainer",
+    ),
+    "docs/agent-harness/workflow.md": (
+        "task-specific HTML explainer",
     ),
     "README.md": (
         "not an official government, legal, tax, accounting, or insurance channel",

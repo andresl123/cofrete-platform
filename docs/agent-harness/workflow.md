@@ -6,9 +6,10 @@
 4. Keep the change scoped to the Linear/GitHub issue.
 5. Update tests or validation for behavior changes.
 6. Update docs when durable knowledge changes.
-7. Run `python scripts/agent_harness_check.py`.
-8. Run service-specific validation when a service exists and is changed.
-9. Commit, push, and open a draft PR unless instructed otherwise.
+7. Create or update a task-specific HTML explainer before handoff. The explainer should summarize what changed, why it changed, affected files or areas, validation run, and the next task it unblocks when relevant.
+8. Run `python scripts/agent_harness_check.py`.
+9. Run service-specific validation when a service exists and is changed.
+10. Commit, push, and open a draft PR unless instructed otherwise.
 
 ## Handoff
 
@@ -19,3 +20,4 @@ PR descriptions should include:
 - user/developer impact.
 - finance/compliance caveats when relevant.
 - validation commands run.
+- link to the task-specific HTML explainer.

@@ -45,3 +45,10 @@
 - Smoke tests, demo seed, and validation flow.
 - Optional web admin/backoffice dashboard.
 - Launch checklist and risk register review.
+
+## Post-MVP Company Mode
+
+- Small fleet and company account workflows.
+- `COMPANY_ADMIN` role activation and assignment.
+- Vehicle-level profitability across multiple trucks.
+- Fleet reserve planning and company-scoped receivables.

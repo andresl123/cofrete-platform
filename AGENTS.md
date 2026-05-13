@@ -43,6 +43,7 @@ This file is intentionally short. Durable project knowledge belongs in versioned
 - Run `python scripts/agent_harness_check.py` before opening a PR that changes repository structure.
 - Do not commit secrets, local environment files, dependency caches, or build artifacts.
 - Update docs when architecture, contracts, validation commands, compliance wording, or risk boundaries change.
+- At the end of every task, create or update a task-specific HTML explainer that summarizes what changed, why it changed, the affected files or areas, validation run, and the next task it unblocks when relevant.
 - Finance math must be deterministic, auditable, and tested with exact expected values.
 - Toll reimbursement and Vale-Pedagio are pass-through money and must not be counted as profit.
 - Cofrete is not an official government, legal, tax, accounting, or insurance channel.

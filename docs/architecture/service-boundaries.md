@@ -8,7 +8,8 @@ Owns:
 - Freights, trips, direct costs, refuels, toll records, and Vale-Pedagio records.
 - Reserve buckets, reserve transactions, customers, receivables, and documents.
 - Compliance metadata, CIOT/freight-floor inputs, waiting-time records, IPVA/licensing reminders, and mobile/web authentication.
-- API request validation and persistence.
+- Auth endpoints, Spring Security configuration, session issuance/revocation, user role authorization, account scoping, API request validation, and persistence.
+- Audit logging for user/admin/support HTTP actions and internal service writes that land in Core API.
 
 Internal implementation rule:
 
@@ -21,6 +22,8 @@ When implementation begins, `core-api` must be internally modular. Keep clear pa
 - `compliance`
 - `receivables`
 - `imports`
+- `auth`
+- `audit`
 
 These modules should be separated in code even while they deploy together inside `core-api`. This keeps the first implementation simple to operate while preserving a clean path to extract high-pressure domains into independent services later.
 
@@ -45,6 +48,7 @@ Owns:
 Does not own:
 
 - User authentication.
+- User refresh sessions or user role assignment.
 - Primary user profile writes.
 - External source imports.
 
@@ -61,11 +65,19 @@ Does not own:
 
 - User-facing finance calculations.
 - Mobile/web authentication.
+- User refresh sessions or user role assignment.
 
 ## Mobile App
 
-Owns driver-facing workflows, validation presentation, navigation, offline/error states, and API client usage. Business math must stay in backend/domain code.
+Owns driver-facing workflows, validation presentation, navigation, offline/error states, platform secure storage usage for mobile auth material, and API client usage. Business math must stay in backend/domain code.
 
 ## Web App
 
-Owns admin/backoffice workflows, demo visibility, support screens, and operational dashboards.
+Owns admin/backoffice workflows, demo visibility, support screens, operational dashboards, and browser client behavior for Core API auth. Web admin should prefer secure, HTTP-only, SameSite cookies for refresh sessions when the deployment shape supports it.
+
+## Shared Infrastructure Access
+
+- PostgreSQL access should use service-specific credentials for Core API, finance worker, and data importer worker.
+- RabbitMQ publishers and consumers should use service-specific credentials limited to required exchanges and queues.
+- Object storage access for user documents should be mediated by Core API or signed URLs unless a worker has a documented, least-privilege need.
+- Internal service credentials are separate from user login sessions and must be stored through environment variables or a secret manager, never committed.

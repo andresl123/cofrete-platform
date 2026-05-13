@@ -6,6 +6,8 @@ The MVP serves an autonomous Brazilian truck driver or owner-operator with one t
 
 MEI Caminhoneiro is the first tax profile. Pessoa Fisica autonoma support should follow soon after because many autonomous drivers do not operate as MEI.
 
+Small fleet and company account workflows are post-MVP. The MVP may keep reserved architecture concepts such as company accounts and `COMPANY_ADMIN`, but those roles must not be active or assignable until a future issue implements company mode.
+
 ## In Scope
 
 - Driver and truck profile setup.
@@ -27,6 +29,7 @@ MEI Caminhoneiro is the first tax profile. Pessoa Fisica autonoma support should
 
 - Real payment movement or bank integration.
 - Automated government account login or gov.br integration.
+- Active company mode, fleet administration, or `COMPANY_ADMIN` assignment.
 - Official RNTRC updates from inside Cofrete.
 - Tax filing, insurance purchasing, or legal compliance certification.
 - Real-time route optimization.
