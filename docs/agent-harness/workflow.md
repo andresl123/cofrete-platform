@@ -9,7 +9,7 @@
 7. Create or update a task-specific HTML explainer before handoff. The explainer should summarize what changed, why it changed, affected files or areas, validation run, and the next task it unblocks when relevant.
 8. Run `python scripts/agent_harness_check.py`.
 9. Run service-specific validation when a service exists and is changed.
-10. Commit, push, and open a draft PR unless instructed otherwise.
+10. Stop with local changes for user review. Do not commit, push, open a PR, or update an existing PR until the user has reviewed the changes and confirmed validation is complete.
 
 ## Handoff
 

@@ -44,6 +44,8 @@ python scripts/agent_harness_check.py
 
 This verifies the baseline folders, ownership files, and required documentation expected by follow-up tasks.
 
+Pull requests also run `.github/workflows/pr-checks.yml`, which executes the harness check and skips service-specific jobs until the corresponding scaffold files exist.
+
 ## Current Status
 
 Working now:
@@ -51,12 +53,13 @@ Working now:
 - Repository foundation and service ownership placeholders.
 - Product, architecture, compliance, runbook, and agent harness docs.
 - Harness validation script.
+- GitHub PR checks and pull request template.
 - Worktree helper script for task branches.
 
 Planned in follow-up issues:
 
 - Docker Compose local infrastructure and `.env.example`.
-- GitHub PR checks, PR template, and image publishing workflow.
+- Image publishing workflow.
 - Java/Spring Boot service scaffolds.
 - Expo mobile app scaffold.
 - React/Vite web app scaffold.

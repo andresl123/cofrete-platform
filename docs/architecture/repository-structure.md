@@ -8,6 +8,10 @@ This document aligns the live repository with the Cofrete architecture blueprint
 cofrete-platform/
   AGENTS.md
   README.md
+  .github/
+    workflows/
+      pr-checks.yml
+    pull_request_template.md
   .editorconfig
   .gitattributes
   .gitignore
@@ -39,21 +43,32 @@ The canonical RNTRC/ANTT filename is `docs/compliance/rntrc-antt.md`. If a plann
 
 Blueprint-required compliance topics currently have dedicated files for RNTRC/ANTT, CIOT/freight floor, Vale-Pedagio, diesel/ANP, insurance, MEI Caminhoneiro, IPVA/licensing, tax profiles, loading/unloading waiting time, and the official-source register.
 
+## CI Structure
+
+COF-004 adds the first GitHub guardrails:
+
+```text
+.github/
+  workflows/
+    pr-checks.yml
+  pull_request_template.md
+```
+
+The concrete CI path is `.github/workflows/pr-checks.yml`. It runs `python scripts/agent_harness_check.py` on pull requests and includes scaffold-aware Java, Node, and Docker Compose validation jobs that skip until service scaffolds or `docker-compose.yml` exist.
+
+The pull request template requires scope, validation commands, docs impact, finance/compliance caveats, UI screenshots when relevant, and risk/rollback notes.
+
 ## Planned Infrastructure Structure
 
-COF-003 and COF-004 are expected to add:
+COF-003 and later CI/deployment issues are expected to add:
 
 ```text
 .env.example
 docker-compose.yml
 .github/
   workflows/
-    pr-checks.yml
     docker-publish.yml
-  pull_request_template.md
 ```
-
-The concrete CI path is `.github/workflows/pr-checks.yml`; it should run `python scripts/agent_harness_check.py` on pull requests once COF-004 lands.
 
 `docker-compose.yml` is local-only. Kubernetes remains the production runtime once the Kubernetes architecture PR lands.
 
