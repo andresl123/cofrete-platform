@@ -2,6 +2,7 @@ package com.cofrete.financeworker.messaging;
 
 import com.cofrete.financeworker.messaging.events.ReserveAllocationRequestedEvent;
 import com.cofrete.financeworker.messaging.events.TripRecalculationRequestedEvent;
+import com.cofrete.financeworker.recalculation.TripFinanceRecalculationService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
@@ -9,10 +10,15 @@ import org.springframework.util.Assert;
 @Component
 public class FinanceEventListeners {
 
+    private final TripFinanceRecalculationService tripFinanceRecalculationService;
+
+    public FinanceEventListeners(TripFinanceRecalculationService tripFinanceRecalculationService) {
+        this.tripFinanceRecalculationService = tripFinanceRecalculationService;
+    }
+
     @RabbitListener(queues = "${cofrete.finance-worker.rabbitmq.trip-recalculation-queue}")
     public void handleTripRecalculationRequested(TripRecalculationRequestedEvent event) {
-        assertEventType(event.eventType(), FinanceEventNames.TRIP_RECALCULATION_REQUESTED);
-        // ROU-216 owns deterministic finance recalculation implementation.
+        tripFinanceRecalculationService.handle(event);
     }
 
     @RabbitListener(queues = "${cofrete.finance-worker.rabbitmq.reserve-allocation-queue}")

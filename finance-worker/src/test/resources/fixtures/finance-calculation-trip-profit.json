@@ -1,0 +1,44 @@
+{
+  "input": {
+    "tripId": "TRIP-216",
+    "driverId": "DRIVER-001",
+    "truckId": "TRUCK-001",
+    "inputRevision": 7,
+    "currency": "BRL",
+    "grossFreight": "8000.00",
+    "totalDistanceKm": "1000.00",
+    "dieselConsumptionKmPerLiter": "2.50",
+    "dieselPricePerLiter": "5.25",
+    "arlaCost": "120.00",
+    "nonReimbursedToll": "300.00",
+    "tollReimbursement": "385.70",
+    "valePedagio": "214.30",
+    "otherPassThrough": "0.00",
+    "mealsAndLodgingCost": "280.00",
+    "otherDirectCost": "200.00",
+    "financingAllocation": "650.00",
+    "reservePolicy": {
+      "maintenanceRate": "0.0800",
+      "tireRate": "0.0400",
+      "taxRate": "0.0300",
+      "insuranceRate": "0.0200",
+      "replacementRate": "0.0500",
+      "emergencyRate": "0.0200"
+    },
+    "sourceFreshness": {
+      "fuel": "CURRENT",
+      "toll": "CURRENT",
+      "tax": "CURRENT",
+      "compliance": "UNKNOWN"
+    }
+  },
+  "expected": {
+    "grossFreight": "8000.00",
+    "passThroughAmount": "600.00",
+    "directTripCost": "3000.00",
+    "requiredReserves": "1776.00",
+    "safePersonalWithdrawal": "1974.00",
+    "expectedProfit": "1974.00",
+    "financialHealthImpact": "GOOD"
+  }
+}

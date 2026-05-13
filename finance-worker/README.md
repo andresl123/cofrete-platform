@@ -6,7 +6,7 @@ Background worker for finance-related processing in Cofrete Platform.
 
 Finance Worker owns asynchronous finance recalculation, reserve allocation, safe-withdrawal calculation, and financial health scoring tasks.
 
-This scaffold only reserves the service runtime and event boundaries. It does not implement deterministic finance algorithms; ROU-216 owns trip finance calculation behavior and ROU-217 owns reserve allocation behavior.
+The service includes the ROU-216 deterministic trip finance calculation engine. ROU-217 owns virtual reserve allocation behavior after freight payment or reserve-rule changes.
 
 Finance output is advisory product software. Do not present worker results as official ANTT, ANP, SUSEP, Receita Federal, DETRAN, SEFAZ, insurer, legal, tax, accounting, or government authority.
 
@@ -23,7 +23,11 @@ Published stub:
 
 - `trip.finance.recalculated`
 
-The listener stubs currently validate event names and return without doing finance math. Monetary values remain decimal strings in the event payloads until the deterministic engine issue defines calculation types and rounding policy.
+`trip.recalculation.requested` handling validates the canonical event, deduplicates by idempotency key, loads an explicit trip finance input snapshot, calculates deterministic money output, and publishes `trip.finance.recalculated`.
+
+The current event contract carries trip IDs and `inputRevision`, not the full calculation snapshot. `TripFinanceInputSnapshotProvider` is the integration boundary for a future Core API or durable read-model source. The default provider fails explicitly so the worker does not fabricate production finance results before authoritative inputs exist.
+
+Calculation rules, reserve formulas, rounding, and trace output are documented in `../docs/architecture/finance-calculation-engine.md`.
 
 ## Local Development
 
