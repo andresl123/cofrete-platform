@@ -6,8 +6,8 @@
 4. Keep the change scoped to the Linear/GitHub issue.
 5. Update tests or validation for behavior changes.
 6. Update docs when durable knowledge changes.
-7. Add "create/update task-specific HTML explainer" to the explicit task plan before editing.
-8. Create or update the task-specific HTML explainer before final validation and before handoff. The explainer should include the task ID from the branch, summarize what changed, why it changed, affected files or areas, validation run, and the next task it unblocks when relevant.
+7. Add "create/update task-specific HTML explainer under `docs/explainers/`" to the explicit task plan before editing.
+8. Create or update the task-specific HTML explainer before final validation and before handoff. The explainer should include the task ID from the branch, summarize what changed, why it changed, affected files or areas, validation run, and the next task it unblocks when relevant. Explainers are derived handoff aids, not source-of-truth docs.
 9. Treat the explainer as required handoff validation alongside service checks, `docker compose config`, `python scripts/agent_harness_check.py`, and `git diff --check`.
 10. Run `python scripts/agent_harness_check.py`.
 11. Run service-specific validation when a service exists and is changed.
