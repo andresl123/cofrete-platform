@@ -27,6 +27,7 @@ DOC_DIRS = (
     "docs/compliance",
     "docs/agent-harness",
     "docs/runbooks",
+    "docs/explainers",
 )
 
 REQUIRED_DIRS = (
@@ -50,7 +51,7 @@ REQUIRED_FILES = (
     ".github/pull_request_template.md",
     ".github/workflows/pr-checks.yml",
     "docs/README.md",
-    "docs/application-explainer.html",
+    "docs/explainers/application-explainer.html",
     "docs/product/brazil-trucker-finance-blueprint.md",
     "docs/product/mvp-scope.md",
     "docs/product/product-principles.md",
@@ -58,7 +59,7 @@ REQUIRED_FILES = (
     "docs/product/glossary-pt-br.md",
     "docs/product/roadmap.md",
     "docs/architecture/system-overview.md",
-    "docs/architecture/architecture-explainer.html",
+    "docs/explainers/architecture-explainer.html",
     "docs/architecture/repository-structure.md",
     "docs/architecture/service-boundaries.md",
     "docs/architecture/data-model.md",
@@ -69,8 +70,8 @@ REQUIRED_FILES = (
     "docs/architecture/auth.md",
     "docs/architecture/observability.md",
     "docs/architecture/deployment.md",
-    "docs/architecture/core-api-scaffold-explainer.html",
-    "docs/architecture/data-importer-worker-scaffold-explainer.html",
+    "docs/explainers/core-api-scaffold-explainer.html",
+    "docs/explainers/data-importer-worker-scaffold-explainer.html",
     "docs/compliance/rntrc-antt.md",
     "docs/compliance/vale-pedagio.md",
     "docs/compliance/diesel-anp.md",
@@ -91,9 +92,9 @@ REQUIRED_FILES = (
     "docs/agent-harness/golden-principles.md",
     "docs/agent-harness/observability.md",
     "docs/agent-harness/risk-register.md",
-    "docs/agent-harness/ci-pr-harness-explainer.html",
+    "docs/explainers/ci-pr-harness-explainer.html",
     "docs/runbooks/local-development.md",
-    "docs/runbooks/local-infrastructure-explainer.html",
+    "docs/explainers/local-infrastructure-explainer.html",
     "docs/runbooks/demo-seed.md",
     "docs/runbooks/data-import-failure.md",
     "docs/runbooks/incident-response.md",
@@ -170,8 +171,8 @@ REQUIRED_TEXT = {
     ),
     "docs/README.md": (
         "derived entry points",
-        "application-explainer.html",
-        "architecture/architecture-explainer.html",
+        "explainers/application-explainer.html",
+        "explainers/architecture-explainer.html",
     ),
     "docs/compliance/official-source-register.md": (
         "ANTT",
@@ -250,13 +251,13 @@ REQUIRED_TEXT = {
         "Kubernetes Secrets",
         "IngressClass",
     ),
-    "docs/application-explainer.html": (
+    "docs/explainers/application-explainer.html": (
         "manually maintained derived summary",
     ),
-    "docs/architecture/architecture-explainer.html": (
+    "docs/explainers/architecture-explainer.html": (
         "manually maintained derived summary",
     ),
-    "docs/architecture/core-api-scaffold-explainer.html": (
+    "docs/explainers/core-api-scaffold-explainer.html": (
         "ROU-209 / COF-005",
         "Core API service scaffold",
         "cd core-api && mvn -q validate test",
@@ -264,7 +265,7 @@ REQUIRED_TEXT = {
         "python scripts/agent_harness_check.py",
         "Live PostgreSQL startup smoke",
     ),
-    "docs/architecture/data-importer-worker-scaffold-explainer.html": (
+    "docs/explainers/data-importer-worker-scaffold-explainer.html": (
         "ROU-211 / COF-007",
         "Data Importer Worker service scaffold",
         "fuel-price.import.completed",
@@ -345,7 +346,7 @@ def _task_explainer_failures(task_ids: tuple[str, ...]) -> list[str]:
     if not task_ids:
         return []
 
-    candidates = sorted(ROOT.glob("docs/**/*explainer.html"))
+    candidates = sorted((ROOT / "docs" / "explainers").glob("*explainer.html"))
     matching_explainers: list[str] = []
 
     for path in candidates:
@@ -359,7 +360,7 @@ def _task_explainer_failures(task_ids: tuple[str, ...]) -> list[str]:
     return [
         "task branch contains issue ID(s) "
         + ", ".join(task_ids)
-        + " but no docs/**/*explainer.html file includes all of them"
+        + " but no docs/explainers/*explainer.html file includes all of them"
     ]
 
 
