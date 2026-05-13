@@ -24,6 +24,7 @@ This repository is structured as a multi-service platform so API, worker, mobile
 - Kubernetes deployment: `docs/architecture/kubernetes.md`
 - Repository structure: `docs/architecture/repository-structure.md`
 - Service ownership: `docs/architecture/service-boundaries.md`
+- External data retrieval: `docs/architecture/external-data-retrieval.md`
 - API contracts: `docs/architecture/api-contracts.md`
 - Event contracts: `docs/architecture/event-contracts.md`
 - Compliance boundaries: `docs/compliance/official-source-register.md`

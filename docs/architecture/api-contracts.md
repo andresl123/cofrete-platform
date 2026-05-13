@@ -2,6 +2,100 @@
 
 These contracts are implementation targets. They are versioned by documentation until OpenAPI generation is introduced.
 
+## Auth And Sessions
+
+```http
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/refresh
+POST /api/auth/logout
+GET /api/auth/me
+```
+
+Auth endpoints are owned by Core API. Cofrete app login is separate from gov.br, ANTT, RNTRC Digital, Receita Federal, ANP, SUSEP, insurer, DETRAN, SEFAZ, or other official systems.
+
+All non-auth product APIs require an authenticated Cofrete principal unless an implementation issue explicitly documents a public endpoint.
+
+Example login request:
+
+```json
+{
+  "email": "driver@example.com",
+  "password": "example-password"
+}
+```
+
+Example login response:
+
+```json
+{
+  "accessToken": "jwt_or_opaque_access_token",
+  "tokenType": "Bearer",
+  "expiresInSeconds": 900,
+  "refreshToken": "refresh_token_returned_only_when_client_type_allows_it",
+  "principal": {
+    "id": "user_123",
+    "type": "DRIVER",
+    "accountId": "acct_123",
+    "roles": ["DRIVER"]
+  }
+}
+```
+
+Example refresh request:
+
+```json
+{
+  "refreshToken": "refresh_token"
+}
+```
+
+Example `/api/auth/me` response:
+
+```json
+{
+  "principal": {
+    "id": "user_123",
+    "type": "DRIVER",
+    "accountId": "acct_123",
+    "roles": ["DRIVER"]
+  },
+  "driverProfileId": "driver_123",
+  "companyId": null
+}
+```
+
+Auth rules:
+
+- Access tokens must be short-lived.
+- Refresh tokens or refresh sessions must be revocable.
+- Logout must revoke the active refresh session.
+- Tokens must carry only authorization metadata, not sensitive driver, vehicle, document, or financial data.
+- Mobile clients should store secrets only in platform secure storage.
+- Web admin should prefer secure, HTTP-only, SameSite cookies when deployment shape allows it.
+- Support and platform-admin access must be auditable.
+- Service-to-service credentials are separate from user login sessions.
+
+Auth error examples:
+
+```json
+{
+  "error": "UNAUTHENTICATED",
+  "message": "Authentication is required.",
+  "details": [],
+  "correlationId": "corr_123"
+}
+```
+
+```json
+{
+  "error": "FORBIDDEN",
+  "message": "You do not have access to this resource.",
+  "details": [],
+  "correlationId": "corr_124"
+}
+```
+
 ## Profile And Tax
 
 ```http
