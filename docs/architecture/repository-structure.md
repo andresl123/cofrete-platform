@@ -26,7 +26,7 @@ cofrete-platform/
   scripts/
 ```
 
-Each service directory currently contains `AGENTS.md` and `README.md` only. Service source code, Dockerfiles, package files, and test folders are introduced by service scaffold issues.
+`core-api/` now contains a Java 21 Spring Boot service scaffold with Maven, Dockerfile, source tree, tests, Flyway migrations, and service documentation. Other service directories currently contain `AGENTS.md` and `README.md` only. Their source code, Dockerfiles, package files, and test folders are introduced by their service scaffold issues.
 
 `docker-compose.yml` and `.env.example` define the local-only PostgreSQL, RabbitMQ, and MinIO infrastructure used by upcoming backend and worker scaffolds.
 
@@ -112,9 +112,10 @@ Until real scripts exist, `scripts/smoke/README.md`, `scripts/demo/README.md`, a
 ```text
 core-api/
   pom.xml
+  Dockerfile
   src/
     main/
-      .../
+      java/com/cofrete/coreapi/
         profile/
         trip/
         finance/
@@ -122,7 +123,12 @@ core-api/
         compliance/
         receivables/
         imports/
-  Dockerfile
+        auth/
+        audit/
+      resources/
+        db/migration/
+    test/
+      java/com/cofrete/coreapi/
 
 finance-worker/
   pom.xml
@@ -147,6 +153,10 @@ web-app/
   Dockerfile
 ```
 
-Service scaffolding issues must update local `README.md` and `AGENTS.md` files with real validation commands.
+Service scaffolding issues must update local `README.md` and `AGENTS.md` files with real validation commands. The Core API service validation command is:
+
+```sh
+cd core-api && mvn -q validate test
+```
 
 The `core-api` package names above are implementation targets, not a requirement to use that exact Java base package path. The important rule is that the Core API starts as an internally modular service with explicit domain boundaries for profile, trip, finance, reserve, compliance, receivables, and imports. Cross-module calls should go through clear application/service interfaces rather than sharing ad hoc persistence or business logic.

@@ -26,6 +26,9 @@ __pycache__/
 .venv/
 venv/
 
+# Java
+target/
+
 # JavaScript and mobile tooling
 node_modules/
 .next/

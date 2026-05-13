@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cofrete Core API Scaffold Explainer</title>
+  <style>
+    :root {
+      --ink: #18202a;
+      --muted: #5a6472;
+      --line: #d8dee8;
+      --paper: #f6f3ed;
+      --panel: #ffffff;
+      --green: #21745a;
+      --blue: #285b93;
+      --amber: #a76516;
+      --red: #a63b3b;
+      --soft-green: #dff0eb;
+      --soft-blue: #e4edf8;
+      --soft-amber: #fff0d9;
+      --soft-red: #f8e2e2;
+      --shadow: 0 18px 42px rgba(24, 32, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.52;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: 68vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+      gap: 38px;
+      align-items: center;
+      padding: 52px 0 36px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--green);
+      font-size: 0.82rem;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 780px;
+      margin-bottom: 20px;
+      font-size: clamp(2.5rem, 6vw, 4.8rem);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      font-size: clamp(1.55rem, 3vw, 2.25rem);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin-bottom: 8px;
+      font-size: 1.04rem;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 1.12rem;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .status-grid,
+    .module-grid,
+    .validation-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    section {
+      padding: 42px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      margin-bottom: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .green {
+      background: var(--soft-green);
+      color: var(--green);
+    }
+
+    .blue {
+      background: var(--soft-blue);
+      color: var(--blue);
+    }
+
+    .amber {
+      background: var(--soft-amber);
+      color: var(--amber);
+    }
+
+    .red {
+      background: var(--soft-red);
+      color: var(--red);
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    li + li {
+      margin-top: 7px;
+    }
+
+    code {
+      padding: 2px 6px;
+      background: #eef1f5;
+      border-radius: 5px;
+      font-size: 0.92em;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .step {
+      min-height: 92px;
+      display: grid;
+      align-content: center;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    @media (max-width: 880px) {
+      .hero,
+      .status-grid,
+      .module-grid,
+      .validation-grid,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">ROU-209 / COF-005</p>
+        <h1>Core API service scaffold</h1>
+        <p class="lede">This task turns `core-api/` from a placeholder into a Java 21 Spring Boot service with Maven, Docker packaging, health checks, Flyway migration setup, PostgreSQL local profile wiring, tests, and documented module boundaries.</p>
+      </div>
+      <aside class="panel">
+        <span class="tag green">Done locally</span>
+        <h2>What changed</h2>
+        <ul>
+          <li>Spring Boot app entrypoint and Maven build.</li>
+          <li>Actuator health endpoint at <code>/actuator/health</code>.</li>
+          <li>Security scaffold reserving <code>/api/*</code> for authenticated product APIs.</li>
+          <li>Flyway baseline migration for the <code>core_api</code> schema.</li>
+          <li>Local profile wired to Compose PostgreSQL defaults.</li>
+          <li>Harness check now requires this task-specific HTML explainer.</li>
+        </ul>
+      </aside>
+    </section>
+
+    <section>
+      <h2>Why It Changed</h2>
+      <div class="status-grid">
+        <article class="card">
+          <span class="tag blue">Dependency ready</span>
+          <h3>Local infrastructure exists</h3>
+          <p>ROU-207 added Docker Compose PostgreSQL, RabbitMQ, and MinIO. Core API can now declare concrete local datasource wiring instead of placeholders only.</p>
+        </article>
+        <article class="card">
+          <span class="tag blue">Backend base</span>
+          <h3>Primary API service needed</h3>
+          <p>Future profile, trip, finance, reserve, compliance, receivable, import, auth, and audit tickets need a runnable API service foundation.</p>
+        </article>
+        <article class="card">
+          <span class="tag amber">Scope control</span>
+          <h3>No product behavior yet</h3>
+          <p>The scaffold reserves contract paths but does not implement finance, compliance, profile, trip, auth, or receivable behavior before dedicated issues define those details.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Affected Areas</h2>
+      <div class="flow" aria-label="Core API scaffold flow">
+        <div class="step">Maven build</div>
+        <div class="step">Spring Boot app</div>
+        <div class="step">Flyway schema</div>
+        <div class="step">Compose PostgreSQL</div>
+        <div class="step">Tests and docs</div>
+      </div>
+      <div class="module-grid" style="margin-top: 18px;">
+        <article class="card">
+          <h3>Build and runtime</h3>
+          <ul>
+            <li><code>core-api/pom.xml</code></li>
+            <li><code>core-api/Dockerfile</code></li>
+            <li><code>core-api/.dockerignore</code></li>
+            <li><code>core-api/src/main/resources/application.yml</code></li>
+            <li><code>core-api/src/main/resources/application-local.yml</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Source modules</h3>
+          <ul>
+            <li><code>profile</code>, <code>trip</code>, <code>finance</code></li>
+            <li><code>reserve</code>, <code>compliance</code>, <code>receivables</code></li>
+            <li><code>imports</code>, <code>auth</code>, <code>audit</code></li>
+            <li><code>config</code> for routing and security conventions</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Documentation</h3>
+          <ul>
+            <li><code>core-api/README.md</code></li>
+            <li><code>core-api/AGENTS.md</code></li>
+            <li><code>docs/architecture/repository-structure.md</code></li>
+            <li><code>docs/architecture/core-api-scaffold-explainer.html</code></li>
+            <li><code>docs/agent-harness/validation.md</code></li>
+            <li><code>README.md</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Harness enforcement</h3>
+          <ul>
+            <li><code>scripts/agent_harness_check.py</code> requires this explainer file.</li>
+            <li>The harness checks key handoff text for task identity, validation commands, and live-startup caveat.</li>
+            <li>This turns the explainer rule into a failing validation check instead of a memory-only instruction.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Module Boundaries</h2>
+      <div class="module-grid">
+        <article class="card"><h3>Profile</h3><p>Drivers, trucks, trailers, and tax profiles.</p></article>
+        <article class="card"><h3>Trip</h3><p>Freights, trips, direct costs, tolls, and profitability snapshots.</p></article>
+        <article class="card"><h3>Finance</h3><p>Advisory product finance data and worker result surfaces.</p></article>
+        <article class="card"><h3>Reserve</h3><p>Reserve rules, wallets, allocations, and transactions.</p></article>
+        <article class="card"><h3>Compliance</h3><p>Advisory compliance metadata, documents, calendars, and official-source links.</p></article>
+        <article class="card"><h3>Receivables</h3><p>Customers, receivables, payments, and customer profitability.</p></article>
+        <article class="card"><h3>Imports</h3><p>Imported dataset status and import audit records.</p></article>
+        <article class="card"><h3>Auth</h3><p>Cofrete identity, sessions, authorization, and Spring Security.</p></article>
+        <article class="card"><h3>Audit</h3><p>User, admin, support, and internal-service audit logging.</p></article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Validation</h2>
+      <div class="validation-grid">
+        <article class="card">
+          <span class="tag green">Passed</span>
+          <h3>Core API tests</h3>
+          <p><code>cd core-api && mvn -q validate test</code></p>
+          <p class="note">Covers application startup, health endpoint access, Flyway test migration, and module marker checks.</p>
+        </article>
+        <article class="card">
+          <span class="tag green">Passed</span>
+          <h3>Compose config</h3>
+          <p><code>docker compose config</code></p>
+          <p class="note">Validates local infrastructure YAML and the PostgreSQL connection placeholders used by Core API.</p>
+        </article>
+        <article class="card">
+          <span class="tag green">Passed</span>
+          <h3>Agent harness</h3>
+          <p><code>python scripts/agent_harness_check.py</code></p>
+          <p class="note">Validates required repository structure and documentation markers.</p>
+        </article>
+      </div>
+      <article class="card" style="margin-top: 16px;">
+        <span class="tag red">Not completed</span>
+        <h3>Live PostgreSQL startup smoke</h3>
+        <p><code>docker compose up -d postgres</code> timed out locally, and follow-up Docker status commands also hung. The service startup against live Compose PostgreSQL should be retried when Docker Desktop or the local Docker CLI is responsive.</p>
+      </article>
+    </section>
+
+    <section>
+      <h2>Next Tasks Unblocked</h2>
+      <div class="status-grid">
+        <article class="card">
+          <h3>ROU-213 / COF-009</h3>
+          <p>Identity, driver, truck, and tax profile model can build on the profile and auth package boundaries.</p>
+        </article>
+        <article class="card">
+          <h3>ROU-215 / COF-011</h3>
+          <p>Freight and trip profitability APIs can build on the trip, finance, and reserve boundaries without mixing controller logic into compliance behavior.</p>
+        </article>
+        <article class="card">
+          <h3>ROU-214 / COF-010</h3>
+          <p>API and event contracts can now refer to a concrete Core API runtime and reserved <code>/api/*</code> routing convention.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
