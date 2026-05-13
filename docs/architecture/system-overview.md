@@ -28,6 +28,7 @@ mobile-app / web-app
 
 - Financial calculations must be deterministic and auditable.
 - External ANP/ANTT data should be imported server-side, not fetched by clients.
+- External-source retrieval, freshness behavior, and Linear issue ownership are tracked in `docs/architecture/external-data-retrieval.md`.
 - Compliance wording must remain advisory and link to official sources.
 - Events must include correlation IDs for tracing.
 - Contracts live in docs until generated or shared contract packages are introduced.

@@ -14,6 +14,10 @@ Cofrete may handle CPF/CNPJ metadata, truck plate/RENAVAM, RNTRC number, insuran
 - Add audit logging for financial, document, and compliance changes.
 - Encrypt production transport with TLS.
 - Keep dev/demo data synthetic.
+- Store password hashes only, never plaintext passwords.
+- Keep user login sessions separate from internal worker credentials.
+- Rotate refresh sessions and internal service credentials when compromise is suspected.
+- Return `UNAUTHENTICATED` for missing/invalid login and `FORBIDDEN` for valid principals without resource access.
 
 ## Review Triggers
 
