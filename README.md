@@ -65,11 +65,12 @@ Working now:
 - Docker Compose local infrastructure and `.env.example`.
 - Finance Worker Java/Spring Boot scaffold with RabbitMQ event stubs.
 - Worktree helper script for task branches.
+- Core API Spring Boot scaffold with health, PostgreSQL local profile, Flyway migration setup, and test skeleton.
 
 Planned in follow-up issues:
 
 - Image publishing workflow.
-- Remaining Java/Spring Boot service scaffolds.
+- Remaining Java/Spring Boot worker scaffolds.
 - Expo mobile app scaffold.
 - React/Vite web app scaffold.
 - Runtime smoke scripts and demo seed/reset scripts.

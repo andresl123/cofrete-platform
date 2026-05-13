@@ -6,6 +6,8 @@ Run from the repository root:
 python scripts/agent_harness_check.py
 ```
 
+The harness validates durable repository structure and required documentation artifacts. Task handoff must include a task-specific HTML explainer when the task changes implementation, architecture, validation behavior, or service ownership. The explainer should summarize what changed, why it changed, affected files or areas, validation run, and the next task it unblocks when relevant.
+
 ## CI Validation Matrix
 
 GitHub Actions runs `.github/workflows/pr-checks.yml` for pull requests, pushes to `main`, and manual dispatches.
