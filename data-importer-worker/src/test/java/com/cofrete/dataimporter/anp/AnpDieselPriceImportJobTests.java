@@ -45,11 +45,17 @@ class AnpDieselPriceImportJobTests {
 
         assertThat(event.eventType()).isEqualTo(DataImportEventNames.FUEL_PRICE_IMPORT_COMPLETED);
         assertThat(event.version()).isEqualTo(1);
+        assertThat(event.idempotencyKey()).startsWith("fuel-price:ANP:");
         assertThat(event.source()).isEqualTo("ANP");
+        assertThat(event.dataset()).isEqualTo("synthetic-anp-diesel-price-fixture");
         assertThat(event.fuelTypes()).containsExactly("DIESEL_S10", "DIESEL_S500");
+        assertThat(event.retrievedAt()).isEqualTo(Instant.parse("2026-05-11T12:00:20Z"));
         assertThat(event.recordsImported()).isEqualTo(3);
         assertThat(event.freshnessStatus()).isEqualTo("CURRENT");
+        assertThat(event.confidence()).isEqualTo("SYNTHETIC_FIXTURE");
+        assertThat(event.fileHash()).isEqualTo("synthetic-fixture");
         assertThat(event.correlationId()).isEqualTo("corr_123");
+        assertThat(event.producer()).isEqualTo("data-importer-worker");
         assertThat(event.completedAt()).isEqualTo(Instant.parse("2026-05-11T12:00:20Z"));
         assertThat(rabbitTemplate.message).isSameAs(event);
     }

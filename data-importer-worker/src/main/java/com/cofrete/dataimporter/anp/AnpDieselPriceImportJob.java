@@ -65,14 +65,20 @@ public class AnpDieselPriceImportJob {
             DataImportEventNames.FUEL_PRICE_IMPORT_COMPLETED,
             1,
             "evt_" + UUID.randomUUID(),
+            "fuel-price:" + SOURCE + ":" + firstRecord.periodStart() + ":" + firstRecord.periodEnd() + ":synthetic-fixture",
             SOURCE,
+            DATASET,
             records.stream().map(AnpDieselPriceFixtureRecord::fuelType).distinct().sorted().toList(),
             firstRecord.periodStart(),
             firstRecord.periodEnd(),
+            Instant.now(clock),
             records.size(),
             firstRecord.freshnessStatus().name(),
+            firstRecord.confidence(),
             "import_" + UUID.randomUUID(),
+            "synthetic-fixture",
             correlationId,
+            "data-importer-worker",
             Instant.now(clock)
         );
 
