@@ -6,7 +6,9 @@ Background worker for finance-related processing in Cofrete Platform.
 
 Finance Worker owns asynchronous finance recalculation, reserve allocation, safe-withdrawal calculation, and financial health scoring tasks.
 
-The service includes the ROU-216 deterministic trip finance calculation engine. ROU-217 owns virtual reserve allocation behavior after freight payment or reserve-rule changes.
+The service includes the ROU-216 deterministic trip finance calculation engine. ROU-217 adds deterministic virtual reserve allocation logic after freight payment or reserve-rule changes.
+
+ROU-217 keeps Core API as the temporary synchronous reserve allocation persistence path for MVP usability. ROU-253 owns the final async integration where Finance Worker allocation results are persisted back into Core API reserve wallets and transactions.
 
 Finance output is advisory product software. Do not present worker results as official ANTT, ANP, SUSEP, Receita Federal, DETRAN, SEFAZ, insurer, legal, tax, accounting, or government authority.
 

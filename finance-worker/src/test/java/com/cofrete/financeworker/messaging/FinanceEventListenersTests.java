@@ -9,14 +9,25 @@ import com.cofrete.financeworker.messaging.events.ReserveAllocationRequestedEven
 import com.cofrete.financeworker.messaging.events.TripRecalculationRequestedEvent;
 import com.cofrete.financeworker.recalculation.ProcessedRecalculationRegistry;
 import com.cofrete.financeworker.recalculation.TripFinanceRecalculationService;
+import com.cofrete.financeworker.reserve.ProcessedReserveAllocationRegistry;
+import com.cofrete.financeworker.reserve.ReserveAllocationCalculator;
+import com.cofrete.financeworker.reserve.ReserveAllocationInputSnapshot;
+import com.cofrete.financeworker.reserve.ReserveAllocationRule;
+import com.cofrete.financeworker.reserve.ReserveAllocationService;
+import com.cofrete.financeworker.reserve.ReserveBucket;
+import com.cofrete.financeworker.reserve.ReserveRulePolicy;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 class FinanceEventListenersTests {
 
-    private final FinanceEventListeners listeners = new FinanceEventListeners(recalculationService());
+    private final FinanceEventListeners listeners = new FinanceEventListeners(
+        recalculationService(),
+        reserveAllocationService()
+    );
 
     @Test
     void acceptsTripRecalculationRequestedEventAndCalculates() {
@@ -37,7 +48,7 @@ class FinanceEventListenersTests {
     }
 
     @Test
-    void acceptsReserveAllocationRequestedEventStubWithoutAllocating() {
+    void acceptsReserveAllocationRequestedEventAndAllocates() {
         listeners.handleReserveAllocationRequested(new ReserveAllocationRequestedEvent(
             FinanceEventNames.RESERVE_ALLOCATION_REQUESTED,
             1,
@@ -91,6 +102,14 @@ class FinanceEventListenersTests {
         );
     }
 
+    private static ReserveAllocationService reserveAllocationService() {
+        return new ReserveAllocationService(
+            ignored -> reserveSnapshot(),
+            new ReserveAllocationCalculator(),
+            new ProcessedReserveAllocationRegistry()
+        );
+    }
+
     private static final class CapturingRabbitTemplate extends RabbitTemplate {
 
         @Override
@@ -124,6 +143,25 @@ class FinanceEventListenersTests {
                 "tax", "CURRENT",
                 "compliance", "UNKNOWN"
             )
+        );
+    }
+
+    private static ReserveAllocationInputSnapshot reserveSnapshot() {
+        return new ReserveAllocationInputSnapshot(
+            "PAY-001",
+            1,
+            "DRIVER-001",
+            "8000.00",
+            "0.00",
+            null,
+            "BRL",
+            List.of(new ReserveAllocationRule(
+                ReserveBucket.MAINTENANCE,
+                ReserveRulePolicy.PERCENT_OF_AMOUNT,
+                "0.080000",
+                null,
+                null
+            ))
         );
     }
 }

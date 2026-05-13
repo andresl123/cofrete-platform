@@ -29,7 +29,7 @@ This document records the first implementation target. Profile-domain table name
 ## Reserves
 
 - ReserveBucket: named bucket, target, current balance, and policy metadata.
-- ReserveTransaction: credit/debit movement, source event, and audit metadata.
+- ReserveTransaction: credit/debit movement, source event, and audit metadata. ROU-217 implements positive credit movements; debit and adjustment corrections need a later documented request shape.
 - ReserveRule: category, percentage, fixed monthly amount, per-km amount, effective dates, and source assumptions.
 
 ## Brazil Data
@@ -75,6 +75,15 @@ The implemented Core API profile migration includes:
 - `ipva_rules`
 - `compliance_profiles`
 - `insurance_policies`
+
+The implemented Core API reserve migration includes:
+
+- `reserve_rules`
+- `reserve_wallets`
+- `reserve_allocations`
+- `reserve_transactions`
+
+ROU-217 stores reserve allocation trip and payment identifiers as external references until ROU-215 introduces durable trip and profitability records that can be linked by foreign key.
 
 Follow-up migration sets should include tables equivalent to:
 
