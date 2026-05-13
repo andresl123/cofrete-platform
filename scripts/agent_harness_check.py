@@ -100,6 +100,7 @@ REQUIRED_TEXT = {
         "docs/agent-harness/README.md",
         "python scripts/agent_harness_check.py",
         "task-specific HTML explainer",
+        "Do not commit, push, open a PR, or update an existing PR",
     ),
     ".github/pull_request_template.md": (
         "Validation",
@@ -117,6 +118,7 @@ REQUIRED_TEXT = {
     ),
     "docs/agent-harness/workflow.md": (
         "task-specific HTML explainer",
+        "Do not commit, push, open a PR, or update an existing PR",
     ),
     "docs/agent-harness/validation.md": (
         "CI Validation Matrix",
