@@ -26,7 +26,7 @@ cofrete-platform/
   scripts/
 ```
 
-`core-api/` now contains a Java 21 Spring Boot service scaffold with Maven, Dockerfile, source tree, tests, Flyway migrations, and service documentation. Other service directories currently contain `AGENTS.md` and `README.md` only. Their source code, Dockerfiles, package files, and test folders are introduced by their service scaffold issues.
+`core-api/` now contains a Java 21 Spring Boot service scaffold with Maven, Dockerfile, source tree, tests, Flyway migrations, and service documentation. `data-importer-worker/` now contains a Java 21 Spring Boot worker scaffold with Maven, Dockerfile, source tree, tests, scheduler/import stubs, synthetic ANP fixture loading, and RabbitMQ publisher stubs. Other service directories currently contain `AGENTS.md` and `README.md` only. Their source code, Dockerfiles, package files, and test folders are introduced by their service scaffold issues.
 
 `docker-compose.yml` and `.env.example` define the local-only PostgreSQL, RabbitMQ, and MinIO infrastructure used by upcoming backend and worker scaffolds.
 
@@ -137,8 +137,18 @@ finance-worker/
 
 data-importer-worker/
   pom.xml
-  src/
   Dockerfile
+  src/
+    main/
+      java/com/cofrete/dataimporter/
+        anp/
+        imports/
+        messaging/
+        scheduling/
+      resources/
+        fixtures/
+    test/
+      java/com/cofrete/dataimporter/
 
 mobile-app/
   package.json
@@ -157,6 +167,12 @@ Service scaffolding issues must update local `README.md` and `AGENTS.md` files w
 
 ```sh
 cd core-api && mvn -q validate test
+```
+
+The Data Importer Worker service validation command is:
+
+```sh
+cd data-importer-worker && mvn -q validate test
 ```
 
 The `core-api` package names above are implementation targets, not a requirement to use that exact Java base package path. The important rule is that the Core API starts as an internally modular service with explicit domain boundaries for profile, trip, finance, reserve, compliance, receivables, and imports. Cross-module calls should go through clear application/service interfaces rather than sharing ad hoc persistence or business logic.

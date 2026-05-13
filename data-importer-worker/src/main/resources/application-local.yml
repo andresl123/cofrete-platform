@@ -1,0 +1,4 @@
+cofrete:
+  data-importer:
+    scheduler:
+      enabled: false
