@@ -40,6 +40,7 @@ REQUIRED_DIRS = (
 
 REQUIRED_FILES = (
     "AGENTS.md",
+    "CONTEXT.md",
     "README.md",
     ".env.example",
     ".editorconfig",
@@ -49,6 +50,7 @@ REQUIRED_FILES = (
     ".github/pull_request_template.md",
     ".github/workflows/pr-checks.yml",
     "docs/README.md",
+    "docs/application-explainer.html",
     "docs/product/brazil-trucker-finance-blueprint.md",
     "docs/product/mvp-scope.md",
     "docs/product/product-principles.md",
@@ -56,6 +58,7 @@ REQUIRED_FILES = (
     "docs/product/glossary-pt-br.md",
     "docs/product/roadmap.md",
     "docs/architecture/system-overview.md",
+    "docs/architecture/architecture-explainer.html",
     "docs/architecture/repository-structure.md",
     "docs/architecture/service-boundaries.md",
     "docs/architecture/data-model.md",
@@ -105,6 +108,7 @@ REQUIRED_FILES = (
 
 REQUIRED_TEXT = {
     "AGENTS.md": (
+        "CONTEXT.md",
         "docs/agent-harness/README.md",
         "python scripts/agent_harness_check.py",
         "task-specific HTML explainer",
@@ -157,6 +161,16 @@ REQUIRED_TEXT = {
         "rabbitmq:3.13-management-alpine",
         "minio/minio",
         "cofrete-local",
+    ),
+    "CONTEXT.md": (
+        "Canonical Markdown Doc",
+        "Explainer Page",
+        "Derived Entry Point",
+    ),
+    "docs/README.md": (
+        "derived entry points",
+        "application-explainer.html",
+        "architecture/architecture-explainer.html",
     ),
     "docs/compliance/official-source-register.md": (
         "ANTT",
@@ -234,6 +248,12 @@ REQUIRED_TEXT = {
         "Current Cluster Access Status",
         "Kubernetes Secrets",
         "IngressClass",
+    ),
+    "docs/application-explainer.html": (
+        "manually maintained derived summary",
+    ),
+    "docs/architecture/architecture-explainer.html": (
+        "manually maintained derived summary",
     ),
     "docs/architecture/core-api-scaffold-explainer.html": (
         "ROU-209 / COF-005",

@@ -363,6 +363,20 @@
       font-size: 0.93rem;
     }
 
+    .derived-note {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border: 1px solid #e4c88f;
+      border-radius: 8px;
+      background: #fff8ea;
+      color: #5d4b30;
+      font-weight: 760;
+    }
+
+    .derived-note p {
+      margin: 0;
+    }
+
     .timeline {
       display: grid;
       gap: 12px;
@@ -612,8 +626,8 @@
         </article>
         <article class="card">
           <span class="tag red">Docs</span>
-          <h3>Architecture source of truth</h3>
-          <p>Owns product, architecture, compliance, runbook, and harness knowledge until concrete service scaffolds add generated or shared artifacts.</p>
+          <h3>Markdown remains canonical</h3>
+          <p>Product, architecture, compliance, runbook, and harness markdown docs own the durable wording. This explainer summarizes them for easier reading.</p>
         </article>
       </div>
     </section>
@@ -840,11 +854,14 @@
         <a class="doc-link" href="./deployment.md"><strong>deployment.md</strong><span>Target environments, production runtime shape, config rules, and release rules.</span></a>
         <a class="doc-link" href="./kubernetes.md"><strong>kubernetes.md</strong><span>Kubernetes target architecture, proposed defaults, open decisions, and CI/CD implications.</span></a>
       </div>
+      <div class="derived-note">
+        <p>Markdown docs are canonical. This HTML page is a manually maintained derived summary and can drift if the markdown changes without realigning this page.</p>
+      </div>
     </section>
   </main>
 
   <footer class="page">
-    Static architecture explainer generated from docs/architecture on 2026-05-12.
+    Cofrete architecture explainer. Manually maintained derived summary last aligned with architecture docs on 2026-05-13.
   </footer>
 </body>
 </html>

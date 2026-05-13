@@ -15,3 +15,14 @@ Keep documents focused and link related service-specific details from the releva
 - `compliance/`: Brazil-specific advisory compliance notes, including RNTRC/ANTT, CIOT/freight floor, tolls, diesel, insurance, IPVA/licensing, tax profiles, waiting time, and official-source register.
 - `agent-harness/`: agent workflow, validation, testing policy, risk register, and engineering principles.
 - `runbooks/`: local development, demo seed, importer failure, incident response, and production release.
+
+## Entry Points
+
+These are derived entry points for faster orientation, not canonical references:
+
+- `application-explainer.html`: product/application overview for readers who want the "what is this?" path.
+- `architecture/architecture-explainer.html`: architecture overview for readers who want the "how is this shaped?" path.
+
+## Explainer Pages
+
+`application-explainer.html` and `architecture/architecture-explainer.html` are manually maintained derived summaries. Markdown docs remain canonical; update the relevant markdown first, then manually realign the explainer pages until a generator exists.
