@@ -15,6 +15,8 @@ This repository is structured as a multi-service platform so API, worker, mobile
 - `web-app/`: web application.
 - `docs/`: product, architecture, compliance, and operations docs.
 - `scripts/`: local automation.
+- `docker-compose.yml`: local-only PostgreSQL, RabbitMQ, and MinIO infrastructure.
+- `.env.example`: safe local defaults and service connection placeholders.
 
 ## Source Of Truth
 
@@ -46,6 +48,12 @@ This verifies the baseline folders, ownership files, and required documentation 
 
 Pull requests also run `.github/workflows/pr-checks.yml`, which executes the harness check and skips service-specific jobs until the corresponding scaffold files exist.
 
+Validate local infrastructure configuration with:
+
+```sh
+docker compose config
+```
+
 ## Current Status
 
 Working now:
@@ -54,11 +62,11 @@ Working now:
 - Product, architecture, compliance, runbook, and agent harness docs.
 - Harness validation script.
 - GitHub PR checks and pull request template.
+- Docker Compose local infrastructure and `.env.example`.
 - Worktree helper script for task branches.
 
 Planned in follow-up issues:
 
-- Docker Compose local infrastructure and `.env.example`.
 - Image publishing workflow.
 - Java/Spring Boot service scaffolds.
 - Expo mobile app scaffold.

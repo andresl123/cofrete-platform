@@ -8,6 +8,8 @@ This document aligns the live repository with the Cofrete architecture blueprint
 cofrete-platform/
   AGENTS.md
   README.md
+  docker-compose.yml
+  .env.example
   .github/
     workflows/
       pr-checks.yml
@@ -25,6 +27,8 @@ cofrete-platform/
 ```
 
 Each service directory currently contains `AGENTS.md` and `README.md` only. Service source code, Dockerfiles, package files, and test folders are introduced by service scaffold issues.
+
+`docker-compose.yml` and `.env.example` define the local-only PostgreSQL, RabbitMQ, and MinIO infrastructure used by upcoming backend and worker scaffolds.
 
 ## Documentation Structure
 
@@ -58,19 +62,22 @@ The concrete CI path is `.github/workflows/pr-checks.yml`. It runs `python scrip
 
 The pull request template requires scope, validation commands, docs impact, finance/compliance caveats, UI screenshots when relevant, and risk/rollback notes.
 
-## Planned Infrastructure Structure
+## Local Infrastructure Structure
 
-COF-003 and later CI/deployment issues are expected to add:
+COF-003 adds the local development infrastructure:
 
 ```text
 .env.example
 docker-compose.yml
+docs/runbooks/local-infrastructure-explainer.html
 .github/
   workflows/
     docker-publish.yml
 ```
 
-`docker-compose.yml` is local-only. Kubernetes remains the production runtime once the Kubernetes architecture PR lands.
+`docker-compose.yml` is local-only and provides PostgreSQL, RabbitMQ, MinIO, a MinIO bucket initializer, named volumes, health checks, and the `cofrete-local` network. Kubernetes remains the intended production runtime.
+
+Later CI/deployment issues are expected to add `.github/workflows/docker-publish.yml`.
 
 ## Planned Script Structure
 

@@ -37,9 +37,11 @@ REQUIRED_DIRS = (
 REQUIRED_FILES = (
     "AGENTS.md",
     "README.md",
+    ".env.example",
     ".editorconfig",
     ".gitattributes",
     ".gitignore",
+    "docker-compose.yml",
     ".github/pull_request_template.md",
     ".github/workflows/pr-checks.yml",
     "docs/README.md",
@@ -82,6 +84,7 @@ REQUIRED_FILES = (
     "docs/agent-harness/risk-register.md",
     "docs/agent-harness/ci-pr-harness-explainer.html",
     "docs/runbooks/local-development.md",
+    "docs/runbooks/local-infrastructure-explainer.html",
     "docs/runbooks/demo-seed.md",
     "docs/runbooks/data-import-failure.md",
     "docs/runbooks/incident-response.md",
@@ -136,6 +139,18 @@ REQUIRED_TEXT = {
         "not an official government, legal, tax, accounting, or insurance channel",
         "docs/architecture/api-contracts.md",
         ".github/workflows/pr-checks.yml",
+        "docker compose config",
+    ),
+    ".env.example": (
+        "COFRETE_CORE_API_DATABASE_URL",
+        "COFRETE_FINANCE_WORKER_AMQP_URL",
+        "COFRETE_DATA_IMPORTER_OBJECT_STORAGE_BUCKET",
+    ),
+    "docker-compose.yml": (
+        "postgres:16-alpine",
+        "rabbitmq:3.13-management-alpine",
+        "minio/minio",
+        "cofrete-local",
     ),
     "docs/compliance/official-source-register.md": (
         "ANTT",
@@ -176,6 +191,26 @@ REQUIRED_TEXT = {
     "docs/architecture/repository-structure.md": (
         "scripts/smoke",
         ".github/workflows/pr-checks.yml",
+        "docker-compose.yml",
+    ),
+    "docs/runbooks/local-development.md": (
+        "docker compose config",
+        "cofrete-postgres",
+        "cofrete-rabbitmq",
+        "cofrete-minio",
+        "COFRETE_CORE_API_DATABASE_URL",
+    ),
+    "core-api/README.md": (
+        "COFRETE_CORE_API_DATABASE_URL",
+        "jdbc:postgresql://postgres:5432/cofrete_local",
+    ),
+    "finance-worker/README.md": (
+        "COFRETE_FINANCE_WORKER_AMQP_URL",
+        "amqp://cofrete:cofrete_local_password@rabbitmq:5672/cofrete",
+    ),
+    "data-importer-worker/README.md": (
+        "COFRETE_DATA_IMPORTER_OBJECT_STORAGE_BUCKET",
+        "http://minio:9000",
     ),
     "docs/agent-harness/runtime-smoke-tests.md": (
         "finance-calculation-smoke.sh",
