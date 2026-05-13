@@ -6,7 +6,7 @@ This document records the first implementation target. Exact table names and mig
 
 - User: app identity and authentication subject.
 - Driver: driver profile, contact metadata, CPF/CNPJ metadata, tax regime, state, RNTRC number, and active account link.
-- Company: small fleet or company account metadata when enabled.
+- Company: post-MVP small fleet or company account metadata, reserved until a future company-mode issue enables it.
 - Truck: vehicle identifiers, plate, RENAVAM metadata, axle/category support.
 - Trailer: optional trailer profile linked to trucks.
 - TaxProfile: MEI Caminhoneiro, ME, Ltda, cooperative, or unknown profile metadata.
