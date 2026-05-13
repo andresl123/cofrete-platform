@@ -15,6 +15,8 @@ This repository is structured as a multi-service platform so API, worker, mobile
 - `web-app/`: web application.
 - `docs/`: product, architecture, compliance, and operations docs.
 - `scripts/`: local automation.
+- `docker-compose.yml`: local-only PostgreSQL, RabbitMQ, and MinIO infrastructure.
+- `.env.example`: safe local defaults and service connection placeholders.
 
 ## Source Of Truth
 
@@ -44,6 +46,14 @@ python scripts/agent_harness_check.py
 
 This verifies the baseline folders, ownership files, and required documentation expected by follow-up tasks.
 
+Pull requests also run `.github/workflows/pr-checks.yml`, which executes the harness check and skips service-specific jobs until the corresponding scaffold files exist.
+
+Validate local infrastructure configuration with:
+
+```sh
+docker compose config
+```
+
 ## Current Status
 
 Working now:
@@ -51,13 +61,16 @@ Working now:
 - Repository foundation and service ownership placeholders.
 - Product, architecture, compliance, runbook, and agent harness docs.
 - Harness validation script.
+- GitHub PR checks and pull request template.
+- Docker Compose local infrastructure and `.env.example`.
+- Finance Worker Java/Spring Boot scaffold with RabbitMQ event stubs.
 - Worktree helper script for task branches.
+- Core API Spring Boot scaffold with health, PostgreSQL local profile, Flyway migration setup, and test skeleton.
 
 Planned in follow-up issues:
 
-- Docker Compose local infrastructure and `.env.example`.
-- GitHub PR checks, PR template, and image publishing workflow.
-- Java/Spring Boot service scaffolds.
+- Image publishing workflow.
+- Remaining Java/Spring Boot worker scaffolds.
 - Expo mobile app scaffold.
 - React/Vite web app scaffold.
 - Runtime smoke scripts and demo seed/reset scripts.

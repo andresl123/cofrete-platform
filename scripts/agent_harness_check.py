@@ -3,11 +3,15 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+import re
+import subprocess
 import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
+TASK_ID_PATTERN = re.compile(r"\b(?:ROU|COF)-\d+\b", re.IGNORECASE)
 
 SERVICE_DIRS = (
     "core-api",
@@ -26,6 +30,8 @@ DOC_DIRS = (
 )
 
 REQUIRED_DIRS = (
+    ".github",
+    ".github/workflows",
     "docs",
     "scripts",
     *SERVICE_DIRS,
@@ -36,9 +42,13 @@ REQUIRED_FILES = (
     "AGENTS.md",
     "CONTEXT.md",
     "README.md",
+    ".env.example",
     ".editorconfig",
     ".gitattributes",
     ".gitignore",
+    "docker-compose.yml",
+    ".github/pull_request_template.md",
+    ".github/workflows/pr-checks.yml",
     "docs/README.md",
     "docs/application-explainer.html",
     "docs/product/brazil-trucker-finance-blueprint.md",
@@ -59,6 +69,7 @@ REQUIRED_FILES = (
     "docs/architecture/auth.md",
     "docs/architecture/observability.md",
     "docs/architecture/deployment.md",
+    "docs/architecture/core-api-scaffold-explainer.html",
     "docs/compliance/rntrc-antt.md",
     "docs/compliance/vale-pedagio.md",
     "docs/compliance/diesel-anp.md",
@@ -79,7 +90,9 @@ REQUIRED_FILES = (
     "docs/agent-harness/golden-principles.md",
     "docs/agent-harness/observability.md",
     "docs/agent-harness/risk-register.md",
+    "docs/agent-harness/ci-pr-harness-explainer.html",
     "docs/runbooks/local-development.md",
+    "docs/runbooks/local-infrastructure-explainer.html",
     "docs/runbooks/demo-seed.md",
     "docs/runbooks/data-import-failure.md",
     "docs/runbooks/incident-response.md",
@@ -98,10 +111,56 @@ REQUIRED_TEXT = {
         "CONTEXT.md",
         "docs/agent-harness/README.md",
         "python scripts/agent_harness_check.py",
+        "task-specific HTML explainer",
+        "Do not commit, push, open a PR, or update an existing PR",
+    ),
+    ".github/pull_request_template.md": (
+        "Validation",
+        "Docs Impact",
+        "Finance / Compliance Caveats",
+        "Screenshots or recordings attached for UI changes",
+        "python scripts/agent_harness_check.py",
+    ),
+    ".github/workflows/pr-checks.yml": (
+        "python scripts/agent_harness_check.py",
+        "mvn -q validate test",
+        "npm run test:ci",
+        "npm run build",
+        "docker compose config",
+    ),
+    "docs/agent-harness/workflow.md": (
+        "task-specific HTML explainer",
+        "Do not commit, push, open a PR, or update an existing PR",
+    ),
+    "docs/agent-harness/validation.md": (
+        "CI Validation Matrix",
+        "python scripts/agent_harness_check.py",
+        "mvn -q validate test",
+        "npm run test:ci",
+        "docker compose config",
+        "task-specific HTML explainer",
+    ),
+    "scripts/ci/README.md": (
+        ".github/workflows/pr-checks.yml",
+        "pull_request",
+        "python scripts/agent_harness_check.py",
     ),
     "README.md": (
         "not an official government, legal, tax, accounting, or insurance channel",
         "docs/architecture/api-contracts.md",
+        ".github/workflows/pr-checks.yml",
+        "docker compose config",
+    ),
+    ".env.example": (
+        "COFRETE_CORE_API_DATABASE_URL",
+        "COFRETE_FINANCE_WORKER_AMQP_URL",
+        "COFRETE_DATA_IMPORTER_OBJECT_STORAGE_BUCKET",
+    ),
+    "docker-compose.yml": (
+        "postgres:16-alpine",
+        "rabbitmq:3.13-management-alpine",
+        "minio/minio",
+        "cofrete-local",
     ),
     "CONTEXT.md": (
         "Canonical Markdown Doc",
@@ -152,6 +211,26 @@ REQUIRED_TEXT = {
     "docs/architecture/repository-structure.md": (
         "scripts/smoke",
         ".github/workflows/pr-checks.yml",
+        "docker-compose.yml",
+    ),
+    "docs/runbooks/local-development.md": (
+        "docker compose config",
+        "cofrete-postgres",
+        "cofrete-rabbitmq",
+        "cofrete-minio",
+        "COFRETE_CORE_API_DATABASE_URL",
+    ),
+    "core-api/README.md": (
+        "COFRETE_CORE_API_DATABASE_URL",
+        "jdbc:postgresql://postgres:5432/cofrete_local",
+    ),
+    "finance-worker/README.md": (
+        "COFRETE_FINANCE_WORKER_AMQP_URL",
+        "amqp://cofrete:cofrete_local_password@rabbitmq:5672/cofrete",
+    ),
+    "data-importer-worker/README.md": (
+        "COFRETE_DATA_IMPORTER_OBJECT_STORAGE_BUCKET",
+        "http://minio:9000",
     ),
     "docs/agent-harness/runtime-smoke-tests.md": (
         "finance-calculation-smoke.sh",
@@ -175,6 +254,14 @@ REQUIRED_TEXT = {
     ),
     "docs/architecture/architecture-explainer.html": (
         "manually maintained derived summary",
+    ),
+    "docs/architecture/core-api-scaffold-explainer.html": (
+        "ROU-209 / COF-005",
+        "Core API service scaffold",
+        "cd core-api && mvn -q validate test",
+        "docker compose config",
+        "python scripts/agent_harness_check.py",
+        "Live PostgreSQL startup smoke",
     ),
     "docs/compliance/diesel-anp.md": (
         "driver_confirmed",
@@ -219,12 +306,61 @@ def _content_failures(required_text: dict[str, tuple[str, ...]]) -> list[str]:
     return failures
 
 
+def _current_branch_name() -> str:
+    github_branch = os.environ.get("GITHUB_HEAD_REF") or os.environ.get("GITHUB_REF_NAME")
+    if github_branch:
+        return github_branch
+
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return ""
+
+    return result.stdout.strip()
+
+
+def _task_ids_from_branch(branch_name: str) -> tuple[str, ...]:
+    task_ids = {match.group(0).upper() for match in TASK_ID_PATTERN.finditer(branch_name)}
+    return tuple(sorted(task_ids))
+
+
+def _task_explainer_failures(task_ids: tuple[str, ...]) -> list[str]:
+    if not task_ids:
+        return []
+
+    candidates = sorted(ROOT.glob("docs/**/*explainer.html"))
+    matching_explainers: list[str] = []
+
+    for path in candidates:
+        text = path.read_text(encoding="utf-8")
+        if all(task_id in text.upper() for task_id in task_ids):
+            matching_explainers.append(str(path.relative_to(ROOT)))
+
+    if matching_explainers:
+        return []
+
+    return [
+        "task branch contains issue ID(s) "
+        + ", ".join(task_ids)
+        + " but no docs/**/*explainer.html file includes all of them"
+    ]
+
+
 def main() -> int:
     missing_dirs = _missing_paths(REQUIRED_DIRS, "directory")
     missing_files = _missing_paths(REQUIRED_FILES, "file")
     content_failures = _content_failures(REQUIRED_TEXT)
+    branch_name = _current_branch_name()
+    task_ids = _task_ids_from_branch(branch_name)
+    task_explainer_failures = _task_explainer_failures(task_ids)
 
-    if missing_dirs or missing_files or content_failures:
+    if missing_dirs or missing_files or content_failures or task_explainer_failures:
         print("agent harness check failed", file=sys.stderr)
         for path in missing_dirs:
             print(f"missing directory: {path}", file=sys.stderr)
@@ -232,11 +368,15 @@ def main() -> int:
             print(f"missing file: {path}", file=sys.stderr)
         for failure in content_failures:
             print(f"content failure: {failure}", file=sys.stderr)
+        for failure in task_explainer_failures:
+            print(f"task explainer failure: {failure}", file=sys.stderr)
         return 1
 
     print("agent harness check passed")
     print(f"checked {len(REQUIRED_DIRS)} directories and {len(REQUIRED_FILES)} files")
     print(f"checked {sum(len(values) for values in REQUIRED_TEXT.values())} required text markers")
+    if task_ids:
+        print(f"checked task explainer for {', '.join(task_ids)}")
     return 0
 
 

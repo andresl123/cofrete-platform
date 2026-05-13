@@ -17,6 +17,9 @@ Thumbs.db
 *.log
 logs/
 
+# Java and Maven tooling
+target/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -25,6 +28,9 @@ __pycache__/
 .mypy_cache/
 .venv/
 venv/
+
+# Java
+target/
 
 # JavaScript and mobile tooling
 node_modules/

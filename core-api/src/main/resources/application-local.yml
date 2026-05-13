@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: ${COFRETE_CORE_API_DATABASE_URL:jdbc:postgresql://localhost:5432/cofrete_local}
+    username: ${COFRETE_POSTGRES_USER:cofrete}
+    password: ${COFRETE_POSTGRES_PASSWORD:cofrete_local_password}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    schemas: core_api
+    default-schema: core_api
+    create-schemas: true

@@ -1,0 +1,133 @@
+name: PR Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  harness:
+    name: Agent harness
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run harness validation
+        run: python scripts/agent_harness_check.py
+
+  java-services:
+    name: Java service checks
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: core-api
+            path: core-api
+          - service: finance-worker
+            path: finance-worker
+          - service: data-importer-worker
+            path: data-importer-worker
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Run Maven validation when scaffold exists
+        env:
+          SERVICE_PATH: ${{ matrix.path }}
+        run: |
+          if [ -f "$SERVICE_PATH/pom.xml" ]; then
+            cd "$SERVICE_PATH"
+            mvn -q validate test
+          else
+            echo "Skipping $SERVICE_PATH because pom.xml does not exist yet."
+          fi
+
+  node-services:
+    name: Node service checks
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: mobile-app
+            path: mobile-app
+          - service: web-app
+            path: web-app
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run npm validation when scaffold exists
+        env:
+          SERVICE_PATH: ${{ matrix.path }}
+        run: |
+          if [ ! -f "$SERVICE_PATH/package.json" ]; then
+            echo "Skipping $SERVICE_PATH because package.json does not exist yet."
+            exit 0
+          fi
+
+          cd "$SERVICE_PATH"
+          npm ci
+
+          case "$SERVICE_PATH" in
+            mobile-app)
+              npm run typecheck
+              npm run lint
+              npm run test:ci
+              ;;
+            web-app)
+              npm run lint
+              npm run test
+              npm run build
+              ;;
+            *)
+              echo "No validation command configured for $SERVICE_PATH" >&2
+              exit 1
+              ;;
+          esac
+
+  compose:
+    name: Compose config
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose config when present
+        run: |
+          if [ -f docker-compose.yml ]; then
+            docker compose config
+          else
+            echo "Skipping docker compose config because docker-compose.yml does not exist yet."
+          fi

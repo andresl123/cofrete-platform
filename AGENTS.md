@@ -39,11 +39,15 @@ This file is intentionally short. Durable project knowledge belongs in versioned
 - Before making any file change, create or switch to a dedicated Git worktree branch for the task.
 - Do not start implementation edits in the main checkout. First create the task worktree, then make changes inside that worktree.
 - Prefer `scripts/start_task_worktree.sh <task-name> [base-branch]` when starting a new task worktree.
+- For every new task, invoke the `caveman` skill in `lite` mode and keep responses concise, professional, and technically complete unless the user asks for normal mode.
+- For any frontend interface change, invoke the `impeccable` skill before editing UI files and follow its required preflight, design, validation, and handoff workflow.
 - Read the nearest `AGENTS.md` before editing a service.
 - Keep service-specific changes inside that service unless the task requires shared repo updates.
 - Run `python scripts/agent_harness_check.py` before opening a PR that changes repository structure.
+- Do not commit, push, open a PR, or update an existing PR until the user has reviewed the local changes and confirmed validation is complete.
 - Do not commit secrets, local environment files, dependency caches, or build artifacts.
 - Update docs when architecture, contracts, validation commands, compliance wording, or risk boundaries change.
+- At the end of every task, create or update a task-specific HTML explainer that summarizes what changed, why it changed, the affected files or areas, validation run, and the next task it unblocks when relevant.
 - Finance math must be deterministic, auditable, and tested with exact expected values.
 - Toll reimbursement and Vale-Pedagio are pass-through money and must not be counted as profit.
 - Cofrete is not an official government, legal, tax, accounting, or insurance channel.

@@ -8,6 +8,7 @@ Keep documents focused and link related service-specific details from the releva
 
 - `product/`: product promise, MVP scope, personas, glossary, and roadmap.
 - `architecture/`: system overview, service boundaries, data model, contracts, external data retrieval, auth, security, observability, and deployment.
+- `architecture/auth-access-control-scope-explainer.html`: visual summary of the ROU-245 auth and access-control scope decision.
 - `architecture/kubernetes.md`: Kubernetes production deployment conventions and cluster discovery status.
 - `architecture/external-data-retrieval.md`: source retrieval strategy, freshness rules, and Linear issue ownership for external data.
 - `architecture/repository-structure.md`: current and planned repository layout.
