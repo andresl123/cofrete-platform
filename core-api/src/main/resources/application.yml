@@ -3,6 +3,9 @@ spring:
     name: cofrete-core-api
   profiles:
     default: local
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
   jpa:
     hibernate:
       ddl-auto: validate
