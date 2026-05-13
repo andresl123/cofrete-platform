@@ -1,0 +1,118 @@
+name: cofrete-local
+
+x-service-connection-placeholders:
+  core-api:
+    database_url: ${COFRETE_CORE_API_DATABASE_URL:-jdbc:postgresql://postgres:5432/cofrete_local}
+    amqp_url: ${COFRETE_CORE_API_AMQP_URL:-amqp://cofrete:cofrete_local_password@rabbitmq:5672/cofrete}
+    object_storage_endpoint: ${COFRETE_CORE_API_OBJECT_STORAGE_ENDPOINT:-http://minio:9000}
+    object_storage_bucket: ${COFRETE_CORE_API_OBJECT_STORAGE_BUCKET:-cofrete-local}
+  finance-worker:
+    database_url: ${COFRETE_FINANCE_WORKER_DATABASE_URL:-jdbc:postgresql://postgres:5432/cofrete_local}
+    amqp_url: ${COFRETE_FINANCE_WORKER_AMQP_URL:-amqp://cofrete:cofrete_local_password@rabbitmq:5672/cofrete}
+  data-importer-worker:
+    database_url: ${COFRETE_DATA_IMPORTER_DATABASE_URL:-jdbc:postgresql://postgres:5432/cofrete_local}
+    amqp_url: ${COFRETE_DATA_IMPORTER_AMQP_URL:-amqp://cofrete:cofrete_local_password@rabbitmq:5672/cofrete}
+    object_storage_endpoint: ${COFRETE_DATA_IMPORTER_OBJECT_STORAGE_ENDPOINT:-http://minio:9000}
+    object_storage_bucket: ${COFRETE_DATA_IMPORTER_OBJECT_STORAGE_BUCKET:-cofrete-local}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cofrete-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${COFRETE_POSTGRES_DB:-cofrete_local}
+      POSTGRES_USER: ${COFRETE_POSTGRES_USER:-cofrete}
+      POSTGRES_PASSWORD: ${COFRETE_POSTGRES_PASSWORD:-cofrete_local_password}
+    ports:
+      - "${COFRETE_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - cofrete-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    networks:
+      - cofrete-local
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: cofrete-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${COFRETE_RABBITMQ_USER:-cofrete}
+      RABBITMQ_DEFAULT_PASS: ${COFRETE_RABBITMQ_PASSWORD:-cofrete_local_password}
+      RABBITMQ_DEFAULT_VHOST: ${COFRETE_RABBITMQ_VHOST:-cofrete}
+    ports:
+      - "${COFRETE_RABBITMQ_AMQP_PORT:-5672}:5672"
+      - "${COFRETE_RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - cofrete-rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    networks:
+      - cofrete-local
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-06T17-38-46Z
+    container_name: cofrete-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${COFRETE_MINIO_ROOT_USER:-cofrete}
+      MINIO_ROOT_PASSWORD: ${COFRETE_MINIO_ROOT_PASSWORD:-cofrete_local_password}
+    ports:
+      - "${COFRETE_MINIO_API_PORT:-9000}:9000"
+      - "${COFRETE_MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - cofrete-minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    networks:
+      - cofrete-local
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: cofrete-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${COFRETE_MINIO_ROOT_USER:-cofrete}
+      MINIO_ROOT_PASSWORD: ${COFRETE_MINIO_ROOT_PASSWORD:-cofrete_local_password}
+      MINIO_DEFAULT_BUCKET: ${COFRETE_MINIO_BUCKET:-cofrete-local}
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 \"$${MINIO_ROOT_USER}\" \"$${MINIO_ROOT_PASSWORD}\";
+      mc mb --ignore-existing local/\"$${MINIO_DEFAULT_BUCKET}\";
+      mc anonymous set none local/\"$${MINIO_DEFAULT_BUCKET}\";
+      "
+    restart: "no"
+    networks:
+      - cofrete-local
+
+volumes:
+  cofrete-postgres-data:
+    name: cofrete-postgres-data
+  cofrete-rabbitmq-data:
+    name: cofrete-rabbitmq-data
+  cofrete-minio-data:
+    name: cofrete-minio-data
+
+networks:
+  cofrete-local:
+    name: cofrete-local
