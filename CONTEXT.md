@@ -40,6 +40,18 @@ _Avoid_: revenue, profit, income
 The advisory amount a driver may plan to use personally after pass-through cash flow and required reserves are excluded.
 _Avoid_: guaranteed income, disposable income, legal availability
 
+**Compliance Profile**:
+An advisory Cofrete view of driver-entered and Cofrete-generated compliance metadata, reminders, and official-channel links.
+_Avoid_: official ANTT record, legal status certificate, government profile
+
+**Compliance Alert**:
+An advisory warning that a compliance-related record may need driver review, renewal, or official-channel confirmation.
+_Avoid_: official violation, enforcement notice, certified legal finding
+
+**Compliance Calendar**:
+A planning calendar of document, insurance, RNTRC, tax, and vehicle-obligation reminders.
+_Avoid_: legal deadline authority, official calendar, guaranteed obligation list
+
 ## Relationships
 
 - An **Explainer Page** summarizes one or more **Canonical Markdown Docs**.
@@ -49,6 +61,7 @@ _Avoid_: guaranteed income, disposable income, legal availability
 - A **Reserve Wallet** contains one or more **Reserve Buckets**.
 - A **Reserve Allocation** creates virtual ledger movement into one or more **Reserve Buckets**.
 - **Pass-Through Cash Flow** is excluded before calculating **Safe Personal Withdrawal**.
+- A **Compliance Profile** can surface one or more **Compliance Alerts** and **Compliance Calendar** reminders.
 
 ## Example dialogue
 
