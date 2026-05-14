@@ -8,6 +8,8 @@ python scripts/agent_harness_check.py
 
 The harness validates durable repository structure and required documentation artifacts. Task handoff must include a task-specific HTML explainer when the task changes implementation, architecture, validation behavior, or service ownership. The explainer should summarize what changed, why it changed, affected files or areas, validation run, and the next task it unblocks when relevant.
 
+For implemented Linear issues, task handoff must also include the `grill-with-docs` review-and-fix loop summary described in `linear-review-loop.md`. Run the loop before the final validation pass so any fixes it discovers are covered by the final service checks and harness check.
+
 ## CI Validation Matrix
 
 GitHub Actions runs `.github/workflows/pr-checks.yml` for pull requests, pushes to `main`, and manual dispatches.
@@ -77,6 +79,20 @@ Create or update the explainer before the final validation pass, then run:
 python scripts/agent_harness_check.py
 git diff --check
 ```
+
+## Linear Review Loop Check
+
+For every implemented Linear issue, run up to 10 `grill-with-docs` review loops before handoff.
+
+The handoff should state:
+
+- number of loops executed;
+- issues found;
+- fixes applied;
+- tests and checks run after the loop;
+- remaining risks or assumptions.
+
+Stop early when no meaningful issue remains. Do not continue looping only to reach 10 iterations.
 
 ## Future Kubernetes Checks
 

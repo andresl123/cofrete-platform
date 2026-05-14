@@ -30,6 +30,7 @@ This file is intentionally short. Durable project knowledge belongs in versioned
 | Event contracts | `docs/architecture/event-contracts.md` |
 | Runtime smoke tests | `docs/agent-harness/runtime-smoke-tests.md` |
 | Validation | `docs/agent-harness/validation.md` |
+| Linear review loop | `docs/agent-harness/linear-review-loop.md` |
 | Testing policy | `docs/agent-harness/testing-policy.md` |
 | Golden principles | `docs/agent-harness/golden-principles.md` |
 | Risk register | `docs/agent-harness/risk-register.md` |
@@ -48,6 +49,7 @@ This file is intentionally short. Durable project knowledge belongs in versioned
 - Do not commit secrets, local environment files, dependency caches, or build artifacts.
 - Update docs when architecture, contracts, validation commands, compliance wording, or risk boundaries change.
 - At the end of every task, create or update a task-specific HTML explainer under `docs/explainers/`. Explainers summarize what changed, why it changed, affected files or areas, validation run, and the next task it unblocks when relevant. They are derived handoff aids, not source-of-truth docs.
+- After implementing a Linear issue, run the `grill-with-docs` review-and-fix loop described in `docs/agent-harness/linear-review-loop.md` before final handoff.
 - Finance math must be deterministic, auditable, and tested with exact expected values.
 - Toll reimbursement and Vale-Pedagio are pass-through money and must not be counted as profit.
 - Cofrete is not an official government, legal, tax, accounting, or insurance channel.
