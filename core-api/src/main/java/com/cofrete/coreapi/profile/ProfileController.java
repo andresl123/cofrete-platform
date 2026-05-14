@@ -85,4 +85,39 @@ class ProfileController {
     TaxProfileEnvelope getTaxProfile(Authentication authentication, @RequestParam(required = false) Integer year) {
         return new TaxProfileEnvelope(profiles.getTaxProfile(users.requireUser(authentication), year));
     }
+
+    @PostMapping(ApiRoutingConventions.API_PREFIX + "/source-rules/ipva")
+    @ResponseStatus(HttpStatus.CREATED)
+    IpvaRuleEnvelope upsertIpvaRule(Authentication authentication, @Valid @RequestBody IpvaRuleRequest request) {
+        users.requireUser(authentication);
+        return new IpvaRuleEnvelope(profiles.createOrUpdateIpvaRule(request));
+    }
+
+    @GetMapping(ApiRoutingConventions.API_PREFIX + "/source-rules/ipva")
+    IpvaRuleEnvelope getIpvaRule(
+        Authentication authentication,
+        @RequestParam String state,
+        @RequestParam VehicleType vehicleType,
+        @RequestParam int effectiveYear
+    ) {
+        users.requireUser(authentication);
+        return new IpvaRuleEnvelope(profiles.getIpvaRule(state, vehicleType, effectiveYear));
+    }
+
+    @PostMapping(ApiRoutingConventions.API_PREFIX + "/source-rules/tax-years")
+    @ResponseStatus(HttpStatus.CREATED)
+    TaxRuleYearEnvelope upsertTaxRuleYear(Authentication authentication, @Valid @RequestBody TaxRuleYearRequest request) {
+        users.requireUser(authentication);
+        return new TaxRuleYearEnvelope(profiles.createOrUpdateTaxRuleYear(request));
+    }
+
+    @GetMapping(ApiRoutingConventions.API_PREFIX + "/source-rules/tax-years")
+    TaxRuleYearEnvelope getTaxRuleYear(
+        Authentication authentication,
+        @RequestParam TaxRegime regime,
+        @RequestParam int planningYear
+    ) {
+        users.requireUser(authentication);
+        return new TaxRuleYearEnvelope(profiles.getTaxRuleYear(regime, planningYear));
+    }
 }

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ROU-249 Tax Rule Source Workflow Explainer</title>
+</head>
+<body>
+  <main>
+    <h1>ROU-249 Tax Rule Source Workflow</h1>
+    <p>MEI Caminhoneiro and Pessoa Fisica tax assumptions now live in source-backed yearly records instead of hardcoded application constants.</p>
+    <h2>What changed</h2>
+    <ul>
+      <li>Added <code>POST /api/source-rules/tax-years</code> for yearly tax rule upserts.</li>
+      <li>Added <code>GET /api/source-rules/tax-years</code> for regime/year lookup with explicit missing status.</li>
+      <li>Extended <code>tax_rule_years</code> with freshness and a configurable cargo-transport taxable percentage for Pessoa Fisica planning.</li>
+      <li>Responses label tax outputs as planning estimates and route drivers to Receita Federal/accountant review.</li>
+    </ul>
+    <h2>Affected areas</h2>
+    <ul>
+      <li><code>core-api/src/main/java/com/cofrete/coreapi/profile/</code></li>
+      <li><code>core-api/src/main/resources/db/migration/V10__source_backed_tax_ipva_waiting_time_rules.sql</code></li>
+      <li><code>core-api/src/test/java/com/cofrete/coreapi/profile/ProfileEndpointTests.java</code></li>
+      <li><code>docs/architecture/api-contracts.md</code></li>
+    </ul>
+    <h2>Validation</h2>
+    <p><code>cd core-api &amp;&amp; mvn -q -Dtest=ProfileEndpointTests,ComplianceEndpointTests test</code> passed.</p>
+    <h2>Risk boundary</h2>
+    <p>The workflow stores tax-planning metadata only. It does not provide tax filing advice or official Receita Federal status.</p>
+  </main>
+</body>
+</html>

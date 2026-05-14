@@ -198,6 +198,10 @@ These APIs own app-maintained driver identity metadata, truck metadata, and tax-
 | `PUT` | `/api/trucks/{truckId}` | Replace editable truck metadata. | Full editable truck fields. | Updated `truck` resource. | `VALIDATION_ERROR`, `NOT_FOUND`, `FORBIDDEN` |
 | `POST` | `/api/tax-profile` | Create or replace active tax-planning profile. | Regime, state, year, source/review metadata when known. | `taxProfile` resource. | `VALIDATION_ERROR`, `CONFLICT` |
 | `GET` | `/api/tax-profile` | Return active tax-planning profile. | Optional `year`. | `taxProfile` resource. | `NOT_FOUND` |
+| `POST` | `/api/source-rules/ipva` | Create or update a source-backed IPVA/licensing rule. | State, vehicle type, effective year, source URLs, reviewed timestamps. | `ipvaRule` resource. | `VALIDATION_ERROR` |
+| `GET` | `/api/source-rules/ipva` | Return state/year/vehicle-type IPVA/licensing rule or missing status. | `state`, `vehicleType`, `effectiveYear`. | `ipvaRule` with `ipvaStatus` and `licensingStatus`. | `UNAUTHENTICATED` |
+| `POST` | `/api/source-rules/tax-years` | Create or update MEI/Pessoa Fisica source-backed tax planning rule. | Regime, year, formula metadata, effective dates, source URL. | `taxRuleYear` resource. | `VALIDATION_ERROR` |
+| `GET` | `/api/source-rules/tax-years` | Return tax rule for regime/year or missing status. | `regime`, `planningYear`. | `taxRuleYear` with `ruleStatus`. | `UNAUTHENTICATED` |
 
 Example truck request:
 
@@ -238,6 +242,8 @@ Field semantics:
 - CPF/CNPJ, RENAVAM, RNTRC, plate, and document identifiers should be stored with minimum necessary exposure and masked in normal responses when full value is not needed.
 - `TaxProfile` reflects planning assumptions. It is not tax filing.
 - Official status fields require source URL or source name plus `reviewedAt` or `retrievedAt`.
+- `IpvaRule` must be keyed by state, vehicle type, and effective year. Missing rules return `MISSING`; stale source review returns `STALE`. Core must not fall back to one national truck IPVA percentage.
+- `TaxRuleYear` stores MEI Caminhoneiro annual limits/DAS formula metadata and Pessoa Fisica cargo-transport taxable percentage as source-backed data. Tax outputs must remain labelled as planning estimates.
 
 ## Freight And Trip Decision
 
@@ -329,6 +335,15 @@ Finance semantics:
 | `GET` | `/api/reserve-wallets` | Return bucket balances, targets, and recent transactions. | `asOf` is reserved for later snapshots. | `reserveWallets[]`. | `UNAUTHENTICATED` |
 | `POST` | `/api/reserve-allocations` | Request async reserve allocation for freight payment or manual correction. | Payment/trip reference, amount, idempotency key. | Allocation request status; wallet credits appear after worker result persistence. | `VALIDATION_ERROR`, `CONFLICT` |
 | `GET` | `/api/financial-health-score` | Return current financial health summary. | `asOf` is reserved for later snapshots. | Score, status, components, trace ID. | `SNAPSHOT_PENDING` |
+
+The mobile financial-health dashboard composes:
+
+- `GET /api/financial-health-score` for score, reserve coverage, safe withdrawal, and trace ID.
+- `GET /api/reserve-wallets` for bucket balances when score components are sparse.
+- `GET /api/receivables?status=overdue` for customer payment risk.
+- `GET /api/compliance/profile` for alerts and caveats.
+
+The dashboard must keep pass-through toll reimbursement and Vale-Pedagio visibly outside profit and safe withdrawal. It must show source/freshness caveats when fuel, toll, tax, import, or compliance assumptions may affect the result.
 
 Example reserve allocation request:
 
@@ -539,6 +554,8 @@ Compliance APIs expose advisory metadata, reminders, and links to official chann
 | `GET` | `/api/compliance/calendar` | Return compliance reminders. | Date range optional. | `calendarItems[]`. | `VALIDATION_ERROR` |
 | `GET` | `/api/documents` | List stored document metadata. | Optional type/status filters. | `documents[]`. | `UNAUTHENTICATED` |
 | `POST` | `/api/documents` | Create document metadata and upload handoff. | Type, owner reference, expiration, storage metadata. | Document metadata and upload instructions if applicable. | `VALIDATION_ERROR`, `UNSUPPORTED_MEDIA_TYPE` |
+| `POST` | `/api/source-rules/waiting-time` | Create or update source-backed loading/unloading waiting-time rule. | Threshold hours, rate per ton-hour, effective dates, source URL, reviewed timestamp, confidence. | `waitingTimeRule` resource. | `VALIDATION_ERROR` |
+| `GET` | `/api/source-rules/waiting-time` | Return effective waiting-time rule or missing status. | Optional `effectiveDate`. | `waitingTimeRule` with `ruleStatus`. | `UNAUTHENTICATED` |
 
 Example compliance profile response:
 
@@ -578,6 +595,7 @@ Compliance semantics:
 - `source=driver_entered` means Cofrete is storing app metadata, not asserting official truth.
 - Public checks must not require or store gov.br credentials.
 - Unsupported automation should return a clear advisory response instead of fake precision.
+- Waiting-time responses are advisory estimates for profitability/customer-risk planning. Copy must tell the driver to confirm official rules and contract terms before charging or disputing a customer.
 
 ## Customers And Receivables
 

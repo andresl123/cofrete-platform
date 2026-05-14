@@ -14,17 +14,23 @@ class ProfileService {
     private final TruckRepository trucks;
     private final TruckConsumptionProfileRepository consumptionProfiles;
     private final TaxProfileRepository taxProfiles;
+    private final IpvaRuleRepository ipvaRules;
+    private final TaxRuleYearRepository taxRuleYears;
 
     ProfileService(
         DriverRepository drivers,
         TruckRepository trucks,
         TruckConsumptionProfileRepository consumptionProfiles,
-        TaxProfileRepository taxProfiles
+        TaxProfileRepository taxProfiles,
+        IpvaRuleRepository ipvaRules,
+        TaxRuleYearRepository taxRuleYears
     ) {
         this.drivers = drivers;
         this.trucks = trucks;
         this.consumptionProfiles = consumptionProfiles;
         this.taxProfiles = taxProfiles;
+        this.ipvaRules = ipvaRules;
+        this.taxRuleYears = taxRuleYears;
     }
 
     @Transactional
@@ -112,6 +118,42 @@ class ProfileService {
             : taxProfiles.findByDriverAndPlanningYear(driver, year);
 
         return TaxProfileResponse.from(profile.orElseThrow(() -> new ProfileNotFoundException("Tax profile not found.")));
+    }
+
+    @Transactional
+    IpvaRuleResponse createOrUpdateIpvaRule(IpvaRuleRequest request) {
+        var state = request.state().trim().toUpperCase();
+        var rule = ipvaRules.findByStateAndVehicleTypeAndEffectiveYear(
+                state,
+                request.vehicleType(),
+                request.effectiveYear()
+            )
+            .orElseGet(() -> new IpvaRule(request));
+        rule.updateFrom(request);
+        return IpvaRuleResponse.from(ipvaRules.save(rule));
+    }
+
+    @Transactional(readOnly = true)
+    IpvaRuleResponse getIpvaRule(String state, VehicleType vehicleType, int effectiveYear) {
+        var normalizedState = state.trim().toUpperCase();
+        return ipvaRules.findByStateAndVehicleTypeAndEffectiveYear(normalizedState, vehicleType, effectiveYear)
+            .map(IpvaRuleResponse::from)
+            .orElseGet(() -> IpvaRuleResponse.missing(normalizedState, vehicleType, effectiveYear));
+    }
+
+    @Transactional
+    TaxRuleYearResponse createOrUpdateTaxRuleYear(TaxRuleYearRequest request) {
+        var rule = taxRuleYears.findByRegimeAndPlanningYear(request.regime(), request.planningYear())
+            .orElseGet(() -> new TaxRuleYear(request));
+        rule.updateFrom(request);
+        return TaxRuleYearResponse.from(taxRuleYears.save(rule));
+    }
+
+    @Transactional(readOnly = true)
+    TaxRuleYearResponse getTaxRuleYear(TaxRegime regime, int planningYear) {
+        return taxRuleYears.findByRegimeAndPlanningYear(regime, planningYear)
+            .map(TaxRuleYearResponse::from)
+            .orElseGet(() -> TaxRuleYearResponse.missing(regime, planningYear));
     }
 
     private Truck requireOwnedTruck(AppUser user, String truckId) {

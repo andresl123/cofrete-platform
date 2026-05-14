@@ -169,6 +169,38 @@ class ComplianceEndpointTests {
                 "Cofrete is not an official government, legal, tax, accounting, or insurance channel.")));
     }
 
+    @Test
+    @WithMockUser(username = "waiting-time-rule@example.test")
+    void upsertsWaitingTimeRuleAndReturnsMissingOrStaleAdvisoryStatus() throws Exception {
+        mockMvc.perform(get("/api/source-rules/waiting-time")
+                .queryParam("effectiveDate", "2026-05-14"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.waitingTimeRule.ruleStatus").value("MISSING"))
+            .andExpect(jsonPath("$.waitingTimeRule.advisoryText").value(
+                "No source-backed waiting-time rule is configured for this date. Keep customer-charge guidance conservative."));
+
+        mockMvc.perform(post("/api/source-rules/waiting-time")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "thresholdHours": "5.00",
+                      "ratePerTonHour": "2.34",
+                      "currency": "BRL",
+                      "effectiveFrom": "2026-01-01",
+                      "sourceUrl": "https://www.gov.br/transportes",
+                      "reviewedAt": "2024-01-10T00:00:00Z",
+                      "freshnessStatus": "CURRENT",
+                      "confidence": "MEDIUM"
+                    }
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.waitingTimeRule.thresholdHours").value("5.00"))
+            .andExpect(jsonPath("$.waitingTimeRule.ratePerTonHour").value("2.34"))
+            .andExpect(jsonPath("$.waitingTimeRule.ruleStatus").value("STALE"))
+            .andExpect(jsonPath("$.waitingTimeRule.advisoryText").value(
+                "Waiting-time impact is an advisory estimate. Confirm official rules and contract terms before charging or disputing a customer."));
+    }
+
     private org.springframework.test.web.servlet.ResultActions createDriver(String name, String rntrcNumber) throws Exception {
         return mockMvc.perform(post("/api/drivers")
             .contentType(MediaType.APPLICATION_JSON)

@@ -176,6 +176,93 @@ class ProfileEndpointTests {
     }
 
     @Test
+    @WithMockUser(username = "ipva-source-rule@example.test")
+    void upsertsIpvaRuleAndReportsMissingOrStaleStateRules() throws Exception {
+        mockMvc.perform(get("/api/source-rules/ipva")
+                .queryParam("state", "GO")
+                .queryParam("vehicleType", "TRUCK")
+                .queryParam("effectiveYear", "2026"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.ipvaRule.ipvaStatus").value("MISSING"))
+            .andExpect(jsonPath("$.ipvaRule.advisoryText").value(
+                "No source-backed state rule is configured. Do not estimate IPVA or licensing from a national hardcoded percentage."));
+
+        mockMvc.perform(post("/api/source-rules/ipva")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "state": "GO",
+                      "vehicleType": "TRUCK",
+                      "effectiveYear": 2026,
+                      "ratePercent": "1.2500",
+                      "currency": "BRL",
+                      "sourceUrl": "https://www.go.gov.br/ipva",
+                      "reviewedAt": "2024-01-10T00:00:00Z",
+                      "freshnessStatus": "CURRENT",
+                      "licensingSourceUrl": "https://www.detran.go.gov.br",
+                      "licensingReviewedAt": "2099-04-01T00:00:00Z",
+                      "licensingFreshnessStatus": "CURRENT"
+                    }
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.ipvaRule.ratePercent").value("1.2500"))
+            .andExpect(jsonPath("$.ipvaRule.ipvaStatus").value("STALE"))
+            .andExpect(jsonPath("$.ipvaRule.licensingStatus").value("CURRENT"))
+            .andExpect(jsonPath("$.ipvaRule.advisoryText").value(
+                "IPVA and licensing reminders are advisory. Confirm official values, due dates, and payment channels with the state DETRAN or SEFAZ."));
+    }
+
+    @Test
+    @WithMockUser(username = "tax-source-rule@example.test")
+    void upsertsMeiAndPessoaFisicaSourceBackedTaxRules() throws Exception {
+        mockMvc.perform(post("/api/source-rules/tax-years")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "regime": "MEI_CAMINHONEIRO",
+                      "planningYear": 2026,
+                      "annualGrossLimit": "251600.00",
+                      "currency": "BRL",
+                      "formulaMetadata": "DAS and annual limit are data records, not code constants.",
+                      "effectiveFrom": "2026-01-01",
+                      "sourceUrl": "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/mei-caminhoneiro/mei-caminhoneiro-3",
+                      "reviewedAt": "2099-05-01T00:00:00Z",
+                      "freshnessStatus": "CURRENT"
+                    }
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.taxRuleYear.regime").value("MEI_CAMINHONEIRO"))
+            .andExpect(jsonPath("$.taxRuleYear.ruleStatus").value("CURRENT"));
+
+        mockMvc.perform(post("/api/source-rules/tax-years")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "regime": "PESSOA_FISICA_AUTONOMA",
+                      "planningYear": 2026,
+                      "currency": "BRL",
+                      "formulaMetadata": "Cargo transport taxable portion is configurable planning metadata.",
+                      "cargoTransportTaxablePercent": "0.100000",
+                      "effectiveFrom": "2026-01-01",
+                      "sourceUrl": "https://www.gov.br/receitafederal",
+                      "reviewedAt": "2099-05-01T00:00:00Z",
+                      "freshnessStatus": "CURRENT"
+                    }
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.taxRuleYear.regime").value("PESSOA_FISICA_AUTONOMA"))
+            .andExpect(jsonPath("$.taxRuleYear.cargoTransportTaxablePercent").value("0.100000"))
+            .andExpect(jsonPath("$.taxRuleYear.advisoryText").value(
+                "Tax outputs are planning estimates. Confirm Receita Federal, state, municipal, and accountant guidance before filing or changing regime."));
+
+        mockMvc.perform(get("/api/source-rules/tax-years")
+                .queryParam("regime", "PESSOA_FISICA_AUTONOMA")
+                .queryParam("planningYear", "2027"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.taxRuleYear.ruleStatus").value("MISSING"));
+    }
+
+    @Test
     @WithMockUser(username = "driver-validation@example.test")
     void validatesRequiredProfileFields() throws Exception {
         mockMvc.perform(post("/api/drivers")

@@ -60,3 +60,16 @@ record ComplianceDocumentRequest(
     Boolean active
 ) {
 }
+
+record WaitingTimeRuleRequest(
+    @NotNull @DecimalMin(value = "0.00", inclusive = false) BigDecimal thresholdHours,
+    @NotNull @DecimalMin("0.00") BigDecimal ratePerTonHour,
+    @Pattern(regexp = "BRL") String currency,
+    @NotNull LocalDate effectiveFrom,
+    LocalDate effectiveTo,
+    @Size(max = 500) String sourceUrl,
+    Instant reviewedAt,
+    ComplianceRuleFreshnessStatus freshnessStatus,
+    RuleConfidence confidence
+) {
+}

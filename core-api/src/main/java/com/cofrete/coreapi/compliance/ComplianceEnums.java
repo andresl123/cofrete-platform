@@ -57,6 +57,27 @@ enum ComplianceSource {
     COFRETE_GENERATED
 }
 
+enum ComplianceRuleFreshnessStatus {
+    CURRENT,
+    STALE,
+    FAILED,
+    UNKNOWN
+}
+
+enum RuleConfidence {
+    HIGH,
+    MEDIUM,
+    LOW,
+    UNKNOWN
+}
+
+enum ComplianceRuleStatus {
+    CURRENT,
+    STALE,
+    MISSING,
+    UNKNOWN
+}
+
 enum ComplianceItemStatus {
     CURRENT,
     EXPIRING_SOON,

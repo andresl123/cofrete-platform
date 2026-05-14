@@ -15,6 +15,7 @@ describe('MobileApp', () => {
   it('renders every MVP route without a dead tab', async () => {
     const user = userEvent.setup();
 
+    queueDashboardLoad();
     render(<MobileApp />);
 
     for (const route of MVP_ROUTES) {
@@ -25,11 +26,50 @@ describe('MobileApp', () => {
     }
   });
 
-  it('uses advisory compliance wording', async () => {
-    const user = userEvent.setup();
-    queueComplianceLoad();
+  it('renders financial health dashboard with reserves, receivables, compliance, and caveats', async () => {
+    queueDashboardLoad();
 
     render(<MobileApp />);
+
+    await screen.findByText('Repasse nao e lucro');
+    expect(screen.getByText('88/100')).toBeOnTheScreen();
+    expect(screen.getByText('R$ 1.100,00')).toBeOnTheScreen();
+    expect(screen.getAllByText('Risco').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/R\$ 2.400,00 vencido/)).toBeOnTheScreen();
+    expect(screen.getByText('Transportadora Exemplo')).toBeOnTheScreen();
+    expect(screen.getByText(/Pedagio reembolsado e Vale-Pedagio ficam fora do lucro/)).toBeOnTheScreen();
+    expect(screen.getByText(/Dados de diesel, pedagio, impostos e importacoes/)).toBeOnTheScreen();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('/api/financial-health-score'),
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      expect.stringContaining('/api/receivables?status=overdue'),
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('shows a good dashboard status when there are no overdue receivables', async () => {
+    fetchMock
+      .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse('2300.00', 'GOOD') }))
+      .mockResolvedValueOnce(okJson({ reserveWallets: reserveWalletsResponse() }))
+      .mockResolvedValueOnce(okJson({ complianceProfile: { ...complianceProfileResponse(), alerts: [] } }))
+      .mockResolvedValueOnce(okJson(emptyReceivablesResponse()));
+
+    render(<MobileApp />);
+
+    await screen.findByText('Sem recebivel vencido no filtro atual');
+    expect(screen.getAllByText('Boa').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Nenhum recebivel vencido retornado pelo Core API.')).toBeOnTheScreen();
+  });
+
+  it('uses advisory compliance wording', async () => {
+    const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
+    queueComplianceLoad();
 
     await user.press(screen.getByRole('button', { name: 'Riscos' }));
 
@@ -41,11 +81,10 @@ describe('MobileApp', () => {
 
   it('keeps finance caveats visible across MVP routes', async () => {
     const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
     fetchMock
       .mockResolvedValueOnce(okJson({ reserveWallets: reserveWalletsResponse() }))
       .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse() }));
-
-    render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Frete' }));
     expect(screen.getByText('Pedagio reembolsado e Vale-Pedagio nao viram lucro.')).toBeOnTheScreen();
@@ -58,11 +97,10 @@ describe('MobileApp', () => {
 
   it('creates driver and truck data from onboarding', async () => {
     const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
     fetchMock
       .mockResolvedValueOnce(okJson({ driver: { id: 'driver_123' } }))
       .mockResolvedValueOnce(okJson({ truck: { id: 'truck_created' } }));
-
-    render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Perfil' }));
     await user.press(screen.getByRole('button', { name: 'Criar perfil e caminhao' }));
@@ -88,12 +126,11 @@ describe('MobileApp', () => {
 
   it('runs the new freight calculator happy path through trip and profitability APIs', async () => {
     const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
     fetchMock
       .mockResolvedValueOnce(okJson({ trip: tripResponse() }))
       .mockResolvedValueOnce(okJson({ trip: tripResponse() }))
       .mockResolvedValueOnce(okJson({ profitabilityEstimate: profitabilityEstimateResponse() }));
-
-    render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Frete' }));
     await user.press(screen.getByRole('button', { name: 'Calcular frete' }));
@@ -129,7 +166,7 @@ describe('MobileApp', () => {
   it('validates required freight inputs before calling the API', async () => {
     const user = userEvent.setup();
 
-    render(<MobileApp />);
+    await renderMobileAppAfterDashboardLoad();
 
     await user.press(screen.getByRole('button', { name: 'Frete' }));
     await user.clear(screen.getByLabelText('Frete bruto'));
@@ -141,13 +178,12 @@ describe('MobileApp', () => {
 
   it('shows driver-friendly copy for Core API validation errors', async () => {
     const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
     fetchMock.mockResolvedValueOnce({
       json: async () => ({ error: 'VALIDATION_ERROR' }),
       ok: false,
       status: 422,
     });
-
-    render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Frete' }));
     await user.press(screen.getByRole('button', { name: 'Calcular frete' }));
@@ -158,9 +194,8 @@ describe('MobileApp', () => {
 
   it('renders compliance profile, alerts, calendar, insurance, and documents', async () => {
     const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
     queueComplianceLoad();
-
-    render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Riscos' }));
 
@@ -186,11 +221,10 @@ describe('MobileApp', () => {
 
   it('renders reserve wallet balances, transactions, and safe withdrawal separately', async () => {
     const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
     fetchMock
       .mockResolvedValueOnce(okJson({ reserveWallets: reserveWalletsResponse() }))
       .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse() }));
-
-    render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Reservas' }));
 
@@ -216,6 +250,7 @@ describe('MobileApp', () => {
 
   it('saves RNTRC, insurance, and document metadata through compliance APIs', async () => {
     const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
     queueComplianceLoad();
     fetchMock.mockResolvedValueOnce(okJson({ rntrcProfile: complianceProfileResponse().rntrc }));
     queueComplianceLoad();
@@ -223,8 +258,6 @@ describe('MobileApp', () => {
     queueComplianceLoad();
     fetchMock.mockResolvedValueOnce(okJson({ document: documentsResponse()[0] }));
     queueComplianceLoad();
-
-    render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Riscos' }));
     await screen.findByText('Salvar metadados');
@@ -245,13 +278,12 @@ describe('MobileApp', () => {
 
   it('shows compliance API errors without raw technical text', async () => {
     const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
     fetchMock.mockResolvedValueOnce({
       json: async () => ({ error: 'VALIDATION_ERROR' }),
       ok: false,
       status: 400,
     });
-
-    render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Riscos' }));
 
@@ -261,11 +293,10 @@ describe('MobileApp', () => {
 
   it('shows reserve wallet empty state and all blueprint buckets', async () => {
     const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
     fetchMock
       .mockResolvedValueOnce(okJson({ reserveWallets: [] }))
       .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse('0.00', 'UNKNOWN') }));
-
-    render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Reservas' }));
 
@@ -283,13 +314,12 @@ describe('MobileApp', () => {
 
   it('shows a reserve wallet API error without raw technical text', async () => {
     const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
     fetchMock.mockResolvedValueOnce({
       json: async () => ({ error: 'SOURCE_STALE' }),
       ok: false,
       status: 500,
     });
-
-    render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Reservas' }));
 
@@ -299,6 +329,7 @@ describe('MobileApp', () => {
 
   it('creates reserve rules and requests an allocation from the reserve screen', async () => {
     const user = userEvent.setup();
+    await renderMobileAppAfterDashboardLoad();
     fetchMock
       .mockResolvedValueOnce(okJson({ reserveWallets: [] }))
       .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse('0.00', 'UNKNOWN') }));
@@ -311,8 +342,6 @@ describe('MobileApp', () => {
       .mockResolvedValueOnce(okJson({ reserveAllocation: reserveAllocationResponse() }))
       .mockResolvedValueOnce(okJson({ reserveWallets: reserveWalletsResponse() }))
       .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse() }));
-
-    render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Reservas' }));
     await screen.findByText('Nenhum balde criado');
@@ -328,11 +357,26 @@ describe('MobileApp', () => {
   });
 });
 
+async function renderMobileAppAfterDashboardLoad() {
+  queueDashboardLoad();
+  render(<MobileApp />);
+  await screen.findByText('Rastro financial_health_test');
+  fetchMock.mockClear();
+}
+
 function okJson(body: unknown) {
   return {
     json: async () => body,
     ok: true,
   };
+}
+
+function queueDashboardLoad() {
+  fetchMock
+    .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse() }))
+    .mockResolvedValueOnce(okJson({ reserveWallets: reserveWalletsResponse() }))
+    .mockResolvedValueOnce(okJson({ complianceProfile: complianceProfileResponse() }))
+    .mockResolvedValueOnce(okJson(receivablesResponse()));
 }
 
 function tripResponse() {
@@ -560,13 +604,73 @@ function reserveWalletsResponse() {
 function financialHealthResponse(safePersonalWithdrawalAvailable = '1100.00', status = 'GOOD') {
   return {
     advisoryText: 'Financial health is advisory planning output.',
-    components: [],
+    components: [
+      {
+        bucket: 'MAINTENANCE',
+        coveragePercent: '12.00',
+        currentBalance: '600.00',
+        status: 'RISK',
+        targetBalance: '5000.00',
+      },
+      {
+        bucket: 'DRIVER_SALARY',
+        coveragePercent: '100.00',
+        currentBalance: safePersonalWithdrawalAvailable,
+        status,
+        targetBalance: null,
+      },
+    ],
     currency: 'BRL',
     reserveCoveragePercent: status === 'UNKNOWN' ? '0.00' : '88.00',
     safePersonalWithdrawalAvailable,
     score: status === 'UNKNOWN' ? 0 : 88,
     status,
     traceId: 'financial_health_test',
+  };
+}
+
+function receivablesResponse() {
+  return {
+    receivables: [
+      {
+        advisoryText: 'Receivables are cash-flow planning records only. Cofrete does not move money or guarantee payment.',
+        amount: '2400.00',
+        currency: 'BRL',
+        customerId: 'customer_123',
+        customerName: 'Transportadora Exemplo',
+        dueDate: '2026-05-01',
+        id: 'recv_123',
+        invoiceReference: 'NF-123',
+        paidAmount: '0.00',
+        paymentMethod: 'PIX',
+        payments: [],
+        remainingAmount: '2400.00',
+        status: 'LATE',
+        statusChanges: [],
+        tripId: 'trip_123',
+        type: 'FREIGHT_BALANCE',
+      },
+    ],
+    totals: {
+      currency: 'BRL',
+      expectedAmount: '0.00',
+      lateAmount: '2400.00',
+      paidAmount: '0.00',
+      partiallyPaidAmount: '0.00',
+    },
+  };
+}
+
+function emptyReceivablesResponse() {
+  return {
+    receivables: [],
+    totals: {
+      currency: 'BRL',
+      expectedAmount: '0.00',
+      lateAmount: '0.00',
+      paidAmount: '0.00',
+      partiallyPaidAmount: '0.00',
+    },
   };
 }
 

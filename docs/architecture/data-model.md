@@ -11,7 +11,7 @@ This document records the first implementation target. Profile-domain table name
 - Trailer: optional trailer profile linked to trucks.
 - TaxProfile: MEI Caminhoneiro, ME, Ltda, cooperative, or unknown profile metadata.
 - TaxRuleYear: year-specific tax planning rule, annual limit, INSS/ISS/ICMS formula, effective dates, and source URL.
-- IpvaRule: state, vehicle type, rate percent, effective year, and source URL.
+- IpvaRule: state, vehicle type, rate percent, effective year, IPVA/licensing source URLs, reviewed timestamps, and freshness status.
 
 ## Trip Economics
 
@@ -24,6 +24,7 @@ This document records the first implementation target. Profile-domain table name
 - TripProfitabilitySnapshot: persisted calculation output for auditability, including gross freight, diesel, ARLA, toll treatment, reserves, expected profit, safe withdrawal, margin, currency, and trace ID.
 - FreightFloorCheck: manual or imported ANTT minimum estimate, input assumptions, margin, status, and source metadata.
 - WaitingTimeRecord: loading/unloading arrival, release, excess hours or fraction, cargo tons, configured rate, amount owed, and customer impact.
+- WaitingTimeRule: source-backed loading/unloading threshold hours, rate per ton-hour, effective dates, source URL, reviewed timestamp, freshness, and confidence.
 - TruckConsumptionProfile: truck-specific loaded/empty km-per-liter averages, source window, confidence, and last calculation timestamp.
 
 ## Reserves
@@ -106,6 +107,7 @@ The implemented Core API fuel and toll import migration includes:
 - `freight_floor_source_periods`
 - `freight_floor_coefficients`
 - `freight_floor_checks`
+- `waiting_time_rules`
 
 Reserve allocation records keep nullable `tripId` and `freightPaymentId` references until a later migration links reserve allocation subjects to trip and receivable records without disrupting existing allocation idempotency keys.
 

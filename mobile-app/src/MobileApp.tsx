@@ -26,6 +26,7 @@ import {
   type InsurancePolicyResponse,
   type ProfitabilityEstimateRequest,
   type ProfitabilityEstimateResponse,
+  type ReceivablesEnvelope,
   type ReserveAllocationRequest,
   type ReserveBucket,
   type ReserveRuleRequest,
@@ -104,6 +105,13 @@ type ComplianceResult = {
 
 type ReserveWalletResult = {
   financialHealth: FinancialHealthResponse | null;
+  wallets: ReserveWalletResponse[];
+};
+
+type DashboardResult = {
+  compliance: ComplianceProfileResponse | null;
+  financialHealth: FinancialHealthResponse | null;
+  overdueReceivables: ReceivablesEnvelope | null;
   wallets: ReserveWalletResponse[];
 };
 
@@ -333,6 +341,8 @@ function MvpScreen({ activeTruckId, apiClient, onTruckReady, routeId }: MvpScree
             <ComplianceCenterScreen apiClient={apiClient} />
           ) : routeId === 'reserves' ? (
             <ReserveWalletScreen apiClient={apiClient} />
+          ) : routeId === 'dashboard' ? (
+            <FinancialHealthDashboardScreen apiClient={apiClient} />
           ) : (
             <ReferenceScreen routeId={routeId} apiBaseUrl={apiClient.baseUrl} />
           )}
@@ -579,6 +589,198 @@ function ComplianceCenterScreen({ apiClient }: { apiClient: CoreApiClient }) {
           'GET /api/compliance/insurance-policies',
           'GET /api/documents',
           'POST /api/documents',
+        ]}
+      />
+    </>
+  );
+}
+
+function FinancialHealthDashboardScreen({ apiClient }: { apiClient: CoreApiClient }) {
+  const [result, setResult] = useState<DashboardResult | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDashboard = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [financialHealth, wallets, compliance, overdueReceivables] = await Promise.all([
+        apiClient.getFinancialHealthScore(),
+        apiClient.getReserveWallets(),
+        apiClient.getComplianceProfile(),
+        apiClient.getReceivables('overdue'),
+      ]);
+      setResult({
+        compliance,
+        financialHealth,
+        overdueReceivables,
+        wallets: sortWallets(wallets),
+      });
+    } catch (loadError) {
+      setResult({
+        compliance: null,
+        financialHealth: null,
+        overdueReceivables: null,
+        wallets: [],
+      });
+      setError(friendlyErrorMessage(loadError, 'Nao foi possivel carregar a saude financeira agora.'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiClient]);
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
+
+  const financialHealth = result?.financialHealth ?? null;
+  const overdueReceivables = result?.overdueReceivables ?? null;
+  const compliance = result?.compliance ?? null;
+  const alerts = compliance?.alerts ?? [];
+  const caveats = dashboardCaveats(financialHealth, compliance);
+
+  return (
+    <>
+      <View style={styles.safeWithdrawalPanel}>
+        <View style={styles.actionCopy}>
+          <Text style={styles.metricLabel}>Saude financeira</Text>
+          <Text style={styles.safeWithdrawalValue}>
+            {financialHealth ? `${financialHealth.score}/100` : 'Sem dado'}
+          </Text>
+          <Text style={styles.metricTone}>
+            Combina reservas, saque planejado, recebiveis vencidos e riscos consultivos.
+          </Text>
+        </View>
+        <View style={styles.statusPill}>
+          <Text style={styles.statusPillText}>
+            {financialHealth ? healthLabel(financialHealth.status) : 'Sem dado'}
+          </Text>
+        </View>
+      </View>
+
+      {isLoading ? (
+        <View style={styles.loadingPanel}>
+          <ActivityIndicator color={colors.accent} />
+          <Text style={styles.sectionNote}>Carregando reservas, recebiveis e alertas.</Text>
+        </View>
+      ) : null}
+
+      <StatusMessage error={error} />
+
+      <View style={styles.metricGrid}>
+        <TextMetric
+          label="Saque seguro"
+          value={financialHealth ? formatCurrency(financialHealth.safePersonalWithdrawalAvailable) : 'R$ 0,00'}
+          tone="Depois de separar pass-through e reservas obrigatorias"
+        />
+        <TextMetric
+          label="Cobertura"
+          value={financialHealth ? formatPercent(financialHealth.reserveCoveragePercent) : '0,00%'}
+          tone="Quanto dos alvos de reserva ja esta coberto"
+        />
+        <TextMetric
+          label="Recebiveis"
+          value={receivableRiskLabel(overdueReceivables)}
+          tone={receivableRiskTone(overdueReceivables)}
+        />
+        <TextMetric
+          label="Alertas"
+          value={`${alerts.length}`}
+          tone={alerts.length === 1 ? '1 pendencia consultiva' : 'Pendencias consultivas'}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Repasse nao e lucro</Text>
+          <Text style={styles.sectionNote}>
+            Pedagio reembolsado e Vale-Pedagio ficam fora do lucro e do saque seguro.
+          </Text>
+        </View>
+        <Text style={styles.emptyCopy}>
+          O painel resume dinheiro planejado para decisao. Ele nao confirma saldo bancario, recebimento de cliente ou regularidade oficial.
+        </Text>
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Reservas que seguram o saque</Text>
+          <Text style={styles.sectionNote}>
+            {financialHealth?.traceId ? `Rastro ${financialHealth.traceId}` : 'Sem rastro de calculo carregado'}
+          </Text>
+        </View>
+        {(financialHealth?.components.length ?? 0) > 0 ? (
+          sortHealthComponents(financialHealth?.components ?? []).map((component) => (
+            <View key={component.bucket} style={styles.healthRow}>
+              <Text style={styles.healthLabel}>{reserveBucketCopy[component.bucket].label}</Text>
+              <Text style={styles.healthValue}>{formatPercent(component.coveragePercent)}</Text>
+              <Text style={styles.healthMeta}>{healthLabel(component.status)}</Text>
+            </View>
+          ))
+        ) : result?.wallets.length ? (
+          result.wallets.slice(0, 4).map((wallet) => <ReserveBucketRow key={wallet.bucket} wallet={wallet} />)
+        ) : (
+          <Text style={styles.emptyCopy}>Sem baldes de reserva carregados para compor o painel.</Text>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Risco de recebimento</Text>
+          <Text style={styles.sectionNote}>
+            Cofrete rastreia previsao de caixa. Nao cobra cliente nem garante pagamento.
+          </Text>
+        </View>
+        {(overdueReceivables?.receivables.length ?? 0) > 0 ? (
+          overdueReceivables?.receivables.slice(0, 3).map((receivable) => (
+            <View key={receivable.id} style={styles.actionRow}>
+              <View style={styles.actionCopy}>
+                <Text style={styles.actionTitle}>{receivable.customerName}</Text>
+                <Text style={styles.actionDetail}>
+                  Venceu em {receivable.dueDate}. Restante {formatCurrency(receivable.remainingAmount)}.
+                </Text>
+              </View>
+              <View style={styles.statusPill}>
+                <Text style={styles.statusPillText}>{receivable.status === 'LATE' ? 'Vencido' : healthLabel('ATTENTION')}</Text>
+              </View>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.emptyCopy}>Nenhum recebivel vencido retornado pelo Core API.</Text>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Alertas e fontes</Text>
+          <Text style={styles.sectionNote}>
+            Diesel, pedagio, impostos e documentos dependem de calculos e fontes revisadas.
+          </Text>
+        </View>
+        {alerts.slice(0, 3).map((alert) => (
+          <View key={alert.id} style={styles.actionRow}>
+            <View style={severityStyle(alert.severity)} />
+            <View style={styles.actionCopy}>
+              <Text style={styles.actionTitle}>{alert.message}</Text>
+              <Text style={styles.actionDetail}>{alert.advisoryText}</Text>
+            </View>
+          </View>
+        ))}
+        {alerts.length === 0 ? <Text style={styles.emptyCopy}>Sem alerta consultivo carregado.</Text> : null}
+        {caveats.map((caveat) => (
+          <Text key={caveat} style={styles.caveat}>
+            {caveat}
+          </Text>
+        ))}
+      </View>
+
+      <EndpointPanel
+        apiBaseUrl={apiClient.baseUrl}
+        endpoints={[
+          'GET /api/financial-health-score',
+          'GET /api/reserve-wallets',
+          'GET /api/receivables?status=overdue',
+          'GET /api/compliance/profile',
         ]}
       />
     </>
@@ -1350,6 +1552,52 @@ function starterRule(bucket: ReserveBucket, rate: string, targetBalance?: string
 function sortWallets(wallets: ReserveWalletResponse[]) {
   return [...wallets].sort(
     (left, right) => reserveBucketOrder.indexOf(left.bucket) - reserveBucketOrder.indexOf(right.bucket)
+  );
+}
+
+function sortHealthComponents(components: FinancialHealthResponse['components']) {
+  return [...components].sort(
+    (left, right) => reserveBucketOrder.indexOf(left.bucket) - reserveBucketOrder.indexOf(right.bucket)
+  );
+}
+
+function receivableRiskLabel(envelope: ReceivablesEnvelope | null) {
+  if (!envelope) {
+    return 'Sem dado';
+  }
+
+  if (decimalValue(envelope.totals.lateAmount) > 0 || envelope.receivables.length > 0) {
+    return 'Risco';
+  }
+
+  if (decimalValue(envelope.totals.partiallyPaidAmount) > 0) {
+    return 'Atencao';
+  }
+
+  return 'Boa';
+}
+
+function receivableRiskTone(envelope: ReceivablesEnvelope | null) {
+  if (!envelope) {
+    return 'Core API nao retornou recebiveis';
+  }
+
+  if (decimalValue(envelope.totals.lateAmount) > 0 || envelope.receivables.length > 0) {
+    return `${formatCurrency(envelope.totals.lateAmount)} vencido para acompanhar`;
+  }
+
+  return 'Sem recebivel vencido no filtro atual';
+}
+
+function dashboardCaveats(financialHealth: FinancialHealthResponse | null, compliance: ComplianceProfileResponse | null) {
+  const caveats = [
+    financialHealth?.advisoryText ?? 'Saude financeira e estimativa consultiva, nao garantia de dinheiro disponivel.',
+    'Dados de diesel, pedagio, impostos e importacoes precisam de fonte atual para nao distorcer margem.',
+    'Cofrete nao e canal oficial governamental, juridico, tributario, contabil ou securitario.',
+  ];
+
+  return [...caveats, ...(compliance?.caveats ?? [])].filter(
+    (caveat, index, allCaveats) => allCaveats.indexOf(caveat) === index
   );
 }
 

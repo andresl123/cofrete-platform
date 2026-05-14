@@ -3,7 +3,10 @@ package com.cofrete.coreapi.compliance;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 interface ComplianceProfileRepository extends JpaRepository<ComplianceProfile, String> {
 
@@ -56,4 +59,17 @@ interface ComplianceCalendarItemRepository extends JpaRepository<ComplianceCalen
         LocalDate from,
         LocalDate to
     );
+}
+
+interface WaitingTimeRuleRepository extends JpaRepository<WaitingTimeRule, String> {
+
+    Optional<WaitingTimeRule> findByEffectiveFrom(LocalDate effectiveFrom);
+
+    @Query("""
+        select rule from WaitingTimeRule rule
+        where rule.effectiveFrom <= :effectiveDate
+          and (rule.effectiveTo is null or rule.effectiveTo >= :effectiveDate)
+        order by rule.effectiveFrom desc
+        """)
+    List<WaitingTimeRule> findEffectiveRules(@Param("effectiveDate") LocalDate effectiveDate, Pageable pageable);
 }

@@ -94,4 +94,23 @@ class ComplianceController {
     ) {
         return new ComplianceDocumentEnvelope(compliance.createDocument(users.requireUser(authentication), request));
     }
+
+    @PostMapping(ApiRoutingConventions.API_PREFIX + "/source-rules/waiting-time")
+    @ResponseStatus(HttpStatus.CREATED)
+    WaitingTimeRuleEnvelope upsertWaitingTimeRule(
+        Authentication authentication,
+        @Valid @RequestBody WaitingTimeRuleRequest request
+    ) {
+        users.requireUser(authentication);
+        return new WaitingTimeRuleEnvelope(compliance.createOrUpdateWaitingTimeRule(request));
+    }
+
+    @GetMapping(ApiRoutingConventions.API_PREFIX + "/source-rules/waiting-time")
+    WaitingTimeRuleEnvelope getWaitingTimeRule(
+        Authentication authentication,
+        @RequestParam(required = false) LocalDate effectiveDate
+    ) {
+        users.requireUser(authentication);
+        return new WaitingTimeRuleEnvelope(compliance.getWaitingTimeRule(effectiveDate));
+    }
 }

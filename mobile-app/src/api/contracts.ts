@@ -10,6 +10,7 @@ export const CORE_API_ENDPOINTS = {
   driverProfile: 'GET /api/drivers/me',
   financialHealthScore: 'GET /api/financial-health-score',
   register: 'POST /api/auth/register',
+  receivablesOverdue: 'GET /api/receivables?status=overdue',
   reserveAllocations: 'POST /api/reserve-allocations',
   reserveRules: 'POST /api/reserve-rules',
   reserveWallets: 'GET /api/reserve-wallets',
@@ -323,6 +324,61 @@ export type FinancialHealthResponse = {
   score: number;
   status: FinancialHealthStatus;
   traceId: string;
+};
+
+export type ReceivableStatus = 'EXPECTED' | 'LATE' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELED';
+
+export type ReceivableType = 'FREIGHT_BALANCE' | 'DETENTION' | 'OTHER';
+
+export type ReceivablePaymentMethod = 'PIX' | 'BANK_TRANSFER' | 'CASH' | 'CARD' | 'OTHER';
+
+export type ReceivablePaymentResponse = {
+  amount: string;
+  currency: CurrencyCode;
+  id: string;
+  note: string;
+  paidDate: string;
+  paymentMethod: ReceivablePaymentMethod;
+};
+
+export type ReceivableStatusChangeResponse = {
+  changedAt: string;
+  id: string;
+  newStatus: ReceivableStatus;
+  note: string;
+  previousStatus: ReceivableStatus | null;
+};
+
+export type ReceivableResponse = {
+  advisoryText: string;
+  amount: string;
+  currency: CurrencyCode;
+  customerId: string;
+  customerName: string;
+  dueDate: string;
+  id: string;
+  invoiceReference: string | null;
+  paidAmount: string;
+  paymentMethod: ReceivablePaymentMethod;
+  payments: ReceivablePaymentResponse[];
+  remainingAmount: string;
+  status: ReceivableStatus;
+  statusChanges: ReceivableStatusChangeResponse[];
+  tripId: string;
+  type: ReceivableType;
+};
+
+export type ReceivableTotalsResponse = {
+  currency: CurrencyCode;
+  expectedAmount: string;
+  lateAmount: string;
+  paidAmount: string;
+  partiallyPaidAmount: string;
+};
+
+export type ReceivablesEnvelope = {
+  receivables: ReceivableResponse[];
+  totals: ReceivableTotalsResponse;
 };
 
 export type ReservePolicyRequest = {

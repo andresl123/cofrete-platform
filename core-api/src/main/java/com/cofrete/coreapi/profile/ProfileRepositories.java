@@ -30,3 +30,13 @@ interface TaxProfileRepository extends JpaRepository<TaxProfile, String> {
 
     Optional<TaxProfile> findFirstByDriverOrderByPlanningYearDesc(Driver driver);
 }
+
+interface IpvaRuleRepository extends JpaRepository<IpvaRule, String> {
+
+    Optional<IpvaRule> findByStateAndVehicleTypeAndEffectiveYear(String state, VehicleType vehicleType, int effectiveYear);
+}
+
+interface TaxRuleYearRepository extends JpaRepository<TaxRuleYear, String> {
+
+    Optional<TaxRuleYear> findByRegimeAndPlanningYear(TaxRegime regime, int planningYear);
+}

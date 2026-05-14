@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 
 record CreateDriverRequest(
     @NotBlank @Size(max = 160) String name,
@@ -57,6 +58,36 @@ record TaxProfileRequest(
     @Pattern(regexp = "BRL") String currency,
     @Size(max = 160) String source,
     @Size(max = 80) String sourceType,
+    Instant reviewedAt,
+    FreshnessStatus freshnessStatus
+) {
+}
+
+record IpvaRuleRequest(
+    @NotBlank @Pattern(regexp = "[A-Z]{2}") String state,
+    @NotNull VehicleType vehicleType,
+    @Min(2020) @Max(2100) int effectiveYear,
+    @DecimalMin("0.0000") BigDecimal ratePercent,
+    @Pattern(regexp = "BRL") String currency,
+    @Size(max = 500) String sourceUrl,
+    Instant reviewedAt,
+    FreshnessStatus freshnessStatus,
+    @Size(max = 500) String licensingSourceUrl,
+    Instant licensingReviewedAt,
+    FreshnessStatus licensingFreshnessStatus
+) {
+}
+
+record TaxRuleYearRequest(
+    @NotNull TaxRegime regime,
+    @Min(2020) @Max(2100) int planningYear,
+    @DecimalMin("0.00") BigDecimal annualGrossLimit,
+    @Pattern(regexp = "BRL") String currency,
+    @Size(max = 2000) String formulaMetadata,
+    @DecimalMin("0.0000") @jakarta.validation.constraints.DecimalMax("1.0000") BigDecimal cargoTransportTaxablePercent,
+    @NotNull LocalDate effectiveFrom,
+    LocalDate effectiveTo,
+    @Size(max = 500) String sourceUrl,
     Instant reviewedAt,
     FreshnessStatus freshnessStatus
 ) {
