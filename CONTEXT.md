@@ -64,6 +64,14 @@ _Avoid_: official violation, enforcement notice, certified legal finding
 A planning calendar of document, insurance, RNTRC, tax, and vehicle-obligation reminders.
 _Avoid_: legal deadline authority, official calendar, guaranteed obligation list
 
+**Freight-Floor Source Period**:
+An app record for one effective official ANTT freight-floor publication and its parsed or manually approved coefficient set.
+_Avoid_: legal certification, permanent table
+
+**Freight-Floor Check**:
+An advisory comparison of an offered freight against a source-backed or manually approved ANTT freight-floor period.
+_Avoid_: official ANTT validation, enforcement decision, guaranteed legal compliance
+
 ## Relationships
 
 - An **Explainer Page** summarizes one or more **Canonical Markdown Docs**.
@@ -76,6 +84,8 @@ _Avoid_: legal deadline authority, official calendar, guaranteed obligation list
 - A **Freight Customer** can have one or more **Receivables**.
 - **Customer Payment Tracking** records receivable state for planning and does not move money.
 - A **Compliance Profile** can surface one or more **Compliance Alerts** and **Compliance Calendar** reminders.
+- A **Freight-Floor Check** uses one **Freight-Floor Source Period** when source confidence is sufficient.
+- A **Freight-Floor Check** returns `unknown` when source, cargo, operation, axle, or effective-period semantics cannot be proven.
 
 ## Example dialogue
 
@@ -88,6 +98,9 @@ _Avoid_: legal deadline authority, official calendar, guaranteed obligation list
 > **Dev:** "Can we show Vale-Pedagio as part of the driver's safe money?"
 > **Domain expert:** "No. Vale-Pedagio is **Pass-Through Cash Flow**. It can appear in cash-flow visibility, but it is excluded from **Safe Personal Withdrawal**."
 
+> **Dev:** "Can Cofrete say a freight is officially legal because the checker says above_floor?"
+> **Domain expert:** "No. A **Freight-Floor Check** is advisory. It must show source period and confidence, and users must confirm official questions with ANTT or qualified professionals."
+
 > **Dev:** "Does marking a receivable paid mean Cofrete collected the money?"
 > **Domain expert:** "No. **Customer Payment Tracking** records driver-entered cash-flow status only. It is not payment processing or collection."
 
@@ -96,4 +109,5 @@ _Avoid_: legal deadline authority, official calendar, guaranteed obligation list
 - "docs" was used to describe both canonical markdown files and generated HTML summaries. Resolved: markdown docs are canonical; HTML explainers are manually maintained derived summaries until a generator exists.
 - "wallet" can imply a real payment account. Resolved: **Reserve Wallet** is a virtual planning ledger until a future payment integration explicitly implements real money movement.
 - "safe withdrawal" can imply guaranteed availability. Resolved: **Safe Personal Withdrawal** is advisory planning output, not legal, fiscal, operational, or cash-availability confirmation.
+- "freight floor checker" can imply official ANTT validation. Resolved: **Freight-Floor Check** is advisory and may return `unknown`; it is not enforcement or legal certification.
 - "customer" can mean Cofrete's own user account or a payer on a freight. Resolved: **Freight Customer** is the payer tracked by the driver for receivables and customer profitability.
