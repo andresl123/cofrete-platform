@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>ROU-221 Receivables Explainer</title>
+  </head>
+  <body>
+    <main>
+      <p><strong>Manual derived explainer.</strong> Canonical behavior remains in the Core API code, migrations, tests, and markdown contracts.</p>
+      <h1>ROU-221 - COF-017 Implement receivables and customer payment tracking</h1>
+      <section>
+        <h2>What changed</h2>
+        <p>Core API now has customer profiles, receivables, payment records, and receivable status history for freight customer cash-flow planning.</p>
+        <ul>
+          <li>Added customer creation at <code>POST /api/customers</code>.</li>
+          <li>Added customer profitability at <code>GET /api/customers/{customerId}/profitability</code>.</li>
+          <li>Added receivable creation, overdue listing, and payment recording at the contracted receivable paths.</li>
+          <li>Added a Flyway migration for customers, receivables, receivable payments, and receivable status changes.</li>
+          <li>Added MockMvc coverage for lifecycle, overdue filtering, customer profitability inputs, and validation errors.</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Why it changed</h2>
+        <p>Financial health and future dashboards need late-payment risk, expected cash flow, and customer payment behavior. Cofrete still treats this as advisory planning data, not bank integration or guaranteed payment.</p>
+      </section>
+      <section>
+        <h2>Affected areas</h2>
+        <ul>
+          <li><code>core-api/src/main/java/com/cofrete/coreapi/receivables/</code></li>
+          <li><code>core-api/src/main/resources/db/migration/V9__receivables_customer_payment_tracking.sql</code></li>
+          <li><code>core-api/src/test/java/com/cofrete/coreapi/receivables/ReceivableEndpointTests.java</code></li>
+          <li><code>docs/architecture/api-contracts.md</code></li>
+          <li><code>core-api/README.md</code></li>
+        </ul>
+      </section>
+      <section>
+        <h2>Validation</h2>
+        <ul>
+          <li><code>cd core-api &amp;&amp; mvn -q validate test</code></li>
+          <li><code>python scripts/agent_harness_check.py</code></li>
+          <li><code>git diff --check</code></li>
+        </ul>
+        <p><code>grill-with-docs</code> review ran for two loops. Fixes applied: documented receivable glossary terms, corrected customer profitability so paid receivables are not reported as profit, and renamed the internal expected-profit field for clarity.</p>
+      </section>
+      <section>
+        <h2>Unblocks</h2>
+        <p>ROU-221 unblocks customer receivable risk inputs for ROU-225 financial health dashboard work.</p>
+      </section>
+    </main>
+  </body>
+</html>

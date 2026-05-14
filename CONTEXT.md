@@ -40,6 +40,18 @@ _Avoid_: revenue, profit, income
 The advisory amount a driver may plan to use personally after pass-through cash flow and required reserves are excluded.
 _Avoid_: guaranteed income, disposable income, legal availability
 
+**Freight Customer**:
+A payer or contracting party the driver tracks for receivable and profitability planning.
+_Avoid_: bank customer, Cofrete customer account
+
+**Receivable**:
+An app-maintained record of freight money expected from a freight customer, such as an advance, balance, or reimbursement.
+_Avoid_: bank payment, guaranteed collection, settlement
+
+**Customer Payment Tracking**:
+Advisory cash-flow tracking for expected, late, partial, paid, or canceled receivables.
+_Avoid_: payment processing, bank integration, legal collection
+
 **Compliance Profile**:
 An advisory Cofrete view of driver-entered and Cofrete-generated compliance metadata, reminders, and official-channel links.
 _Avoid_: official ANTT record, legal status certificate, government profile
@@ -69,6 +81,8 @@ _Avoid_: official ANTT validation, enforcement decision, guaranteed legal compli
 - A **Reserve Wallet** contains one or more **Reserve Buckets**.
 - A **Reserve Allocation** creates virtual ledger movement into one or more **Reserve Buckets**.
 - **Pass-Through Cash Flow** is excluded before calculating **Safe Personal Withdrawal**.
+- A **Freight Customer** can have one or more **Receivables**.
+- **Customer Payment Tracking** records receivable state for planning and does not move money.
 - A **Compliance Profile** can surface one or more **Compliance Alerts** and **Compliance Calendar** reminders.
 - A **Freight-Floor Check** uses one **Freight-Floor Source Period** when source confidence is sufficient.
 - A **Freight-Floor Check** returns `unknown` when source, cargo, operation, axle, or effective-period semantics cannot be proven.
@@ -87,9 +101,13 @@ _Avoid_: official ANTT validation, enforcement decision, guaranteed legal compli
 > **Dev:** "Can Cofrete say a freight is officially legal because the checker says above_floor?"
 > **Domain expert:** "No. A **Freight-Floor Check** is advisory. It must show source period and confidence, and users must confirm official questions with ANTT or qualified professionals."
 
+> **Dev:** "Does marking a receivable paid mean Cofrete collected the money?"
+> **Domain expert:** "No. **Customer Payment Tracking** records driver-entered cash-flow status only. It is not payment processing or collection."
+
 ## Flagged ambiguities
 
 - "docs" was used to describe both canonical markdown files and generated HTML summaries. Resolved: markdown docs are canonical; HTML explainers are manually maintained derived summaries until a generator exists.
 - "wallet" can imply a real payment account. Resolved: **Reserve Wallet** is a virtual planning ledger until a future payment integration explicitly implements real money movement.
 - "safe withdrawal" can imply guaranteed availability. Resolved: **Safe Personal Withdrawal** is advisory planning output, not legal, fiscal, operational, or cash-availability confirmation.
 - "freight floor checker" can imply official ANTT validation. Resolved: **Freight-Floor Check** is advisory and may return `unknown`; it is not enforcement or legal certification.
+- "customer" can mean Cofrete's own user account or a payer on a freight. Resolved: **Freight Customer** is the payer tracked by the driver for receivables and customer profitability.

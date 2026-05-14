@@ -6,7 +6,7 @@ Backend API service for Cofrete Platform.
 
 Core API owns authenticated product APIs and primary PostgreSQL persistence for driver profile, trip, advisory finance, reserve, compliance, receivables, imports, auth, and audit data.
 
-The service now implements the first profile-domain product controllers, trip profitability APIs, reserve wallet/allocation endpoints, fuel-price read/report/estimate endpoints, and toll/Vale-Pedagio classification endpoints. Remaining contracted routes under `/api/*` are reserved for implementation issues documented in `../docs/architecture/api-contracts.md`.
+The service now implements the first profile-domain product controllers, trip profitability APIs, reserve wallet/allocation endpoints, fuel-price read/report/estimate endpoints, toll/Vale-Pedagio classification endpoints, and receivable/customer payment tracking endpoints. Remaining contracted routes under `/api/*` are reserved for implementation issues documented in `../docs/architecture/api-contracts.md`.
 
 Reserve allocation is async: Core API records allocation requests, publishes `reserve.allocation.requested`, and idempotently persists Finance Worker `reserve.allocation.completed` results into reserve wallets and transactions.
 
@@ -65,6 +65,8 @@ ROU-219 / COF-015 implements advisory toll classification in the trip module:
 - `GET /api/toll-data/import-status`
 
 Toll reimbursement and Vale-Pedagio records are preserved separately from profit through classification, finance treatment, and confidence metadata. Persisted pass-through toll records can supply default toll inputs for the temporary synchronous trip profitability estimate when request toll fields are omitted.
+
+Receivables are cash-flow planning records only. Customer profiles store minimized tax ID metadata, receivable lifecycle changes are recorded in an audit history, and paid/late receivables feed customer profitability risk inputs without implying bank integration or guaranteed payment.
 
 ## Fuel And Imported Data
 

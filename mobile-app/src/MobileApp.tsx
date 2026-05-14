@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -15,9 +15,21 @@ import {
 
 import { createCoreApiClient, type CoreApiClient } from './api/client';
 import {
+  type ComplianceCalendarItemResponse,
+  type ComplianceDocumentResponse,
+  type ComplianceItemStatus,
+  type ComplianceProfileResponse,
+  type ComplianceScoreResponse,
+  type ComplianceSeverity,
   type DriverProfileRequest,
+  type FinancialHealthResponse,
+  type InsurancePolicyResponse,
   type ProfitabilityEstimateRequest,
   type ProfitabilityEstimateResponse,
+  type ReserveAllocationRequest,
+  type ReserveBucket,
+  type ReserveRuleRequest,
+  type ReserveWalletResponse,
   type RoutePoint,
   type TripRequest,
   type TripResponse,
@@ -64,6 +76,14 @@ type FreightFormState = {
   valePedagio: string;
 };
 
+type ComplianceFormState = {
+  documentLast4: string;
+  documentTitle: string;
+  insuranceLast4: string;
+  insurer: string;
+  rntrcNumber: string;
+};
+
 type OnboardingResult = {
   driverId: string;
   truckId: string;
@@ -72,6 +92,19 @@ type OnboardingResult = {
 type FreightResult = {
   estimate: ProfitabilityEstimateResponse;
   trip: TripResponse;
+};
+
+type ComplianceResult = {
+  calendarItems: ComplianceCalendarItemResponse[];
+  documents: ComplianceDocumentResponse[];
+  insurancePolicies: InsurancePolicyResponse[];
+  profile: ComplianceProfileResponse | null;
+  score: ComplianceScoreResponse | null;
+};
+
+type ReserveWalletResult = {
+  financialHealth: FinancialHealthResponse | null;
+  wallets: ReserveWalletResponse[];
 };
 
 type FieldProps = {
@@ -128,6 +161,86 @@ const defaultFreightForm: FreightFormState = {
   truckId: 'truck_123',
   valePedagio: '214.30',
 };
+
+const defaultComplianceForm: ComplianceFormState = {
+  documentLast4: '1122',
+  documentTitle: 'CRLV 2026',
+  insuranceLast4: '6789',
+  insurer: 'Example Seguros',
+  rntrcNumber: '987654321',
+};
+
+const reserveBucketOrder: ReserveBucket[] = [
+  'FUEL_ARLA_TOLL_CASH_FLOW',
+  'MAINTENANCE',
+  'TIRES',
+  'INSURANCE',
+  'TAXES_AND_DOCUMENTS',
+  'TRUCK_REPLACEMENT',
+  'EMERGENCY',
+  'DRIVER_SALARY',
+  'PROFIT',
+];
+
+const reserveBucketCopy: Record<ReserveBucket, { label: string; tone: string; required: boolean }> = {
+  DRIVER_SALARY: {
+    label: 'Salario do motorista',
+    required: false,
+    tone: 'Parte planejada para uso pessoal',
+  },
+  EMERGENCY: {
+    label: 'Emergencia',
+    required: true,
+    tone: 'Parada, quebra ou dia sem frete',
+  },
+  FUEL_ARLA_TOLL_CASH_FLOW: {
+    label: 'Diesel, ARLA e pedagio',
+    required: true,
+    tone: 'Caixa de viagem, nao lucro',
+  },
+  INSURANCE: {
+    label: 'Seguro',
+    required: true,
+    tone: 'Apolices e responsabilidade',
+  },
+  MAINTENANCE: {
+    label: 'Manutencao',
+    required: true,
+    tone: 'Oleo, filtros, freio e suspensao',
+  },
+  PROFIT: {
+    label: 'Lucro',
+    required: false,
+    tone: 'Crescimento do negocio',
+  },
+  TAXES_AND_DOCUMENTS: {
+    label: 'Impostos e documentos',
+    required: true,
+    tone: 'DAS, IPVA, licenciamento e contador',
+  },
+  TIRES: {
+    label: 'Pneus',
+    required: true,
+    tone: 'Troca, recapagem e alinhamento',
+  },
+  TRUCK_REPLACEMENT: {
+    label: 'Troca do caminhao',
+    required: true,
+    tone: 'Entrada futura ou substituicao',
+  },
+};
+
+const starterReserveRules: ReserveRuleRequest[] = [
+  starterRule('FUEL_ARLA_TOLL_CASH_FLOW', '0.000000', '0.00'),
+  starterRule('MAINTENANCE', '0.080000', '5000.00'),
+  starterRule('TIRES', '0.040000', '3000.00'),
+  starterRule('INSURANCE', '0.020000', '2500.00'),
+  starterRule('TAXES_AND_DOCUMENTS', '0.030000', '1800.00'),
+  starterRule('TRUCK_REPLACEMENT', '0.050000', '12000.00'),
+  starterRule('EMERGENCY', '0.020000', '2500.00'),
+  starterRule('DRIVER_SALARY', '0.150000'),
+  starterRule('PROFIT', '0.050000'),
+];
 
 export function MobileApp() {
   const apiClient = useMemo(() => createCoreApiClient(getCoreApiBaseUrl()), []);
@@ -216,12 +329,259 @@ function MvpScreen({ activeTruckId, apiClient, onTruckReady, routeId }: MvpScree
             <OnboardingScreen apiClient={apiClient} onTruckReady={onTruckReady} />
           ) : routeId === 'freight' ? (
             <FreightCalculatorScreen apiClient={apiClient} activeTruckId={activeTruckId} />
+          ) : routeId === 'compliance' ? (
+            <ComplianceCenterScreen apiClient={apiClient} />
+          ) : routeId === 'reserves' ? (
+            <ReserveWalletScreen apiClient={apiClient} />
           ) : (
             <ReferenceScreen routeId={routeId} apiBaseUrl={apiClient.baseUrl} />
           )}
         </ScrollView>
       </View>
     </View>
+  );
+}
+
+function ComplianceCenterScreen({ apiClient }: { apiClient: CoreApiClient }) {
+  const [result, setResult] = useState<ComplianceResult | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSavingRntrc, setIsSavingRntrc] = useState(false);
+  const [isSavingInsurance, setIsSavingInsurance] = useState(false);
+  const [isSavingDocument, setIsSavingDocument] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [form, setForm] = useState(defaultComplianceForm);
+
+  const updateField = (field: keyof ComplianceFormState) => (value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const loadCompliance = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [profile, score, calendarItems, insurancePolicies, documents] = await Promise.all([
+        apiClient.getComplianceProfile(),
+        apiClient.getComplianceScore(),
+        apiClient.getComplianceCalendar(),
+        apiClient.getInsurancePolicies(),
+        apiClient.getDocuments(),
+      ]);
+      setResult({ calendarItems, documents, insurancePolicies, profile, score });
+    } catch (loadError) {
+      setResult({ calendarItems: [], documents: [], insurancePolicies: [], profile: null, score: null });
+      setError(friendlyErrorMessage(loadError, 'Nao foi possivel carregar o centro de conformidade agora.'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiClient]);
+
+  useEffect(() => {
+    void loadCompliance();
+  }, [loadCompliance]);
+
+  const saveRntrc = async () => {
+    setIsSavingRntrc(true);
+    setError(null);
+    setMessage(null);
+    if (!form.rntrcNumber.trim()) {
+      setError('Informe o RNTRC antes de salvar.');
+      return;
+    }
+    try {
+      await apiClient.updateRntrc({
+        ciotRequired: 'UNKNOWN',
+        latestCiotStatus: 'NOT_RECORDED',
+        rntrcCategory: 'TAC',
+        rntrcNumber: form.rntrcNumber.trim(),
+        rntrcStatus: 'ACTIVE',
+      });
+      setMessage('RNTRC salvo no Cofrete. Para alteracao oficial, use RNTRC Digital com gov.br.');
+      await loadCompliance();
+    } catch (saveError) {
+      setError(friendlyErrorMessage(saveError, 'Nao foi possivel salvar o RNTRC agora.'));
+    } finally {
+      setIsSavingRntrc(false);
+    }
+  };
+
+  const saveInsurance = async () => {
+    setIsSavingInsurance(true);
+    setError(null);
+    setMessage(null);
+    if (!form.insurer.trim() || !form.insuranceLast4.trim()) {
+      setError('Informe seguradora e final da apolice.');
+      return;
+    }
+    try {
+      await apiClient.createInsurancePolicy({
+        active: true,
+        annualPremium: '3600.00',
+        currency: 'BRL',
+        expiresOn: nextDate(30),
+        insurer: form.insurer.trim(),
+        linkedRntrc: true,
+        monthlyReserve: '300.00',
+        pgrRequired: true,
+        policyNumberLast4: form.insuranceLast4.trim().slice(-4),
+        policyType: 'RCTR_C',
+        startsOn: nextDate(-335),
+        verificationStatus: 'VERIFIED_BY_DRIVER',
+      });
+      setMessage('Seguro salvo como metadado. Confirme cobertura com seguradora, SUSEP ou profissional qualificado.');
+      await loadCompliance();
+    } catch (saveError) {
+      setError(friendlyErrorMessage(saveError, 'Nao foi possivel salvar o seguro agora.'));
+    } finally {
+      setIsSavingInsurance(false);
+    }
+  };
+
+  const saveDocument = async () => {
+    setIsSavingDocument(true);
+    setError(null);
+    setMessage(null);
+    if (!form.documentTitle.trim() || !form.documentLast4.trim()) {
+      setError('Informe titulo do documento e identificador final.');
+      return;
+    }
+    try {
+      await apiClient.createDocument({
+        active: true,
+        documentType: 'CRLV',
+        expiresOn: nextDate(45),
+        identifierLast4: form.documentLast4.trim().slice(-4),
+        issuedOn: nextDate(-320),
+        notes: 'Organizacao interna. Confirmar canal oficial antes de decisao sensivel.',
+        ownerType: 'DRIVER',
+        source: 'DRIVER_ENTERED',
+        title: form.documentTitle.trim(),
+      });
+      setMessage('Documento salvo para lembrete. Cofrete nao certifica regularidade oficial.');
+      await loadCompliance();
+    } catch (saveError) {
+      setError(friendlyErrorMessage(saveError, 'Nao foi possivel salvar o documento agora.'));
+    } finally {
+      setIsSavingDocument(false);
+    }
+  };
+
+  const profile = result?.profile ?? null;
+  const score = result?.score ?? null;
+  const alerts = profile?.alerts ?? [];
+  const calendarItems = result?.calendarItems ?? [];
+
+  return (
+    <>
+      <View style={styles.resultPanel}>
+        <View style={styles.resultHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Status consultivo</Text>
+            <Text style={styles.sectionNote}>Organizador interno. Nao atualiza ANTT, gov.br, SUSEP ou seguradora.</Text>
+          </View>
+          <View style={styles.statusPill}>
+            <Text style={styles.statusPillText}>{score ? complianceScoreLabel(score.score.status) : 'Sem dado'}</Text>
+          </View>
+        </View>
+        <View style={styles.metricGrid}>
+          <TextMetric label="RNTRC" value={profile?.rntrc.status ?? 'UNKNOWN'} tone="Confirmar em RNTRC Digital" />
+          <TextMetric label="Seguro" value={`${profile?.insurance.expiringSoon ?? 0} a revisar`} tone="Validar com seguradora/SUSEP" />
+          <TextMetric label="Documentos" value={`${profile?.documents.expired ?? 0} vencidos`} tone="Conferir DETRAN, SEFAZ ou canal oficial" />
+          <TextMetric label="Score" value={score ? `${score.score.value}/100` : 'Sem dado'} tone="Indicador consultivo" />
+        </View>
+        <Text style={styles.caveat}>
+          RNTRC Digital e gov.br sao os canais para atualizacao oficial. Cofrete guarda metadados e lembretes.
+        </Text>
+      </View>
+
+      {isLoading ? (
+        <View style={styles.healthRow}>
+          <ActivityIndicator color={colors.accent} />
+          <Text style={styles.sectionNote}>Carregando alertas e calendario.</Text>
+        </View>
+      ) : null}
+      <StatusMessage error={error} />
+      {message ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successTitle}>Registro salvo</Text>
+          <Text style={styles.successCopy}>{message}</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Alertas</Text>
+        {alerts.length === 0 ? (
+          <Text style={styles.sectionNote}>Sem alertas. Continue conferindo canais oficiais antes de rodar.</Text>
+        ) : (
+          alerts.map((alert) => (
+            <View key={alert.id} style={styles.actionRow}>
+              <View style={severityStyle(alert.severity)} />
+              <View style={styles.actionCopy}>
+                <Text style={styles.actionTitle}>{alert.message}</Text>
+                <Text style={styles.actionDetail}>{alert.advisoryText}</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </View>
+
+      <View style={styles.formSection}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Salvar metadados</Text>
+          <Text style={styles.sectionNote}>Use dados informados pelo motorista e confira o canal oficial antes de decisao sensivel.</Text>
+        </View>
+        <Field label="RNTRC" keyboardType="number-pad" value={form.rntrcNumber} onChangeText={updateField('rntrcNumber')} />
+        <View style={styles.inlineFields}>
+          <Field label="Seguradora" value={form.insurer} onChangeText={updateField('insurer')} />
+          <Field label="Final apolice" keyboardType="number-pad" value={form.insuranceLast4} onChangeText={updateField('insuranceLast4')} />
+        </View>
+        <View style={styles.inlineFields}>
+          <Field label="Documento" value={form.documentTitle} onChangeText={updateField('documentTitle')} />
+          <Field label="Final doc." keyboardType="number-pad" value={form.documentLast4} onChangeText={updateField('documentLast4')} />
+        </View>
+        <ActionButton label={isSavingRntrc ? 'Salvando RNTRC' : 'Salvar RNTRC TAC'} loading={isSavingRntrc} onPress={saveRntrc} />
+        <ActionButton label={isSavingInsurance ? 'Salvando seguro' : 'Salvar seguro RCTR-C'} loading={isSavingInsurance} onPress={saveInsurance} />
+        <ActionButton label={isSavingDocument ? 'Salvando documento' : 'Salvar CRLV'} loading={isSavingDocument} onPress={saveDocument} />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Calendario</Text>
+        {calendarItems.length === 0 ? (
+          <Text style={styles.sectionNote}>Nenhum vencimento salvo ainda.</Text>
+        ) : (
+          calendarItems.map((item) => (
+            <ComplianceListRow key={item.id} title={item.title} status={item.status} tone={item.advisoryText} />
+          ))
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Seguros e documentos</Text>
+        {result?.insurancePolicies.map((policy) => (
+          <ComplianceListRow key={policy.id} title={policy.insurer} status={policy.status} tone={policy.advisoryText} />
+        ))}
+        {result?.documents.map((document) => (
+          <ComplianceListRow key={document.id} title={document.title} status={document.status} tone={document.advisoryText} />
+        ))}
+        {(result?.insurancePolicies.length ?? 0) + (result?.documents.length ?? 0) === 0 ? (
+          <Text style={styles.sectionNote}>Use os botoes acima para salvar os primeiros metadados.</Text>
+        ) : null}
+      </View>
+
+      <EndpointPanel
+        apiBaseUrl={apiClient.baseUrl}
+        endpoints={[
+          'GET /api/compliance/profile',
+          'GET /api/compliance/score',
+          'GET /api/compliance/calendar',
+          'PUT /api/compliance/rntrc',
+          'POST /api/compliance/insurance-policies',
+          'GET /api/compliance/insurance-policies',
+          'GET /api/documents',
+          'POST /api/documents',
+        ]}
+      />
+    </>
   );
 }
 
@@ -259,6 +619,209 @@ function ReferenceScreen({ apiBaseUrl, routeId }: { apiBaseUrl: string; routeId:
 
       <EndpointPanel apiBaseUrl={apiBaseUrl} endpoints={activeContent.endpoints} />
     </>
+  );
+}
+
+function ReserveWalletScreen({ apiClient }: { apiClient: CoreApiClient }) {
+  const [result, setResult] = useState<ReserveWalletResult | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingRules, setIsCreatingRules] = useState(false);
+  const [isAllocating, setIsAllocating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const loadWallets = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [wallets, financialHealth] = await Promise.all([
+        apiClient.getReserveWallets(),
+        apiClient.getFinancialHealthScore(),
+      ]);
+      setResult({ financialHealth, wallets: sortWallets(wallets) });
+    } catch (loadError) {
+      setResult({ financialHealth: null, wallets: [] });
+      setError(friendlyErrorMessage(loadError, 'Nao foi possivel carregar a carteira de reservas agora.'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiClient]);
+
+  useEffect(() => {
+    void loadWallets();
+  }, [loadWallets]);
+
+  const createStarterRules = async () => {
+    setActionMessage(null);
+    setError(null);
+    setIsCreatingRules(true);
+    try {
+      await Promise.all(starterReserveRules.map((rule) => apiClient.createReserveRule(rule)));
+      setActionMessage('Regras starter registradas. Revise percentuais antes de usar em fretes reais.');
+      await loadWallets();
+    } catch (createError) {
+      setError(friendlyErrorMessage(createError, 'Nao foi possivel criar as regras de reserva agora.'));
+    } finally {
+      setIsCreatingRules(false);
+    }
+  };
+
+  const requestExampleAllocation = async () => {
+    setActionMessage(null);
+    setError(null);
+    setIsAllocating(true);
+    try {
+      const allocation = await apiClient.createReserveAllocation(buildReserveAllocationRequest());
+      setActionMessage(
+        allocation.status === 'REQUESTED'
+          ? 'Alocacao solicitada. Os saldos mudam quando o worker financeiro confirmar o evento.'
+          : 'Alocacao registrada na carteira virtual.'
+      );
+      await loadWallets();
+    } catch (allocationError) {
+      setError(friendlyErrorMessage(allocationError, 'Nao foi possivel solicitar a alocacao agora.'));
+    } finally {
+      setIsAllocating(false);
+    }
+  };
+
+  const wallets = result?.wallets ?? [];
+  const financialHealth = result?.financialHealth ?? null;
+
+  return (
+    <>
+      <View style={styles.safeWithdrawalPanel}>
+        <View>
+          <Text style={styles.metricLabel}>Saque pessoal seguro</Text>
+          <Text style={styles.safeWithdrawalValue}>
+            {financialHealth ? formatCurrency(financialHealth.safePersonalWithdrawalAvailable) : 'R$ 0,00'}
+          </Text>
+          <Text style={styles.metricTone}>
+            Somente o balde salario do motorista. Reservas obrigatorias continuam separadas.
+          </Text>
+        </View>
+        <View style={styles.statusPill}>
+          <Text style={styles.statusPillText}>
+            {financialHealth ? healthLabel(financialHealth.status) : 'Sem dado'}
+          </Text>
+        </View>
+      </View>
+
+      {isLoading ? (
+        <View style={styles.loadingPanel}>
+          <ActivityIndicator color={colors.accent} />
+          <Text style={styles.sectionNote}>Carregando saldos e historico virtual.</Text>
+        </View>
+      ) : null}
+
+      <StatusMessage error={error} />
+      {actionMessage ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successTitle}>Carteira atualizada</Text>
+          <Text style={styles.successCopy}>{actionMessage}</Text>
+        </View>
+      ) : null}
+
+      {!isLoading && wallets.length === 0 ? <ReserveEmptyState /> : null}
+
+      {wallets.length > 0 ? (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Baldes de reserva</Text>
+            <Text style={styles.sectionNote}>Obrigacoes e saque pessoal ficam em linhas diferentes.</Text>
+          </View>
+          {wallets.map((wallet) => (
+            <ReserveBucketRow key={wallet.bucket} wallet={wallet} />
+          ))}
+        </View>
+      ) : null}
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Historico recente</Text>
+          <Text style={styles.sectionNote}>Movimentos sao virtuais. Nao representam transferencia bancaria.</Text>
+        </View>
+        {wallets.flatMap((wallet) => wallet.transactions.slice(0, 3)).length === 0 ? (
+          <Text style={styles.emptyCopy}>Nenhum movimento confirmado pelo worker financeiro ainda.</Text>
+        ) : (
+          wallets.flatMap((wallet) =>
+            wallet.transactions.slice(0, 3).map((transaction) => (
+              <View key={transaction.id} style={styles.transactionRow}>
+                <Text style={styles.actionTitle}>{reserveBucketCopy[transaction.bucket].label}</Text>
+                <Text style={styles.transactionAmount}>{formatCurrency(transaction.amount)}</Text>
+                <Text style={styles.metricTone}>{reserveTransactionNote(transaction.note)}</Text>
+              </View>
+            ))
+          )
+        )}
+      </View>
+
+      <View style={styles.inlineFields}>
+        <ActionButton
+          label={isCreatingRules ? 'Criando regras' : 'Criar regras starter'}
+          loading={isCreatingRules}
+          onPress={createStarterRules}
+        />
+        <ActionButton
+          label={isAllocating ? 'Solicitando' : 'Solicitar alocacao virtual'}
+          loading={isAllocating}
+          onPress={requestExampleAllocation}
+        />
+      </View>
+
+      <EndpointPanel
+        apiBaseUrl={apiClient.baseUrl}
+        endpoints={[
+          'GET /api/reserve-wallets',
+          'POST /api/reserve-rules',
+          'POST /api/reserve-allocations',
+          'GET /api/financial-health-score',
+        ]}
+      />
+    </>
+  );
+}
+
+function ReserveEmptyState() {
+  return (
+    <View style={styles.formSection}>
+      <Text style={styles.sectionTitle}>Nenhum balde criado</Text>
+      <Text style={styles.emptyCopy}>
+        Crie regras starter para ver os nove baldes do blueprint. Sem saldo confirmado, o saque pessoal seguro fica zerado.
+      </Text>
+      <View style={styles.bucketChecklist}>
+        {reserveBucketOrder.map((bucket) => (
+          <Text key={bucket} style={styles.bucketChecklistItem}>
+            {reserveBucketCopy[bucket].label}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ReserveBucketRow({ wallet }: { wallet: ReserveWalletResponse }) {
+  const copy = reserveBucketCopy[wallet.bucket];
+  const coverage = reserveCoverage(wallet);
+
+  return (
+    <View style={styles.bucketRow}>
+      <View style={styles.bucketHeader}>
+        <View style={styles.actionCopy}>
+          <Text style={styles.actionTitle}>{copy.label}</Text>
+          <Text style={styles.metricTone}>{copy.tone}</Text>
+        </View>
+        <Text style={copy.required ? styles.requiredTag : styles.safeTag}>
+          {copy.required ? 'Reserva' : 'Disponivel planejado'}
+        </Text>
+      </View>
+      <View style={styles.bucketNumbers}>
+        <Text style={styles.bucketAmount}>{formatCurrency(wallet.currentBalance)}</Text>
+        <Text style={styles.metricTone}>
+          {wallet.targetBalance ? `Alvo ${formatCurrency(wallet.targetBalance)} (${coverage})` : 'Sem alvo definido'}
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -700,6 +1263,118 @@ function MoneyMetric({ label, tone, value }: { label: string; tone: string; valu
   );
 }
 
+function TextMetric({ label, tone, value }: { label: string; tone: string; value: string }) {
+  return (
+    <View style={styles.metricCard}>
+      <Text style={styles.metricLabel}>{label}</Text>
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricTone}>{tone}</Text>
+    </View>
+  );
+}
+
+function ComplianceListRow({
+  status,
+  title,
+  tone,
+}: {
+  status: ComplianceItemStatus;
+  title: string;
+  tone: string;
+}) {
+  return (
+    <View style={styles.actionRow}>
+      <View style={styles.actionCopy}>
+        <Text style={styles.actionTitle}>{title}</Text>
+        <Text style={styles.actionDetail}>{tone}</Text>
+      </View>
+      <View style={styles.statusPill}>
+        <Text style={styles.statusPillText}>{complianceItemLabel(status)}</Text>
+      </View>
+    </View>
+  );
+}
+
+function severityStyle(severity: ComplianceSeverity) {
+  if (severity === 'CRITICAL') {
+    return [styles.actionMarker, styles.actionMarkerCritical];
+  }
+  if (severity === 'WARNING') {
+    return [styles.actionMarker, styles.actionMarkerWarning];
+  }
+  return styles.actionMarker;
+}
+
+function complianceItemLabel(status: ComplianceItemStatus) {
+  switch (status) {
+    case 'CURRENT':
+      return 'Em dia';
+    case 'EXPIRING_SOON':
+      return 'Vence logo';
+    case 'EXPIRED':
+      return 'Vencido';
+    case 'UNKNOWN':
+      return 'Sem dado';
+  }
+}
+
+function complianceScoreLabel(status: ComplianceScoreResponse['score']['status']) {
+  switch (status) {
+    case 'ATTENTION':
+      return 'Atencao';
+    case 'GOOD':
+      return 'Boa';
+    case 'RISK':
+      return 'Risco';
+  }
+}
+
+function nextDate(daysFromToday: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromToday);
+  return date.toISOString().slice(0, 10);
+}
+
+function starterRule(bucket: ReserveBucket, rate: string, targetBalance?: string): ReserveRuleRequest {
+  return {
+    active: true,
+    bucket,
+    currency: 'BRL',
+    policy: 'PERCENT_OF_AMOUNT',
+    rate,
+    sourceAssumption: 'Regra starter MVP revisavel pelo motorista',
+    targetBalance,
+  };
+}
+
+function sortWallets(wallets: ReserveWalletResponse[]) {
+  return [...wallets].sort(
+    (left, right) => reserveBucketOrder.indexOf(left.bucket) - reserveBucketOrder.indexOf(right.bucket)
+  );
+}
+
+function reserveCoverage(wallet: ReserveWalletResponse) {
+  if (!wallet.targetBalance || decimalValue(wallet.targetBalance) <= 0) {
+    return 'sem alvo';
+  }
+
+  return percentFormatter.format(decimalValue(wallet.currentBalance) / decimalValue(wallet.targetBalance));
+}
+
+function buildReserveAllocationRequest(): ReserveAllocationRequest {
+  const timestamp = Date.now();
+  return {
+    allocationRevision: 1,
+    allocationSubjectId: `mobile_manual_${timestamp}`,
+    currency: 'BRL',
+    grossAmount: '8000.00',
+    idempotencyKey: `mobile-reserve-${timestamp}`,
+    passThroughAmount: '600.00',
+    reason: 'FREIGHT_PAYMENT_RECEIVED',
+    requestedAt: new Date(timestamp).toISOString(),
+  };
+}
+
 function buildDriverRequest(form: OnboardingFormState): DriverProfileRequest {
   return {
     active: true,
@@ -810,12 +1485,16 @@ function recommendationLabel(value: ProfitabilityEstimateResponse['recommendatio
   }
 }
 
-function healthLabel(value: ProfitabilityEstimateResponse['financialHealthStatus']) {
+function healthLabel(value: ProfitabilityEstimateResponse['financialHealthStatus'] | FinancialHealthResponse['status']) {
   switch (value) {
+    case 'ATTENTION':
+      return 'Atencao';
     case 'GOOD':
       return 'Boa';
     case 'RISK':
       return 'Risco';
+    case 'UNKNOWN':
+      return 'Sem dado';
     case 'WARNING':
       return 'Atencao';
   }
@@ -831,6 +1510,14 @@ function driverFriendlyCaveat(caveat: string) {
   }
 
   return caveat;
+}
+
+function reserveTransactionNote(note: string) {
+  if (note.includes('Virtual reserve ledger movement')) {
+    return 'Movimento virtual de reserva. Nao e transferencia bancaria real.';
+  }
+
+  return note;
 }
 
 function friendlyErrorMessage(error: unknown, fallback: string) {
@@ -901,6 +1588,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
     width: 10,
   },
+  actionMarkerCritical: {
+    backgroundColor: colors.dangerText,
+  },
+  actionMarkerWarning: {
+    backgroundColor: colors.infoText,
+  },
   actionRow: {
     borderTopColor: colors.border,
     borderTopWidth: 1,
@@ -940,6 +1633,42 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '800',
   },
+  bucketAmount: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  bucketChecklist: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  bucketChecklistItem: {
+    backgroundColor: colors.field,
+    borderColor: colors.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: '700',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  bucketHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  bucketNumbers: {
+    gap: 2,
+  },
+  bucketRow: {
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    gap: 10,
+    paddingVertical: 14,
+  },
   caveat: {
     color: colors.muted,
     fontSize: 12,
@@ -955,6 +1684,11 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     fontSize: 12,
     lineHeight: 19,
+  },
+  emptyCopy: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 18,
   },
   errorPanel: {
     backgroundColor: colors.dangerBg,
@@ -1047,6 +1781,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
+  loadingPanel: {
+    alignItems: 'center',
+    backgroundColor: colors.panel,
+    borderColor: colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 14,
+  },
   kicker: {
     color: colors.accent,
     fontSize: 12,
@@ -1138,6 +1882,33 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     flex: 1,
   },
+  safeTag: {
+    backgroundColor: colors.successBg,
+    borderRadius: 999,
+    color: colors.successText,
+    fontSize: 11,
+    fontWeight: '800',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    textTransform: 'uppercase',
+  },
+  safeWithdrawalPanel: {
+    alignItems: 'flex-start',
+    backgroundColor: colors.field,
+    borderColor: colors.accentBorder,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 14,
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  safeWithdrawalValue: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 30,
+  },
   section: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
@@ -1169,6 +1940,16 @@ const styles = StyleSheet.create({
     color: colors.infoText,
     fontSize: 12,
     fontWeight: '800',
+  },
+  requiredTag: {
+    backgroundColor: colors.infoBg,
+    borderRadius: 999,
+    color: colors.infoText,
+    fontSize: 11,
+    fontWeight: '800',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    textTransform: 'uppercase',
   },
   successCopy: {
     color: colors.successText,
@@ -1221,5 +2002,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     lineHeight: 30,
+  },
+  transactionAmount: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  transactionRow: {
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    gap: 4,
+    paddingVertical: 12,
   },
 });

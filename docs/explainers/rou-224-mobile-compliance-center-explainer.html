@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>ROU-224 Mobile Compliance Center Explainer</title>
+  </head>
+  <body>
+    <main>
+      <p><strong>Manual derived explainer.</strong> Canonical behavior remains in mobile code, tests, API contracts, compliance docs, and product markdown.</p>
+      <h1>ROU-224 - COF-020 Build mobile compliance center screens</h1>
+      <section>
+        <h2>What changed</h2>
+        <p>The mobile Riscos tab now loads and writes compliance metadata through Core API instead of showing static reference content.</p>
+        <ul>
+          <li>Added typed mobile contracts for compliance profile, score, calendar, alerts, RNTRC, insurance policies, and documents.</li>
+          <li>Added API client methods for the documented compliance and document endpoints.</li>
+          <li>Added a compliance center screen with profile metrics, advisory alerts, calendar rows, insurance/document lists, editable metadata fields, and write actions.</li>
+          <li>Added tests for advisory wording, alert/list rendering, metadata saves, validation-style errors, and raw error suppression.</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Why it changed</h2>
+        <p>Drivers need one mobile place to organize RNTRC, insurance, and document metadata before accepting or running freight. The screen makes official-channel boundaries explicit and does not claim Cofrete updates ANTT, gov.br, SUSEP, insurer, DETRAN, SEFAZ, Receita Federal, or other official records.</p>
+      </section>
+      <section>
+        <h2>Affected areas</h2>
+        <ul>
+          <li><code>mobile-app/src/MobileApp.tsx</code></li>
+          <li><code>mobile-app/src/api/client.ts</code></li>
+          <li><code>mobile-app/src/api/contracts.ts</code></li>
+          <li><code>mobile-app/src/__tests__/MobileApp.test.tsx</code></li>
+        </ul>
+      </section>
+      <section>
+        <h2>Validation</h2>
+        <ul>
+          <li><code>cd mobile-app &amp;&amp; npm ci</code></li>
+          <li><code>cd mobile-app &amp;&amp; npm run typecheck &amp;&amp; npm run lint &amp;&amp; npm run test:ci</code></li>
+        </ul>
+        <p>Impeccable review triggered because mobile UI changed. Two passes ran manually against <code>polish</code> and <code>adapt</code> references because the wrapper command was unavailable. Fix applied: removed implementation-oriented copy from the user-facing screen.</p>
+        <p><code>grill-with-docs</code> review ran for two loops. Fix applied: changed fixed example save actions into editable metadata fields before calling compliance write APIs.</p>
+      </section>
+      <section>
+        <h2>Unblocks</h2>
+        <p>ROU-224 unblocks compliance status inputs for ROU-225 financial health dashboard work.</p>
+      </section>
+    </main>
+  </body>
+</html>
