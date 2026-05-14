@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -16,8 +16,13 @@ import {
 import { createCoreApiClient, type CoreApiClient } from './api/client';
 import {
   type DriverProfileRequest,
+  type FinancialHealthResponse,
   type ProfitabilityEstimateRequest,
   type ProfitabilityEstimateResponse,
+  type ReserveAllocationRequest,
+  type ReserveBucket,
+  type ReserveRuleRequest,
+  type ReserveWalletResponse,
   type RoutePoint,
   type TripRequest,
   type TripResponse,
@@ -74,6 +79,11 @@ type FreightResult = {
   trip: TripResponse;
 };
 
+type ReserveWalletResult = {
+  financialHealth: FinancialHealthResponse | null;
+  wallets: ReserveWalletResponse[];
+};
+
 type FieldProps = {
   label: string;
   keyboardType?: KeyboardTypeOptions;
@@ -128,6 +138,78 @@ const defaultFreightForm: FreightFormState = {
   truckId: 'truck_123',
   valePedagio: '214.30',
 };
+
+const reserveBucketOrder: ReserveBucket[] = [
+  'FUEL_ARLA_TOLL_CASH_FLOW',
+  'MAINTENANCE',
+  'TIRES',
+  'INSURANCE',
+  'TAXES_AND_DOCUMENTS',
+  'TRUCK_REPLACEMENT',
+  'EMERGENCY',
+  'DRIVER_SALARY',
+  'PROFIT',
+];
+
+const reserveBucketCopy: Record<ReserveBucket, { label: string; tone: string; required: boolean }> = {
+  DRIVER_SALARY: {
+    label: 'Salario do motorista',
+    required: false,
+    tone: 'Parte planejada para uso pessoal',
+  },
+  EMERGENCY: {
+    label: 'Emergencia',
+    required: true,
+    tone: 'Parada, quebra ou dia sem frete',
+  },
+  FUEL_ARLA_TOLL_CASH_FLOW: {
+    label: 'Diesel, ARLA e pedagio',
+    required: true,
+    tone: 'Caixa de viagem, nao lucro',
+  },
+  INSURANCE: {
+    label: 'Seguro',
+    required: true,
+    tone: 'Apolices e responsabilidade',
+  },
+  MAINTENANCE: {
+    label: 'Manutencao',
+    required: true,
+    tone: 'Oleo, filtros, freio e suspensao',
+  },
+  PROFIT: {
+    label: 'Lucro',
+    required: false,
+    tone: 'Crescimento do negocio',
+  },
+  TAXES_AND_DOCUMENTS: {
+    label: 'Impostos e documentos',
+    required: true,
+    tone: 'DAS, IPVA, licenciamento e contador',
+  },
+  TIRES: {
+    label: 'Pneus',
+    required: true,
+    tone: 'Troca, recapagem e alinhamento',
+  },
+  TRUCK_REPLACEMENT: {
+    label: 'Troca do caminhao',
+    required: true,
+    tone: 'Entrada futura ou substituicao',
+  },
+};
+
+const starterReserveRules: ReserveRuleRequest[] = [
+  starterRule('FUEL_ARLA_TOLL_CASH_FLOW', '0.000000', '0.00'),
+  starterRule('MAINTENANCE', '0.080000', '5000.00'),
+  starterRule('TIRES', '0.040000', '3000.00'),
+  starterRule('INSURANCE', '0.020000', '2500.00'),
+  starterRule('TAXES_AND_DOCUMENTS', '0.030000', '1800.00'),
+  starterRule('TRUCK_REPLACEMENT', '0.050000', '12000.00'),
+  starterRule('EMERGENCY', '0.020000', '2500.00'),
+  starterRule('DRIVER_SALARY', '0.150000'),
+  starterRule('PROFIT', '0.050000'),
+];
 
 export function MobileApp() {
   const apiClient = useMemo(() => createCoreApiClient(getCoreApiBaseUrl()), []);
@@ -216,6 +298,8 @@ function MvpScreen({ activeTruckId, apiClient, onTruckReady, routeId }: MvpScree
             <OnboardingScreen apiClient={apiClient} onTruckReady={onTruckReady} />
           ) : routeId === 'freight' ? (
             <FreightCalculatorScreen apiClient={apiClient} activeTruckId={activeTruckId} />
+          ) : routeId === 'reserves' ? (
+            <ReserveWalletScreen apiClient={apiClient} />
           ) : (
             <ReferenceScreen routeId={routeId} apiBaseUrl={apiClient.baseUrl} />
           )}
@@ -259,6 +343,209 @@ function ReferenceScreen({ apiBaseUrl, routeId }: { apiBaseUrl: string; routeId:
 
       <EndpointPanel apiBaseUrl={apiBaseUrl} endpoints={activeContent.endpoints} />
     </>
+  );
+}
+
+function ReserveWalletScreen({ apiClient }: { apiClient: CoreApiClient }) {
+  const [result, setResult] = useState<ReserveWalletResult | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingRules, setIsCreatingRules] = useState(false);
+  const [isAllocating, setIsAllocating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const loadWallets = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [wallets, financialHealth] = await Promise.all([
+        apiClient.getReserveWallets(),
+        apiClient.getFinancialHealthScore(),
+      ]);
+      setResult({ financialHealth, wallets: sortWallets(wallets) });
+    } catch (loadError) {
+      setResult({ financialHealth: null, wallets: [] });
+      setError(friendlyErrorMessage(loadError, 'Nao foi possivel carregar a carteira de reservas agora.'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiClient]);
+
+  useEffect(() => {
+    void loadWallets();
+  }, [loadWallets]);
+
+  const createStarterRules = async () => {
+    setActionMessage(null);
+    setError(null);
+    setIsCreatingRules(true);
+    try {
+      await Promise.all(starterReserveRules.map((rule) => apiClient.createReserveRule(rule)));
+      setActionMessage('Regras starter registradas. Revise percentuais antes de usar em fretes reais.');
+      await loadWallets();
+    } catch (createError) {
+      setError(friendlyErrorMessage(createError, 'Nao foi possivel criar as regras de reserva agora.'));
+    } finally {
+      setIsCreatingRules(false);
+    }
+  };
+
+  const requestExampleAllocation = async () => {
+    setActionMessage(null);
+    setError(null);
+    setIsAllocating(true);
+    try {
+      const allocation = await apiClient.createReserveAllocation(buildReserveAllocationRequest());
+      setActionMessage(
+        allocation.status === 'REQUESTED'
+          ? 'Alocacao solicitada. Os saldos mudam quando o worker financeiro confirmar o evento.'
+          : 'Alocacao registrada na carteira virtual.'
+      );
+      await loadWallets();
+    } catch (allocationError) {
+      setError(friendlyErrorMessage(allocationError, 'Nao foi possivel solicitar a alocacao agora.'));
+    } finally {
+      setIsAllocating(false);
+    }
+  };
+
+  const wallets = result?.wallets ?? [];
+  const financialHealth = result?.financialHealth ?? null;
+
+  return (
+    <>
+      <View style={styles.safeWithdrawalPanel}>
+        <View>
+          <Text style={styles.metricLabel}>Saque pessoal seguro</Text>
+          <Text style={styles.safeWithdrawalValue}>
+            {financialHealth ? formatCurrency(financialHealth.safePersonalWithdrawalAvailable) : 'R$ 0,00'}
+          </Text>
+          <Text style={styles.metricTone}>
+            Somente o balde salario do motorista. Reservas obrigatorias continuam separadas.
+          </Text>
+        </View>
+        <View style={styles.statusPill}>
+          <Text style={styles.statusPillText}>
+            {financialHealth ? healthLabel(financialHealth.status) : 'Sem dado'}
+          </Text>
+        </View>
+      </View>
+
+      {isLoading ? (
+        <View style={styles.loadingPanel}>
+          <ActivityIndicator color={colors.accent} />
+          <Text style={styles.sectionNote}>Carregando saldos e historico virtual.</Text>
+        </View>
+      ) : null}
+
+      <StatusMessage error={error} />
+      {actionMessage ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successTitle}>Carteira atualizada</Text>
+          <Text style={styles.successCopy}>{actionMessage}</Text>
+        </View>
+      ) : null}
+
+      {!isLoading && wallets.length === 0 ? <ReserveEmptyState /> : null}
+
+      {wallets.length > 0 ? (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Baldes de reserva</Text>
+            <Text style={styles.sectionNote}>Obrigacoes e saque pessoal ficam em linhas diferentes.</Text>
+          </View>
+          {wallets.map((wallet) => (
+            <ReserveBucketRow key={wallet.bucket} wallet={wallet} />
+          ))}
+        </View>
+      ) : null}
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Historico recente</Text>
+          <Text style={styles.sectionNote}>Movimentos sao virtuais. Nao representam transferencia bancaria.</Text>
+        </View>
+        {wallets.flatMap((wallet) => wallet.transactions.slice(0, 3)).length === 0 ? (
+          <Text style={styles.emptyCopy}>Nenhum movimento confirmado pelo worker financeiro ainda.</Text>
+        ) : (
+          wallets.flatMap((wallet) =>
+            wallet.transactions.slice(0, 3).map((transaction) => (
+              <View key={transaction.id} style={styles.transactionRow}>
+                <Text style={styles.actionTitle}>{reserveBucketCopy[transaction.bucket].label}</Text>
+                <Text style={styles.transactionAmount}>{formatCurrency(transaction.amount)}</Text>
+                <Text style={styles.metricTone}>{reserveTransactionNote(transaction.note)}</Text>
+              </View>
+            ))
+          )
+        )}
+      </View>
+
+      <View style={styles.inlineFields}>
+        <ActionButton
+          label={isCreatingRules ? 'Criando regras' : 'Criar regras starter'}
+          loading={isCreatingRules}
+          onPress={createStarterRules}
+        />
+        <ActionButton
+          label={isAllocating ? 'Solicitando' : 'Solicitar alocacao virtual'}
+          loading={isAllocating}
+          onPress={requestExampleAllocation}
+        />
+      </View>
+
+      <EndpointPanel
+        apiBaseUrl={apiClient.baseUrl}
+        endpoints={[
+          'GET /api/reserve-wallets',
+          'POST /api/reserve-rules',
+          'POST /api/reserve-allocations',
+          'GET /api/financial-health-score',
+        ]}
+      />
+    </>
+  );
+}
+
+function ReserveEmptyState() {
+  return (
+    <View style={styles.formSection}>
+      <Text style={styles.sectionTitle}>Nenhum balde criado</Text>
+      <Text style={styles.emptyCopy}>
+        Crie regras starter para ver os nove baldes do blueprint. Sem saldo confirmado, o saque pessoal seguro fica zerado.
+      </Text>
+      <View style={styles.bucketChecklist}>
+        {reserveBucketOrder.map((bucket) => (
+          <Text key={bucket} style={styles.bucketChecklistItem}>
+            {reserveBucketCopy[bucket].label}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ReserveBucketRow({ wallet }: { wallet: ReserveWalletResponse }) {
+  const copy = reserveBucketCopy[wallet.bucket];
+  const coverage = reserveCoverage(wallet);
+
+  return (
+    <View style={styles.bucketRow}>
+      <View style={styles.bucketHeader}>
+        <View style={styles.actionCopy}>
+          <Text style={styles.actionTitle}>{copy.label}</Text>
+          <Text style={styles.metricTone}>{copy.tone}</Text>
+        </View>
+        <Text style={copy.required ? styles.requiredTag : styles.safeTag}>
+          {copy.required ? 'Reserva' : 'Disponivel planejado'}
+        </Text>
+      </View>
+      <View style={styles.bucketNumbers}>
+        <Text style={styles.bucketAmount}>{formatCurrency(wallet.currentBalance)}</Text>
+        <Text style={styles.metricTone}>
+          {wallet.targetBalance ? `Alvo ${formatCurrency(wallet.targetBalance)} (${coverage})` : 'Sem alvo definido'}
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -700,6 +987,46 @@ function MoneyMetric({ label, tone, value }: { label: string; tone: string; valu
   );
 }
 
+function starterRule(bucket: ReserveBucket, rate: string, targetBalance?: string): ReserveRuleRequest {
+  return {
+    active: true,
+    bucket,
+    currency: 'BRL',
+    policy: 'PERCENT_OF_AMOUNT',
+    rate,
+    sourceAssumption: 'Regra starter MVP revisavel pelo motorista',
+    targetBalance,
+  };
+}
+
+function sortWallets(wallets: ReserveWalletResponse[]) {
+  return [...wallets].sort(
+    (left, right) => reserveBucketOrder.indexOf(left.bucket) - reserveBucketOrder.indexOf(right.bucket)
+  );
+}
+
+function reserveCoverage(wallet: ReserveWalletResponse) {
+  if (!wallet.targetBalance || decimalValue(wallet.targetBalance) <= 0) {
+    return 'sem alvo';
+  }
+
+  return percentFormatter.format(decimalValue(wallet.currentBalance) / decimalValue(wallet.targetBalance));
+}
+
+function buildReserveAllocationRequest(): ReserveAllocationRequest {
+  const timestamp = Date.now();
+  return {
+    allocationRevision: 1,
+    allocationSubjectId: `mobile_manual_${timestamp}`,
+    currency: 'BRL',
+    grossAmount: '8000.00',
+    idempotencyKey: `mobile-reserve-${timestamp}`,
+    passThroughAmount: '600.00',
+    reason: 'FREIGHT_PAYMENT_RECEIVED',
+    requestedAt: new Date(timestamp).toISOString(),
+  };
+}
+
 function buildDriverRequest(form: OnboardingFormState): DriverProfileRequest {
   return {
     active: true,
@@ -810,12 +1137,16 @@ function recommendationLabel(value: ProfitabilityEstimateResponse['recommendatio
   }
 }
 
-function healthLabel(value: ProfitabilityEstimateResponse['financialHealthStatus']) {
+function healthLabel(value: ProfitabilityEstimateResponse['financialHealthStatus'] | FinancialHealthResponse['status']) {
   switch (value) {
+    case 'ATTENTION':
+      return 'Atencao';
     case 'GOOD':
       return 'Boa';
     case 'RISK':
       return 'Risco';
+    case 'UNKNOWN':
+      return 'Sem dado';
     case 'WARNING':
       return 'Atencao';
   }
@@ -831,6 +1162,14 @@ function driverFriendlyCaveat(caveat: string) {
   }
 
   return caveat;
+}
+
+function reserveTransactionNote(note: string) {
+  if (note.includes('Virtual reserve ledger movement')) {
+    return 'Movimento virtual de reserva. Nao e transferencia bancaria real.';
+  }
+
+  return note;
 }
 
 function friendlyErrorMessage(error: unknown, fallback: string) {
@@ -940,6 +1279,42 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '800',
   },
+  bucketAmount: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  bucketChecklist: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  bucketChecklistItem: {
+    backgroundColor: colors.field,
+    borderColor: colors.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: '700',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  bucketHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  bucketNumbers: {
+    gap: 2,
+  },
+  bucketRow: {
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    gap: 10,
+    paddingVertical: 14,
+  },
   caveat: {
     color: colors.muted,
     fontSize: 12,
@@ -955,6 +1330,11 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     fontSize: 12,
     lineHeight: 19,
+  },
+  emptyCopy: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 18,
   },
   errorPanel: {
     backgroundColor: colors.dangerBg,
@@ -1047,6 +1427,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
+  loadingPanel: {
+    alignItems: 'center',
+    backgroundColor: colors.panel,
+    borderColor: colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 14,
+  },
   kicker: {
     color: colors.accent,
     fontSize: 12,
@@ -1138,6 +1528,33 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     flex: 1,
   },
+  safeTag: {
+    backgroundColor: colors.successBg,
+    borderRadius: 999,
+    color: colors.successText,
+    fontSize: 11,
+    fontWeight: '800',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    textTransform: 'uppercase',
+  },
+  safeWithdrawalPanel: {
+    alignItems: 'flex-start',
+    backgroundColor: colors.field,
+    borderColor: colors.accentBorder,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 14,
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  safeWithdrawalValue: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 30,
+  },
   section: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
@@ -1169,6 +1586,16 @@ const styles = StyleSheet.create({
     color: colors.infoText,
     fontSize: 12,
     fontWeight: '800',
+  },
+  requiredTag: {
+    backgroundColor: colors.infoBg,
+    borderRadius: 999,
+    color: colors.infoText,
+    fontSize: 11,
+    fontWeight: '800',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    textTransform: 'uppercase',
   },
   successCopy: {
     color: colors.successText,
@@ -1221,5 +1648,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     lineHeight: 30,
+  },
+  transactionAmount: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  transactionRow: {
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    gap: 4,
+    paddingVertical: 12,
   },
 });

@@ -1,9 +1,14 @@
 import {
   type DriverProfileRequest,
   type DriverProfileResponse,
+  type FinancialHealthResponse,
   type ProfitabilityEstimateRequest,
   type ProfitabilityEstimateResponse,
-  type ReserveWalletSummary,
+  type ReserveAllocationRequest,
+  type ReserveAllocationResponse,
+  type ReserveRuleRequest,
+  type ReserveRuleResponse,
+  type ReserveWalletResponse,
   type TripRequest,
   type TripResponse,
   type TruckProfileRequest,
@@ -19,9 +24,12 @@ type RequestOptions = {
 export type CoreApiClient = {
   baseUrl: string;
   createDriverProfile: (draft: DriverProfileRequest) => Promise<DriverProfileResponse>;
+  createReserveAllocation: (draft: ReserveAllocationRequest) => Promise<ReserveAllocationResponse>;
+  createReserveRule: (draft: ReserveRuleRequest) => Promise<ReserveRuleResponse>;
   createTrip: (draft: TripRequest) => Promise<TripResponse>;
   createTruckProfile: (draft: TruckProfileRequest) => Promise<TruckProfileResponse>;
-  getReserveWallets: () => Promise<ReserveWalletSummary>;
+  getFinancialHealthScore: () => Promise<FinancialHealthResponse>;
+  getReserveWallets: () => Promise<ReserveWalletResponse[]>;
   getTrip: (tripId: string) => Promise<TripResponse>;
   requestProfitabilityEstimate: (
     tripId: string,
@@ -57,6 +65,18 @@ export function createCoreApiClient(baseUrl: string): CoreApiClient {
         method: 'POST',
         path: '/api/drivers',
       }).then((envelope) => envelope.driver),
+    createReserveAllocation: (draft) =>
+      request<{ reserveAllocation: ReserveAllocationResponse }>({
+        body: draft,
+        method: 'POST',
+        path: '/api/reserve-allocations',
+      }).then((envelope) => envelope.reserveAllocation),
+    createReserveRule: (draft) =>
+      request<{ reserveRule: ReserveRuleResponse }>({
+        body: draft,
+        method: 'POST',
+        path: '/api/reserve-rules',
+      }).then((envelope) => envelope.reserveRule),
     createTrip: (draft) =>
       request<{ trip: TripResponse }>({
         body: draft,
@@ -69,11 +89,16 @@ export function createCoreApiClient(baseUrl: string): CoreApiClient {
         method: 'POST',
         path: '/api/trucks',
       }).then((envelope) => envelope.truck),
+    getFinancialHealthScore: () =>
+      request<{ financialHealthScore: FinancialHealthResponse }>({
+        method: 'GET',
+        path: '/api/financial-health-score',
+      }).then((envelope) => envelope.financialHealthScore),
     getReserveWallets: () =>
-      request<ReserveWalletSummary>({
+      request<{ reserveWallets: ReserveWalletResponse[] }>({
         method: 'GET',
         path: '/api/reserve-wallets',
-      }),
+      }).then((envelope) => envelope.reserveWallets),
     getTrip: (tripId) =>
       request<{ trip: TripResponse }>({
         method: 'GET',
