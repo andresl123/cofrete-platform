@@ -1,6 +1,7 @@
 package com.cofrete.coreapi.profile;
 
 import com.cofrete.coreapi.auth.AppUser;
+import java.math.BigDecimal;
 import java.time.Year;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -11,11 +12,18 @@ class ProfileService {
 
     private final DriverRepository drivers;
     private final TruckRepository trucks;
+    private final TruckConsumptionProfileRepository consumptionProfiles;
     private final TaxProfileRepository taxProfiles;
 
-    ProfileService(DriverRepository drivers, TruckRepository trucks, TaxProfileRepository taxProfiles) {
+    ProfileService(
+        DriverRepository drivers,
+        TruckRepository trucks,
+        TruckConsumptionProfileRepository consumptionProfiles,
+        TaxProfileRepository taxProfiles
+    ) {
         this.drivers = drivers;
         this.trucks = trucks;
+        this.consumptionProfiles = consumptionProfiles;
         this.taxProfiles = taxProfiles;
     }
 
@@ -79,6 +87,14 @@ class ProfileService {
         return TruckResponse.from(truck);
     }
 
+    @Transactional(readOnly = true)
+    TruckConsumptionProfileResponse consumptionProfile(AppUser user, String truckId) {
+        var truck = requireOwnedTruck(user, truckId);
+        return consumptionProfiles.findById(truck.getId())
+            .map(TruckConsumptionProfileResponse::from)
+            .orElseGet(() -> TruckConsumptionProfileResponse.defaultFor(truck));
+    }
+
     @Transactional
     TaxProfileResponse createOrReplaceTaxProfile(AppUser user, TaxProfileRequest request) {
         var driver = requireDriver(user);
@@ -110,5 +126,21 @@ class ProfileService {
 
     int currentPlanningYear() {
         return Year.now().getValue();
+    }
+
+    static BigDecimal defaultLoadedConsumption(Truck truck) {
+        return switch (truck.getFuelType()) {
+            case DIESEL_S10, DIESEL_S500 -> new BigDecimal("2.3500");
+            case BIODIESEL -> new BigDecimal("2.2000");
+            case OTHER -> new BigDecimal("2.0000");
+        };
+    }
+
+    static BigDecimal defaultEmptyConsumption(Truck truck) {
+        return switch (truck.getFuelType()) {
+            case DIESEL_S10, DIESEL_S500 -> new BigDecimal("3.1000");
+            case BIODIESEL -> new BigDecimal("2.9000");
+            case OTHER -> new BigDecimal("2.5000");
+        };
     }
 }

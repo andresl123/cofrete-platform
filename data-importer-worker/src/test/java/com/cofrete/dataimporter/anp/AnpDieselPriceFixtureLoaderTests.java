@@ -23,9 +23,12 @@ class AnpDieselPriceFixtureLoaderTests {
             .allSatisfy(record -> {
                 assertThat(record.freshnessStatus()).isEqualTo(FreshnessStatus.CURRENT);
                 assertThat(record.confidence()).isEqualTo("SYNTHETIC_FIXTURE");
+                assertThat(record.sourceUrl()).startsWith("https://www.gov.br/anp/");
                 assertThat(record.pricePerLiterBrl()).isGreaterThan(BigDecimal.ZERO);
             });
         assertThat(records).extracting(AnpDieselPriceFixtureRecord::fuelType)
             .contains("DIESEL_S10", "DIESEL_S500");
+        assertThat(records).extracting(AnpDieselPriceFixtureRecord::city)
+            .contains("GOIANIA", "SAO PAULO", "CURITIBA");
     }
 }

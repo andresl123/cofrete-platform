@@ -6,7 +6,7 @@ Backend API service for Cofrete Platform.
 
 Core API owns authenticated product APIs and primary PostgreSQL persistence for driver profile, trip, advisory finance, reserve, compliance, receivables, imports, auth, and audit data.
 
-The service now implements the first profile-domain product controllers, trip profitability APIs, reserve wallet/allocation endpoints, and toll/Vale-Pedagio classification endpoints. Remaining contracted routes under `/api/*` are reserved for implementation issues documented in `../docs/architecture/api-contracts.md`.
+The service now implements the first profile-domain product controllers, trip profitability APIs, reserve wallet/allocation endpoints, fuel-price read/report/estimate endpoints, and toll/Vale-Pedagio classification endpoints. Remaining contracted routes under `/api/*` are reserved for implementation issues documented in `../docs/architecture/api-contracts.md`.
 
 Reserve allocation is async: Core API records allocation requests, publishes `reserve.allocation.requested`, and idempotently persists Finance Worker `reserve.allocation.completed` results into reserve wallets and transactions.
 
@@ -65,6 +65,20 @@ ROU-219 / COF-015 implements advisory toll classification in the trip module:
 - `GET /api/toll-data/import-status`
 
 Toll reimbursement and Vale-Pedagio records are preserved separately from profit through classification, finance treatment, and confidence metadata. Persisted pass-through toll records can supply default toll inputs for the temporary synchronous trip profitability estimate when request toll fields are omitted.
+
+## Fuel And Imported Data
+
+ROU-218 / COF-014 and ROU-246 / COF-025 add the first imported-data read paths:
+
+- `GET /api/fuel-prices/latest`
+- `GET /api/fuel-prices/history`
+- `POST /api/fuel-prices/driver-report`
+- `GET /api/trucks/{truckId}/consumption-profile`
+- `POST /api/trips/{tripId}/fuel-estimate`
+
+Flyway migration `V8__fuel_toll_import_data_model.sql` adds `import_jobs`, `fuel_prices`, `driver_fuel_reports`, `truck_consumption_profiles`, `toll_plazas`, and `toll_tariffs`. Seed rows are synthetic ANP/ANTT-shaped data with official-source URLs, freshness, confidence, and import audit IDs for local validation only.
+
+Fuel and toll responses expose source, source type, period or effective date where applicable, freshness, confidence, and import audit IDs. `GET /api/toll-data/import-status` also returns audit details such as source URL, row count, file hash, parser error summary, and retrieval/completion timestamps. Driver fuel reports are marked as `sourceType=driver_report` with `confidence=driver_confirmed` so they are not presented as official ANP data.
 
 ## Validation
 

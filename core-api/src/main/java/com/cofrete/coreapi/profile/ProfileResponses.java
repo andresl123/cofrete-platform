@@ -11,6 +11,9 @@ record TruckEnvelope(TruckResponse truck) {
 record TrucksEnvelope(Iterable<TruckResponse> trucks) {
 }
 
+record TruckConsumptionProfileEnvelope(TruckConsumptionProfileResponse truckConsumptionProfile) {
+}
+
 record TaxProfileEnvelope(TaxProfileResponse taxProfile) {
 }
 
@@ -63,6 +66,46 @@ record DriverResponse(
 
     private static String maskLast4(String last4) {
         return last4 == null ? null : "***" + last4;
+    }
+}
+
+record TruckConsumptionProfileResponse(
+    String truckId,
+    String loadedAvgKmPerLiter,
+    String emptyAvgKmPerLiter,
+    String last30DaysAvgKmPerLiter,
+    String confidence,
+    String sourceWindowStart,
+    String sourceWindowEnd,
+    Instant calculatedAt
+) {
+
+    static TruckConsumptionProfileResponse from(TruckConsumptionProfile profile) {
+        return new TruckConsumptionProfileResponse(
+            profile.getTruck().getId(),
+            profile.getLoadedAvgKmL().toPlainString(),
+            profile.getEmptyAvgKmL().toPlainString(),
+            profile.getLast30DaysAvgKmL().toPlainString(),
+            profile.getConfidence(),
+            profile.getSourceWindowStart() == null ? null : profile.getSourceWindowStart().toString(),
+            profile.getSourceWindowEnd() == null ? null : profile.getSourceWindowEnd().toString(),
+            profile.getCalculatedAt()
+        );
+    }
+
+    static TruckConsumptionProfileResponse defaultFor(Truck truck) {
+        var loaded = ProfileService.defaultLoadedConsumption(truck);
+        var empty = ProfileService.defaultEmptyConsumption(truck);
+        return new TruckConsumptionProfileResponse(
+            truck.getId(),
+            loaded.toPlainString(),
+            empty.toPlainString(),
+            loaded.toPlainString(),
+            "default_by_fuel_type",
+            null,
+            null,
+            truck.getUpdatedAt()
+        );
     }
 }
 

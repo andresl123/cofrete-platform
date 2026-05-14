@@ -448,6 +448,9 @@ Example fuel estimate response:
   "priceSourceType": "official_dataset",
   "priceConfidence": "official_weekly",
   "freshnessStatus": "CURRENT",
+  "sourcePeriodStart": "2026-05-03",
+  "sourcePeriodEnd": "2026-05-09",
+  "importAuditId": "import_123",
   "calculationTraceId": "calc_fuel_123"
 }
 ```
@@ -456,6 +459,7 @@ Fuel semantics:
 
 - Fuel is a direct trip cost, not a reserve percentage.
 - Driver reports can override app estimates only when the calculation trace records the override.
+- Driver reports use `sourceType=driver_report`, `confidence=driver_confirmed`, and `freshnessStatus=CURRENT`; they are user-provided data, not official ANP data.
 - Stale or unknown ANP data must remain visible to the driver.
 
 ## Tolls And Vale-Pedagio
@@ -490,7 +494,11 @@ Example toll estimate response:
       "amount": "42.50",
       "currency": "BRL",
       "confidence": "matched_by_route_buffer",
-      "classification": "PASS_THROUGH"
+      "classification": "PASS_THROUGH",
+      "source": "ANTT_DADOS_ABERTOS",
+      "sourceType": "official_open_dataset",
+      "effectiveStart": "2026-05-01",
+      "importAuditId": "import_124"
     }
   ],
   "totalEstimatedToll": "385.70",
@@ -514,6 +522,7 @@ Toll semantics:
 - `DRIVER_PAID_NON_REIMBURSED` tolls reduce profitability.
 - Known `INCLUDED_IN_FREIGHT` toll components must stay visible and be excluded from profit when the amount is identified.
 - `UNKNOWN` classification must keep the estimate conservative and visible.
+- Toll import status includes source URL, source period when known, retrieval/completion timestamps, row count, file hash when available, parser error summary, freshness, confidence, and import audit ID.
 
 ## Compliance
 

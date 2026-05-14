@@ -58,6 +58,14 @@ class ProfileController {
         return new TruckEnvelope(profiles.getTruck(users.requireUser(authentication), truckId));
     }
 
+    @GetMapping(ApiRoutingConventions.API_PREFIX + "/trucks/{truckId}/consumption-profile")
+    TruckConsumptionProfileEnvelope getTruckConsumptionProfile(
+        Authentication authentication,
+        @PathVariable String truckId
+    ) {
+        return new TruckConsumptionProfileEnvelope(profiles.consumptionProfile(users.requireUser(authentication), truckId));
+    }
+
     @PutMapping(ApiRoutingConventions.API_PREFIX + "/trucks/{truckId}")
     TruckEnvelope replaceTruck(
         Authentication authentication,

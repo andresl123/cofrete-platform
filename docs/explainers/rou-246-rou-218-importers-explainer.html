@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ROU-246 And ROU-218 Importers Explainer</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.5;
+        margin: 0;
+        color: #17202a;
+        background: #f7faf8;
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 40px 20px 56px;
+      }
+      h1, h2 {
+        line-height: 1.15;
+      }
+      h1 {
+        margin-bottom: 8px;
+      }
+      .note {
+        border-left: 4px solid #237157;
+        background: #e2f1ea;
+        padding: 12px 16px;
+      }
+      code {
+        background: #eef1f4;
+        border: 1px solid #dde3e9;
+        border-radius: 5px;
+        padding: 2px 5px;
+      }
+      li {
+        margin: 6px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ROU-246 / COF-025 And ROU-218 / COF-014 Importers</h1>
+      <p class="note">
+        Manually maintained derived summary. Canonical source of truth remains the Markdown docs and service code.
+      </p>
+
+      <h2>What Changed</h2>
+      <ul>
+        <li>Data Importer Worker now has synthetic ANP diesel and ANTT toll plaza/tariff fixtures with source URL, period/effective date, freshness, confidence, file hash, and import audit metadata.</li>
+        <li>Worker jobs publish canonical <code>fuel-price.import.completed</code> and <code>toll-data.import.completed</code> events using the exact architecture contract names.</li>
+        <li>Core API now persists import jobs, fuel prices, driver fuel reports, truck consumption profiles, toll plazas, and toll tariffs.</li>
+        <li>Core API serves <code>GET /api/fuel-prices/latest</code>, <code>GET /api/fuel-prices/history</code>, <code>POST /api/fuel-prices/driver-report</code>, <code>GET /api/trucks/{truckId}/consumption-profile</code>, <code>POST /api/trips/{tripId}/fuel-estimate</code>, source-backed <code>POST /api/toll-estimates</code>, and <code>GET /api/toll-data/import-status</code>.</li>
+        <li>Toll import status now returns the audit fields Linear asked for: source URL, source period, retrieval/completion timestamps, row count, file hash, parser error summary, freshness, confidence, and import audit ID.</li>
+        <li>Driver fuel reports are exposed as user-provided data with <code>sourceType=driver_report</code>, <code>confidence=driver_confirmed</code>, and <code>freshnessStatus=CURRENT</code>; they are not presented as official ANP data.</li>
+      </ul>
+
+      <h2>Why It Changed</h2>
+      <p>
+        Fuel and toll calculations need source-backed prices instead of placeholders. Responses now expose source, freshness, confidence, period/effective date, and import audit IDs so advisory estimates can show where assumptions came from.
+      </p>
+
+      <h2>Affected Areas</h2>
+      <ul>
+        <li><code>data-importer-worker/src/main/java/com/cofrete/dataimporter/anp</code> and <code>.../antt</code>: fixture loaders and import jobs.</li>
+        <li><code>data-importer-worker/src/main/resources/fixtures</code>: synthetic ANP and ANTT fixture files.</li>
+        <li><code>core-api/src/main/java/com/cofrete/coreapi/imports</code>: import, fuel, and toll read models and endpoints.</li>
+        <li><code>core-api/src/main/java/com/cofrete/coreapi/profile</code>: truck consumption profile read path.</li>
+        <li><code>core-api/src/main/java/com/cofrete/coreapi/trip</code>: toll estimates now read imported toll tariffs, and fuel estimate lookup exposes owned trip context.</li>
+        <li><code>docs/architecture/data-model.md</code>, <code>core-api/README.md</code>, and <code>data-importer-worker/README.md</code>: documentation aligned with the implemented persistence and importer behavior.</li>
+      </ul>
+
+      <h2>Validation</h2>
+      <ul>
+        <li><code>cd data-importer-worker &amp;&amp; mvn -q validate test</code></li>
+        <li><code>cd core-api &amp;&amp; mvn -q validate test</code></li>
+        <li><code>python scripts/agent_harness_check.py</code></li>
+      </ul>
+
+      <h2>Compliance Notes</h2>
+      <ul>
+        <li>The committed fixture rows are synthetic and safe to commit; they are not official source extracts.</li>
+        <li>ANP fuel responses distinguish official-dataset-shaped fixture data from driver reports.</li>
+        <li>Toll estimates remain advisory and do not add production paid toll provider integration.</li>
+        <li>Vale-Pedagio and toll reimbursement remain pass-through money and must not count as profit.</li>
+      </ul>
+    </main>
+  </body>
+</html>

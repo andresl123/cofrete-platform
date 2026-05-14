@@ -1,4 +1,4 @@
-fuel_type,state,price_per_liter_brl,period_start,period_end,freshness_status,confidence
-DIESEL_S10,SP,6.10,2026-05-03,2026-05-09,CURRENT,SYNTHETIC_FIXTURE
-DIESEL_S10,MG,6.25,2026-05-03,2026-05-09,CURRENT,SYNTHETIC_FIXTURE
-DIESEL_S500,PR,5.98,2026-05-03,2026-05-09,CURRENT,SYNTHETIC_FIXTURE
+fuel_type,state,city,price_per_liter_brl,period_start,period_end,source_url,freshness_status,confidence
+DIESEL_S10,GO,GOIANIA,6.18,2026-05-03,2026-05-09,https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/levantamento-de-precos-de-combustiveis-ultimas-semanas-pesquisadas,CURRENT,SYNTHETIC_FIXTURE
+DIESEL_S10,SP,SAO PAULO,6.10,2026-05-03,2026-05-09,https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/levantamento-de-precos-de-combustiveis-ultimas-semanas-pesquisadas,CURRENT,SYNTHETIC_FIXTURE
+DIESEL_S500,PR,CURITIBA,5.98,2026-05-03,2026-05-09,https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/levantamento-de-precos-de-combustiveis-ultimas-semanas-pesquisadas,CURRENT,SYNTHETIC_FIXTURE

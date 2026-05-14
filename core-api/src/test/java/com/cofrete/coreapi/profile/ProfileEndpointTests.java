@@ -108,6 +108,13 @@ class ProfileEndpointTests {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.truck.fuelType").value("DIESEL_S10"));
 
+        mockMvc.perform(get("/api/trucks/{truckId}/consumption-profile", truck.path("id").asText()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.truckConsumptionProfile.truckId").value(truck.path("id").asText()))
+            .andExpect(jsonPath("$.truckConsumptionProfile.loadedAvgKmPerLiter").value("2.3500"))
+            .andExpect(jsonPath("$.truckConsumptionProfile.emptyAvgKmPerLiter").value("3.1000"))
+            .andExpect(jsonPath("$.truckConsumptionProfile.confidence").value("default_by_fuel_type"));
+
         mockMvc.perform(put("/api/trucks/{truckId}", truck.path("id").asText())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""

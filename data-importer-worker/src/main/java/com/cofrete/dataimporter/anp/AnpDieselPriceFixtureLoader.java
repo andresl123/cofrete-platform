@@ -31,7 +31,7 @@ public class AnpDieselPriceFixtureLoader {
                 .filter(line -> !line.isBlank())
                 .toList();
 
-            if (lines.isEmpty() || !"fuel_type,state,price_per_liter_brl,period_start,period_end,freshness_status,confidence".equals(lines.getFirst())) {
+            if (lines.isEmpty() || !"fuel_type,state,city,price_per_liter_brl,period_start,period_end,source_url,freshness_status,confidence".equals(lines.getFirst())) {
                 throw new IllegalStateException("ANP diesel fixture header is invalid");
             }
 
@@ -44,18 +44,20 @@ public class AnpDieselPriceFixtureLoader {
 
     private AnpDieselPriceFixtureRecord toRecord(String line) {
         String[] columns = line.split(",", -1);
-        if (columns.length != 7) {
-            throw new IllegalStateException("ANP diesel fixture row must have 7 columns");
+        if (columns.length != 9) {
+            throw new IllegalStateException("ANP diesel fixture row must have 9 columns");
         }
 
         return new AnpDieselPriceFixtureRecord(
             columns[0],
             columns[1],
-            new BigDecimal(columns[2]),
-            LocalDate.parse(columns[3]),
+            columns[2],
+            new BigDecimal(columns[3]),
             LocalDate.parse(columns[4]),
-            FreshnessStatus.valueOf(columns[5]),
-            columns[6]
+            LocalDate.parse(columns[5]),
+            columns[6],
+            FreshnessStatus.valueOf(columns[7]),
+            columns[8]
         );
     }
 }

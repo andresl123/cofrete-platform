@@ -18,8 +18,11 @@ cofrete:
     scheduler:
       enabled: ${COFRETE_DATA_IMPORTER_SCHEDULER_ENABLED:false}
       anp-diesel-cron: ${COFRETE_DATA_IMPORTER_ANP_DIESEL_CRON:0 0 3 * * *}
+      antt-toll-cron: ${COFRETE_DATA_IMPORTER_ANTT_TOLL_CRON:0 30 3 * * *}
     anp:
       fixture: ${COFRETE_DATA_IMPORTER_ANP_FIXTURE:classpath:fixtures/anp-diesel-prices-synthetic.csv}
+    antt:
+      fixture: ${COFRETE_DATA_IMPORTER_ANTT_FIXTURE:classpath:fixtures/antt-toll-plazas-tariffs-synthetic.csv}
 
 management:
   endpoints:
