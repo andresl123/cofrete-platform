@@ -25,6 +25,11 @@ interface ReserveWalletRepository extends JpaRepository<ReserveWallet, String> {
 interface ReserveAllocationRepository extends JpaRepository<ReserveAllocation, String> {
 
     Optional<ReserveAllocation> findByAccountIdAndIdempotencyKey(String accountId, String idempotencyKey);
+
+    Optional<ReserveAllocation> findTopByAccountIdAndAllocationSubjectIdOrderByAllocationRevisionDesc(
+        String accountId,
+        String allocationSubjectId
+    );
 }
 
 interface ReserveTransactionRepository extends JpaRepository<ReserveTransaction, String> {

@@ -61,6 +61,7 @@ public class ReserveAllocationCalculator {
         String traceInput = String.join("|",
             input.allocationSubjectId(),
             Integer.toString(input.allocationRevision()),
+            input.accountId(),
             input.driverId(),
             moneyString(gross),
             moneyString(passThrough),
@@ -73,6 +74,7 @@ public class ReserveAllocationCalculator {
         return new ReserveAllocationResult(
             input.allocationSubjectId(),
             input.allocationRevision(),
+            input.accountId(),
             input.driverId(),
             moneyString(gross),
             moneyString(passThrough),

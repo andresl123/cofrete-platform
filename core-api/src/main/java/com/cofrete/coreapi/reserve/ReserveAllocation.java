@@ -68,6 +68,15 @@ class ReserveAllocation {
     @Column(nullable = false)
     private Instant requestedAt;
 
+    @Column(length = 160)
+    private String resultEventId;
+
+    @Column(length = 80)
+    private String allocationTraceId;
+
+    @Column
+    private Instant allocatedAt;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -78,7 +87,7 @@ class ReserveAllocation {
         String accountId,
         ReserveAllocationRequest request,
         String requestFingerprint,
-        AllocationMathResult math,
+        BigDecimal allocatableAmount,
         ReserveAllocationStatus status
     ) {
         id = DomainIds.prefixed("reserve_alloc");
@@ -89,11 +98,11 @@ class ReserveAllocation {
         freightPaymentId = request.freightPaymentId();
         allocationSubjectId = request.allocationSubjectId();
         allocationRevision = request.allocationRevision();
-        grossAmount = math.grossAmount();
-        passThroughAmount = math.passThroughAmount();
-        allocatableAmount = math.allocatableAmount();
-        requiredReserveAmount = math.requiredReserveAmount();
-        safePersonalWithdrawal = math.safePersonalWithdrawal();
+        grossAmount = ReserveMoney.money(request.grossAmount(), "grossAmount");
+        passThroughAmount = ReserveMoney.money(request.passThroughAmount(), "passThroughAmount");
+        this.allocatableAmount = allocatableAmount;
+        requiredReserveAmount = BigDecimal.ZERO.setScale(2);
+        safePersonalWithdrawal = BigDecimal.ZERO.setScale(2);
         currency = request.currency();
         reason = request.reason();
         this.status = status;
@@ -109,6 +118,23 @@ class ReserveAllocation {
         return requestFingerprint.equals(fingerprint);
     }
 
+    boolean isRequested() {
+        return status == ReserveAllocationStatus.REQUESTED;
+    }
+
+    void applyWorkerResult(ReserveAllocationCompletedEvent event) {
+        grossAmount = resultMoney(event.grossAmount(), "grossAmount");
+        passThroughAmount = resultMoney(event.passThroughAmount(), "passThroughAmount");
+        allocatableAmount = resultMoney(event.allocatableAmount(), "allocatableAmount");
+        requiredReserveAmount = resultMoney(event.requiredReserveAmount(), "requiredReserveAmount");
+        safePersonalWithdrawal = resultMoney(event.safePersonalWithdrawal(), "safePersonalWithdrawal");
+        currency = event.currency();
+        resultEventId = event.eventId();
+        allocationTraceId = event.allocationTraceId();
+        allocatedAt = event.allocatedAt();
+        status = ReserveAllocationStatus.ALLOCATED;
+    }
+
     String getId() {
         return id;
     }
@@ -119,6 +145,22 @@ class ReserveAllocation {
 
     String getIdempotencyKey() {
         return idempotencyKey;
+    }
+
+    String getTripId() {
+        return tripId;
+    }
+
+    String getFreightPaymentId() {
+        return freightPaymentId;
+    }
+
+    String getAllocationSubjectId() {
+        return allocationSubjectId;
+    }
+
+    int getAllocationRevision() {
+        return allocationRevision;
     }
 
     BigDecimal getGrossAmount() {
@@ -155,5 +197,17 @@ class ReserveAllocation {
 
     Instant getRequestedAt() {
         return requestedAt;
+    }
+
+    String getAllocationTraceId() {
+        return allocationTraceId;
+    }
+
+    Instant getAllocatedAt() {
+        return allocatedAt;
+    }
+
+    private static BigDecimal resultMoney(String value, String fieldName) {
+        return ReserveMoney.money(new BigDecimal(value), fieldName);
     }
 }

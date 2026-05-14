@@ -10,6 +10,6 @@ class ReserveAllocationConfiguration {
     @Bean
     @ConditionalOnMissingBean
     ReserveAllocationInputSnapshotProvider reserveAllocationInputSnapshotProvider() {
-        return new UnavailableReserveAllocationInputSnapshotProvider();
+        return new EventReserveAllocationInputSnapshotProvider();
     }
 }

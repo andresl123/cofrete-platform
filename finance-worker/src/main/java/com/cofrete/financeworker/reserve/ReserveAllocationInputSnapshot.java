@@ -7,6 +7,7 @@ import org.springframework.util.StringUtils;
 public record ReserveAllocationInputSnapshot(
     String allocationSubjectId,
     int allocationRevision,
+    String accountId,
     String driverId,
     String grossAmount,
     String passThroughAmount,
@@ -18,6 +19,7 @@ public record ReserveAllocationInputSnapshot(
     public ReserveAllocationInputSnapshot {
         Assert.isTrue(StringUtils.hasText(allocationSubjectId), "allocationSubjectId is required");
         Assert.isTrue(allocationRevision > 0, "allocationRevision must be positive");
+        Assert.isTrue(StringUtils.hasText(accountId), "accountId is required");
         Assert.isTrue(StringUtils.hasText(driverId), "driverId is required");
         Assert.isTrue("BRL".equals(currency), "currency must be BRL for MVP reserve allocation");
         Assert.notNull(rules, "rules are required");

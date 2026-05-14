@@ -26,10 +26,12 @@ enum ReserveAllocationReason {
 }
 
 enum ReserveAllocationStatus {
+    REQUESTED,
     ALLOCATED
 }
 
 enum ReserveAllocationRequestStatus {
+    REQUESTED,
     ALLOCATED,
     DUPLICATE_IGNORED
 }

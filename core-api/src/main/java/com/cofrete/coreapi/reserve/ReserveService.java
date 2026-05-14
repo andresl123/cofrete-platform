@@ -20,31 +20,25 @@ import org.springframework.transaction.annotation.Transactional;
 class ReserveService {
 
     private static final String BRL = "BRL";
-    private static final List<ReserveBucket> REQUIRED_BUCKETS = List.of(
-        ReserveBucket.FUEL_ARLA_TOLL_CASH_FLOW,
-        ReserveBucket.MAINTENANCE,
-        ReserveBucket.TIRES,
-        ReserveBucket.INSURANCE,
-        ReserveBucket.TAXES_AND_DOCUMENTS,
-        ReserveBucket.TRUCK_REPLACEMENT,
-        ReserveBucket.EMERGENCY
-    );
 
     private final ReserveRuleRepository rules;
     private final ReserveWalletRepository wallets;
     private final ReserveAllocationRepository allocations;
     private final ReserveTransactionRepository transactions;
+    private final ReserveAllocationEventPublisher allocationEvents;
 
     ReserveService(
         ReserveRuleRepository rules,
         ReserveWalletRepository wallets,
         ReserveAllocationRepository allocations,
-        ReserveTransactionRepository transactions
+        ReserveTransactionRepository transactions,
+        ReserveAllocationEventPublisher allocationEvents
     ) {
         this.rules = rules;
         this.wallets = wallets;
         this.allocations = allocations;
         this.transactions = transactions;
+        this.allocationEvents = allocationEvents;
     }
 
     @Transactional
@@ -103,23 +97,87 @@ class ReserveService {
         if (activeRules.isEmpty()) {
             throw new ReserveValidationException("At least one active reserve rule is required before allocation.");
         }
+        if (request.distanceKm() == null && activeRules.stream().anyMatch(rule -> rule.getPolicy() == ReserveRulePolicy.PER_KM)) {
+            throw new ReserveValidationException("distanceKm is required for active PER_KM reserve rules.");
+        }
 
-        AllocationMathResult math = calculateAllocation(request, activeRules);
+        BigDecimal gross = ReserveMoney.money(request.grossAmount(), "grossAmount");
+        BigDecimal passThrough = ReserveMoney.money(request.passThroughAmount(), "passThroughAmount");
+        if (passThrough.compareTo(gross) > 0) {
+            throw new ReserveValidationException("passThroughAmount cannot exceed grossAmount.");
+        }
+        BigDecimal allocatable = gross.subtract(passThrough);
         var allocation = allocations.save(new ReserveAllocation(
             accountId,
             request,
             fingerprint,
-            math,
-            ReserveAllocationStatus.ALLOCATED
+            allocatable,
+            ReserveAllocationStatus.REQUESTED
         ));
 
-        Instant allocatedAt = request.requestedAt() == null ? Instant.now() : request.requestedAt();
-        math.bucketAllocations().forEach((bucket, amount) -> {
+        allocationEvents.publish(ReserveAllocationRequestedEvent.from(
+            accountId,
+            user.getId(),
+            request,
+            activeRules
+        ));
+
+        var allocationTransactions = transactions.findByAllocationOrderByBucketAsc(allocation);
+        return ReserveAllocationResponse.from(
+            allocation,
+            ReserveAllocationRequestStatus.REQUESTED,
+            Map.of(),
+            allocationTransactions
+        );
+    }
+
+    @Transactional
+    ReserveAllocationResponse persistWorkerResult(ReserveAllocationCompletedEvent event) {
+        validateResultEvent(event);
+        var latestForSubject = allocations
+            .findTopByAccountIdAndAllocationSubjectIdOrderByAllocationRevisionDesc(
+                event.accountId(),
+                event.allocationSubjectId()
+            );
+        if (latestForSubject.isPresent() && event.allocationRevision() < latestForSubject.get().getAllocationRevision()) {
+            return ReserveAllocationResponse.from(
+                latestForSubject.get(),
+                ReserveAllocationRequestStatus.DUPLICATE_IGNORED,
+                Map.of(),
+                transactions.findByAllocationOrderByBucketAsc(latestForSubject.get())
+            );
+        }
+        ReserveAllocation allocation = allocations.findByAccountIdAndIdempotencyKey(
+                event.accountId(),
+                event.idempotencyKey()
+            )
+            .orElseThrow(() -> new ReserveValidationException("Reserve allocation request not found for worker result."));
+        if (!allocation.isRequested()) {
+            var existingTransactions = transactions.findByAllocationOrderByBucketAsc(allocation);
+            return ReserveAllocationResponse.from(
+                allocation,
+                ReserveAllocationRequestStatus.DUPLICATE_IGNORED,
+                bucketAmounts(existingTransactions),
+                existingTransactions
+            );
+        }
+        if (event.allocationRevision() != allocation.getAllocationRevision()
+            || !event.allocationSubjectId().equals(allocation.getAllocationSubjectId())) {
+            throw new ReserveConflictException("Worker result does not match the reserve allocation request.");
+        }
+        if (!matchesRequestAmounts(allocation, event)) {
+            throw new ReserveConflictException("Worker result amounts do not match the reserve allocation request.");
+        }
+
+        allocation.applyWorkerResult(event);
+        allocations.save(allocation);
+        event.bucketAllocations().forEach((bucket, value) -> {
+            BigDecimal amount = ReserveMoney.money(new BigDecimal(value), "bucketAllocations." + bucket);
             if (amount.compareTo(BigDecimal.ZERO) > 0) {
-                var wallet = wallet(accountId, bucket, request.currency());
-                wallet.credit(amount, allocatedAt);
+                var wallet = wallet(event.accountId(), bucket, event.currency());
+                wallet.credit(amount, event.allocatedAt());
                 wallets.save(wallet);
-                transactions.save(new ReserveTransaction(accountId, wallet, allocation, amount, request.idempotencyKey()));
+                transactions.save(new ReserveTransaction(event.accountId(), wallet, allocation, amount, event.idempotencyKey()));
             }
         });
 
@@ -127,7 +185,7 @@ class ReserveService {
         return ReserveAllocationResponse.from(
             allocation,
             ReserveAllocationRequestStatus.ALLOCATED,
-            math.stringBucketAllocations(),
+            bucketAmounts(allocationTransactions),
             allocationTransactions
         );
     }
@@ -217,46 +275,6 @@ class ReserveService {
         }
     }
 
-    private AllocationMathResult calculateAllocation(ReserveAllocationRequest request, List<ReserveRule> activeRules) {
-        BigDecimal gross = ReserveMoney.money(request.grossAmount(), "grossAmount");
-        BigDecimal passThrough = ReserveMoney.money(request.passThroughAmount(), "passThroughAmount");
-        if (passThrough.compareTo(gross) > 0) {
-            throw new ReserveValidationException("passThroughAmount cannot exceed grossAmount.");
-        }
-        BigDecimal allocatable = gross.subtract(passThrough);
-        Map<ReserveBucket, BigDecimal> bucketAllocations = new EnumMap<>(ReserveBucket.class);
-        for (ReserveRule rule : activeRules) {
-            bucketAllocations.put(rule.getBucket(), allocationForRule(rule, allocatable, request.distanceKm()));
-        }
-        BigDecimal totalAllocated = bucketAllocations.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (totalAllocated.compareTo(allocatable) > 0) {
-            throw new ReserveConflictException("Active reserve rules allocate more than the allocatable amount.");
-        }
-        BigDecimal required = bucketAllocations.entrySet().stream()
-            .filter(entry -> REQUIRED_BUCKETS.contains(entry.getKey()))
-            .map(Map.Entry::getValue)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal driverSalary = bucketAllocations.getOrDefault(ReserveBucket.DRIVER_SALARY, BigDecimal.ZERO);
-        BigDecimal profit = bucketAllocations.getOrDefault(ReserveBucket.PROFIT, BigDecimal.ZERO);
-        BigDecimal safeWithdrawal = driverSalary.compareTo(BigDecimal.ZERO) > 0
-            ? driverSalary
-            : allocatable.subtract(required).subtract(profit).max(BigDecimal.ZERO);
-        return new AllocationMathResult(gross, passThrough, allocatable, required, safeWithdrawal, bucketAllocations);
-    }
-
-    private static BigDecimal allocationForRule(ReserveRule rule, BigDecimal allocatableAmount, BigDecimal distanceKm) {
-        return switch (rule.getPolicy()) {
-            case PERCENT_OF_AMOUNT -> ReserveMoney.roundMoney(allocatableAmount.multiply(rule.getRate()));
-            case FIXED_AMOUNT -> ReserveMoney.roundMoney(rule.getFixedAmount());
-            case PER_KM -> {
-                if (distanceKm == null) {
-                    throw new ReserveValidationException("distanceKm is required for active PER_KM reserve rules.");
-                }
-                yield ReserveMoney.roundMoney(distanceKm.multiply(rule.getPerKmAmount()));
-            }
-        };
-    }
-
     private FinancialHealthComponentResponse healthComponent(ReserveWallet wallet) {
         BigDecimal coverage = wallet.getTargetBalance() == null || wallet.getTargetBalance().compareTo(BigDecimal.ZERO) == 0
             ? BigDecimal.ZERO
@@ -323,6 +341,40 @@ class ReserveService {
         }
     }
 
+    private static void validateResultEvent(ReserveAllocationCompletedEvent event) {
+        if (event == null) {
+            throw new ReserveValidationException("Reserve allocation result event is required.");
+        }
+        if (!ReserveAllocationCompletedEvent.EVENT_TYPE.equals(event.eventType())) {
+            throw new ReserveValidationException("Expected eventType " + ReserveAllocationCompletedEvent.EVENT_TYPE + ".");
+        }
+        if (event.version() != ReserveAllocationCompletedEvent.VERSION) {
+            throw new ReserveValidationException("reserve.allocation.completed version must be 1.");
+        }
+        if (!BRL.equals(event.currency())) {
+            throw new ReserveValidationException("currency must be BRL.");
+        }
+        if (!ReserveAllocationCompletedEvent.PRODUCER.equals(event.producer())) {
+            throw new ReserveValidationException("producer must be finance-worker.");
+        }
+        if (event.allocatedAt() == null) {
+            throw new ReserveValidationException("allocatedAt is required.");
+        }
+        if (event.bucketAllocations() == null || event.bucketAllocations().isEmpty()) {
+            throw new ReserveValidationException("bucketAllocations are required.");
+        }
+    }
+
+    private static boolean matchesRequestAmounts(ReserveAllocation allocation, ReserveAllocationCompletedEvent event) {
+        BigDecimal gross = new BigDecimal(event.grossAmount());
+        BigDecimal passThrough = new BigDecimal(event.passThroughAmount());
+        BigDecimal allocatable = new BigDecimal(event.allocatableAmount());
+        return allocation.getGrossAmount().compareTo(gross) == 0
+            && allocation.getPassThroughAmount().compareTo(passThrough) == 0
+            && allocation.getAllocatableAmount().compareTo(allocatable) == 0
+            && allocation.getCurrency().equals(event.currency());
+    }
+
     private static String fingerprint(ReserveAllocationRequest request) {
         String canonical = String.join("|",
             nullToEmpty(request.tripId()),
@@ -361,25 +413,5 @@ class ReserveService {
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 is unavailable", exception);
         }
-    }
-}
-
-record AllocationMathResult(
-    BigDecimal grossAmount,
-    BigDecimal passThroughAmount,
-    BigDecimal allocatableAmount,
-    BigDecimal requiredReserveAmount,
-    BigDecimal safePersonalWithdrawal,
-    Map<ReserveBucket, BigDecimal> bucketAllocations
-) {
-
-    AllocationMathResult {
-        bucketAllocations = new EnumMap<>(bucketAllocations);
-    }
-
-    Map<ReserveBucket, String> stringBucketAllocations() {
-        Map<ReserveBucket, String> result = new TreeMap<>();
-        bucketAllocations.forEach((bucket, amount) -> result.put(bucket, ReserveMoney.money(amount)));
-        return result;
     }
 }

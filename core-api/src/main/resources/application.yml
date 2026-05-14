@@ -22,6 +22,9 @@ cofrete:
       enabled: ${COFRETE_CORE_API_RABBITMQ_ENABLED:true}
       exchange: ${COFRETE_CORE_API_EVENTS_EXCHANGE:cofrete.finance.events}
       trip-recalculation-requested-routing-key: trip.recalculation.requested
+      reserve-allocation-requested-routing-key: reserve.allocation.requested
+      reserve-allocation-completed-queue: core-api.reserve-allocation.completed
+      reserve-allocation-completed-routing-key: reserve.allocation.completed
 
 management:
   endpoints:

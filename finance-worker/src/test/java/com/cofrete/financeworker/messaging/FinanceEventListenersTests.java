@@ -6,6 +6,7 @@ import com.cofrete.financeworker.calculation.ReservePolicy;
 import com.cofrete.financeworker.calculation.TripFinanceCalculator;
 import com.cofrete.financeworker.calculation.TripFinanceInputSnapshot;
 import com.cofrete.financeworker.messaging.events.ReserveAllocationRequestedEvent;
+import com.cofrete.financeworker.messaging.events.ReserveAllocationRuleEvent;
 import com.cofrete.financeworker.messaging.events.TripRecalculationRequestedEvent;
 import com.cofrete.financeworker.recalculation.ProcessedRecalculationRegistry;
 import com.cofrete.financeworker.recalculation.TripFinanceRecalculationService;
@@ -54,6 +55,7 @@ class FinanceEventListenersTests {
             1,
             "evt_125",
             "reserve:PAY-001:1",
+            "ACCT-001",
             "PAY-001",
             1,
             "PAY-001",
@@ -61,8 +63,16 @@ class FinanceEventListenersTests {
             "DRIVER-001",
             "8000.00",
             "0.00",
+            null,
             "BRL",
             "FREIGHT_PAYMENT_RECEIVED",
+            List.of(new ReserveAllocationRuleEvent(
+                "MAINTENANCE",
+                "PERCENT_OF_AMOUNT",
+                "0.080000",
+                null,
+                null
+            )),
             "corr_123",
             "core-api",
             Instant.parse("2026-05-11T12:00:10Z")
@@ -106,6 +116,7 @@ class FinanceEventListenersTests {
         return new ReserveAllocationService(
             ignored -> reserveSnapshot(),
             new ReserveAllocationCalculator(),
+            new FinanceEventPublisher(new CapturingRabbitTemplate(), new FinanceWorkerRabbitProperties()),
             new ProcessedReserveAllocationRegistry()
         );
     }
@@ -150,6 +161,7 @@ class FinanceEventListenersTests {
         return new ReserveAllocationInputSnapshot(
             "PAY-001",
             1,
+            "ACCT-001",
             "DRIVER-001",
             "8000.00",
             "0.00",
