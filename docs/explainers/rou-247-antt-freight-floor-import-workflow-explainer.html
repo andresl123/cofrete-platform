@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>ROU-247 ANTT Freight-Floor Import Workflow Explainer</title>
+  </head>
+  <body>
+    <main>
+      <p><strong>Manual derived explainer.</strong> Canonical behavior remains in compliance and architecture markdown docs.</p>
+      <h1>ROU-247 - COF-026 Design source-backed ANTT freight-floor import workflow</h1>
+      <section>
+        <h2>What changed</h2>
+        <p>Documented a source-backed workflow for ANTT minimum freight-floor ingestion with parser adapters, source periods, coefficient rows, checker output, manual approval, and synthetic fixture strategy.</p>
+        <ul>
+          <li>Expanded <code>docs/compliance/ciot-freight-floor.md</code> with source discovery, parser, fallback, data model, test fixture, and deferral decisions.</li>
+          <li>Updated <code>docs/compliance/official-source-register.md</code> with the freight-floor hub, ANTT calculator, and ROU-247 source check date.</li>
+          <li>Updated <code>docs/architecture/data-model.md</code> with proposed freight-floor source period, coefficient, and check records.</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Why it changed</h2>
+        <p>Freight-floor data is high-risk. Cofrete needs a path to return <code>above_floor</code>, <code>below_floor</code>, or <code>unknown</code> with source and confidence without claiming official ANTT legal certification.</p>
+      </section>
+      <section>
+        <h2>Validation</h2>
+        <ul>
+          <li>Official ANTT source pages reviewed on 2026-05-14.</li>
+          <li><code>python scripts/agent_harness_check.py</code></li>
+          <li><code>git diff --check</code></li>
+        </ul>
+        <p><code>grill-with-docs</code> review ran for two loops. Fix applied: added source-period approval and manual fallback criteria so production automation remains deferred until parser reliability and review gates exist.</p>
+      </section>
+      <section>
+        <h2>Unblocks</h2>
+        <p>ROU-247 prepares follow-up implementation tasks for ANTT freight-floor source ingestion, parser tests, admin approval, and advisory checker output.</p>
+      </section>
+    </main>
+  </body>
+</html>

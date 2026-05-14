@@ -2,6 +2,7 @@
 
 Last full-register check: 2026-05-11.
 ROU-220 RNTRC Digital source check: 2026-05-14.
+ROU-247 ANTT freight-floor source check: 2026-05-14.
 
 Cofrete is not an official government, legal, tax, accounting, or insurance channel. Product behavior must link users back to official sources when a decision can affect compliance, tax, insurance, or legal obligations.
 
@@ -13,7 +14,9 @@ Cofrete is not an official government, legal, tax, accounting, or insurance chan
 | Road cargo transport / CIOT / VPO | ANTT cargo transport overview | https://www.gov.br/antt/pt-br/a-antt/o-transporte-de-cargas | Compliance center wording and transport concepts |
 | CIOT | ANTT CIOT | https://www.gov.br/antt/pt-br/assuntos/cargas/pagamento-eletronico-de-fretes-pef-ciot/ciot | Pre-trip checklist and CIOT warning copy |
 | CIOT enforcement / freight floor | ANTT CIOT and minimum freight floor news | https://www.gov.br/antt/pt-br/assuntos/ultimas-noticias/frete-irregular-e-barrado-antes-de-existir-antt-transforma-ciot-em-filtro-obrigatorio-e-reforca-o-cumprimento-do-piso-minimo | Freight-floor risk wording |
+| Minimum freight floor hub | ANTT Piso Minimo do Frete | https://www.gov.br/antt/pt-br/assuntos/cargas/pagamento-eletronico-de-fretes-pef-ciot/piso-minimo-do-frete | Freight-floor source discovery and latest official publication links |
 | Minimum freight floor updates | ANTT freight floor update news | https://www.gov.br/antt/pt-br/assuntos/ultimas-noticias/antt-atualiza-tabela-dos-pisos-minimos-de-frete-em-decorrencia-da-variacao-no-preco-do-diesel-s10 | Freight-floor table source discovery |
+| Minimum freight floor calculator | ANTT freight calculator | https://calculadorafrete.antt.gov.br | User-facing official calculation cross-check, not bulk import source unless ANTT exposes stable machine-readable data |
 | Vale-Pedagio | ANTT Vale-Pedagio Obrigatorio | https://www.gov.br/antt/pt-br/assuntos/cargas/vale-pedagio-obrigatorio/o-que-e | Toll pass-through and reimbursement rules |
 | Loading/unloading | ANTT Carga e Descarga | https://www.gov.br/antt/pt-br/assuntos/cargas/carga-descarga | Waiting-time rule source review |
 | Toll plazas | ANTT Dados Abertos - Praca de Pedagio | https://dados.antt.gov.br/dataset/praca-de-pedagio | Toll plaza importer source |

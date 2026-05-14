@@ -41,6 +41,9 @@ This document records the first implementation target. Profile-domain table name
 - TollTariff: toll amount by plaza, vehicle category, axle count, and effective date.
 - TripToll: estimated/actual toll for a trip and reimbursement classification.
 - ValePedagioRecord: pass-through payment proof and classification.
+- FreightFloorSourcePeriod: official-source period for ANTT minimum freight-floor coefficients, including source URL, publication ID, effective dates, parser version, source hash, import audit ID, approval status, freshness, and confidence.
+- FreightFloorCoefficient: source-backed coefficient row by table label, cargo type, operation type, vehicle/axle assumption, source-original labels, formula version, row hash, and raw row text.
+- FreightFloorCheck: advisory check result for offered freight against a source period, returning `above_floor`, `below_floor`, or `unknown` with margin, source, source period, and confidence.
 
 ## Compliance
 
@@ -100,6 +103,9 @@ The implemented Core API fuel and toll import migration includes:
 - `truck_consumption_profiles`
 - `toll_plazas`
 - `toll_tariffs`
+- `freight_floor_source_periods`
+- `freight_floor_coefficients`
+- `freight_floor_checks`
 
 Reserve allocation records keep nullable `tripId` and `freightPaymentId` references until a later migration links reserve allocation subjects to trip and receivable records without disrupting existing allocation idempotency keys.
 
@@ -107,7 +113,6 @@ Follow-up migration sets should include tables equivalent to:
 
 - `fuel_station_prices`
 - `trip_toll`
-- `freight_floor_checks`
 - `waiting_time_records`
 
 ## Audit Fields
