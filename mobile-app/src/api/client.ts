@@ -11,6 +11,8 @@ import {
   type InsurancePolicyResponse,
   type ProfitabilityEstimateRequest,
   type ProfitabilityEstimateResponse,
+  type ReceivableStatus,
+  type ReceivablesEnvelope,
   type ReserveAllocationRequest,
   type ReserveAllocationResponse,
   type ReserveRuleRequest,
@@ -45,6 +47,7 @@ export type CoreApiClient = {
   getDocuments: () => Promise<ComplianceDocumentResponse[]>;
   getFinancialHealthScore: () => Promise<FinancialHealthResponse>;
   getInsurancePolicies: () => Promise<InsurancePolicyResponse[]>;
+  getReceivables: (status?: 'overdue' | ReceivableStatus) => Promise<ReceivablesEnvelope>;
   getReserveWallets: () => Promise<ReserveWalletResponse[]>;
   getTrip: (tripId: string) => Promise<TripResponse>;
   requestProfitabilityEstimate: (
@@ -153,6 +156,11 @@ export function createCoreApiClient(baseUrl: string): CoreApiClient {
         method: 'GET',
         path: '/api/compliance/insurance-policies',
       }).then((envelope) => envelope.insurancePolicies),
+    getReceivables: (status) =>
+      request<ReceivablesEnvelope>({
+        method: 'GET',
+        path: `/api/receivables${status ? `?status=${encodeURIComponent(status)}` : ''}`,
+      }),
     getTrip: (tripId) =>
       request<{ trip: TripResponse }>({
         method: 'GET',

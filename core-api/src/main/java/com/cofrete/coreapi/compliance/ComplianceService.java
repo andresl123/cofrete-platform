@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ class ComplianceService {
     private final ComplianceAlertRepository alerts;
     private final ComplianceScoreSnapshotRepository scoreSnapshots;
     private final ComplianceCalendarItemRepository calendarItems;
+    private final WaitingTimeRuleRepository waitingTimeRules;
     private final Clock clock;
 
     ComplianceService(
@@ -29,7 +31,8 @@ class ComplianceService {
         ComplianceDocumentRepository documents,
         ComplianceAlertRepository alerts,
         ComplianceScoreSnapshotRepository scoreSnapshots,
-        ComplianceCalendarItemRepository calendarItems
+        ComplianceCalendarItemRepository calendarItems,
+        WaitingTimeRuleRepository waitingTimeRules
     ) {
         this.profiles = profiles;
         this.complianceProfiles = complianceProfiles;
@@ -38,6 +41,7 @@ class ComplianceService {
         this.alerts = alerts;
         this.scoreSnapshots = scoreSnapshots;
         this.calendarItems = calendarItems;
+        this.waitingTimeRules = waitingTimeRules;
         clock = Clock.systemUTC();
     }
 
@@ -161,6 +165,26 @@ class ComplianceService {
                     : documents.findByDriverIdAndDocumentTypeAndActiveOrderByCreatedAtAsc(driverId, documentType, active);
         results.forEach(document -> document.refreshStatus(clock));
         return results.stream().map(ComplianceDocumentResponse::from).toList();
+    }
+
+    @Transactional
+    WaitingTimeRuleResponse createOrUpdateWaitingTimeRule(WaitingTimeRuleRequest request) {
+        if (request.effectiveTo() != null && request.effectiveTo().isBefore(request.effectiveFrom())) {
+            throw new ComplianceValidationException("effectiveTo cannot be before effectiveFrom.");
+        }
+        var rule = waitingTimeRules.findByEffectiveFrom(request.effectiveFrom())
+            .orElseGet(() -> new WaitingTimeRule(request));
+        rule.updateFrom(request);
+        return WaitingTimeRuleResponse.from(waitingTimeRules.save(rule));
+    }
+
+    @Transactional(readOnly = true)
+    WaitingTimeRuleResponse getWaitingTimeRule(LocalDate effectiveDate) {
+        var date = effectiveDate == null ? LocalDate.now(clock) : effectiveDate;
+        return waitingTimeRules.findEffectiveRules(date, PageRequest.of(0, 1)).stream()
+            .findFirst()
+            .map(WaitingTimeRuleResponse::from)
+            .orElseGet(() -> WaitingTimeRuleResponse.missing(date));
     }
 
     private ComplianceProfile requireOrCreateProfile(String driverId) {

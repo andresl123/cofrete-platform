@@ -1,4 +1,4 @@
-package com.cofrete.coreapi.profile;
+package com.cofrete.coreapi.compliance;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,30 +14,20 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "tax_rule_years")
-class TaxRuleYear {
+@Table(name = "waiting_time_rules")
+class WaitingTimeRule {
 
     @Id
     private String id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 60)
-    private TaxRegime regime;
+    @Column(nullable = false, precision = 6, scale = 2)
+    private BigDecimal thresholdHours;
 
-    @Column(nullable = false)
-    private int planningYear;
-
-    @Column(precision = 14, scale = 2)
-    private BigDecimal annualGrossLimit;
+    @Column(nullable = false, precision = 14, scale = 2)
+    private BigDecimal ratePerTonHour;
 
     @Column(nullable = false, length = 3)
     private String currency;
-
-    @Column(columnDefinition = "text")
-    private String formulaMetadata;
-
-    @Column(precision = 7, scale = 6)
-    private BigDecimal cargoTransportTaxablePercent;
 
     @Column(nullable = false)
     private LocalDate effectiveFrom;
@@ -51,7 +41,11 @@ class TaxRuleYear {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
-    private FreshnessStatus freshnessStatus = FreshnessStatus.UNKNOWN;
+    private ComplianceRuleFreshnessStatus freshnessStatus = ComplianceRuleFreshnessStatus.UNKNOWN;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 40)
+    private RuleConfidence confidence = RuleConfidence.UNKNOWN;
 
     @Column(nullable = false)
     private Instant createdAt;
@@ -59,26 +53,26 @@ class TaxRuleYear {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    protected TaxRuleYear() {
+    protected WaitingTimeRule() {
     }
 
-    TaxRuleYear(TaxRuleYearRequest request) {
-        id = "tax_rule_year_" + UUID.randomUUID();
+    WaitingTimeRule(WaitingTimeRuleRequest request) {
+        id = "waiting_time_rule_" + UUID.randomUUID();
         updateFrom(request);
     }
 
-    void updateFrom(TaxRuleYearRequest request) {
-        regime = request.regime();
-        planningYear = request.planningYear();
-        annualGrossLimit = request.annualGrossLimit();
+    void updateFrom(WaitingTimeRuleRequest request) {
+        thresholdHours = request.thresholdHours();
+        ratePerTonHour = request.ratePerTonHour();
         currency = request.currency() == null ? "BRL" : request.currency();
-        formulaMetadata = blankToNull(request.formulaMetadata());
-        cargoTransportTaxablePercent = request.cargoTransportTaxablePercent();
         effectiveFrom = request.effectiveFrom();
         effectiveTo = request.effectiveTo();
-        sourceUrl = blankToNull(request.sourceUrl());
+        sourceUrl = request.sourceUrl() == null || request.sourceUrl().isBlank() ? null : request.sourceUrl().trim();
         reviewedAt = request.reviewedAt();
-        freshnessStatus = request.freshnessStatus() == null ? FreshnessStatus.UNKNOWN : request.freshnessStatus();
+        freshnessStatus = request.freshnessStatus() == null
+            ? ComplianceRuleFreshnessStatus.UNKNOWN
+            : request.freshnessStatus();
+        confidence = request.confidence() == null ? RuleConfidence.UNKNOWN : request.confidence();
     }
 
     @PrePersist
@@ -97,28 +91,16 @@ class TaxRuleYear {
         return id;
     }
 
-    TaxRegime getRegime() {
-        return regime;
+    BigDecimal getThresholdHours() {
+        return thresholdHours;
     }
 
-    int getPlanningYear() {
-        return planningYear;
-    }
-
-    BigDecimal getAnnualGrossLimit() {
-        return annualGrossLimit;
+    BigDecimal getRatePerTonHour() {
+        return ratePerTonHour;
     }
 
     String getCurrency() {
         return currency;
-    }
-
-    String getFormulaMetadata() {
-        return formulaMetadata;
-    }
-
-    BigDecimal getCargoTransportTaxablePercent() {
-        return cargoTransportTaxablePercent;
     }
 
     LocalDate getEffectiveFrom() {
@@ -137,8 +119,12 @@ class TaxRuleYear {
         return reviewedAt;
     }
 
-    FreshnessStatus getFreshnessStatus() {
+    ComplianceRuleFreshnessStatus getFreshnessStatus() {
         return freshnessStatus;
+    }
+
+    RuleConfidence getConfidence() {
+        return confidence;
     }
 
     Instant getCreatedAt() {
@@ -147,9 +133,5 @@ class TaxRuleYear {
 
     Instant getUpdatedAt() {
         return updatedAt;
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
     }
 }

@@ -1,6 +1,7 @@
 package com.cofrete.coreapi.compliance;
 
 import java.time.Instant;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -29,6 +30,9 @@ record ComplianceDocumentEnvelope(ComplianceDocumentResponse document) {
 }
 
 record ComplianceDocumentsEnvelope(Iterable<ComplianceDocumentResponse> documents) {
+}
+
+record WaitingTimeRuleEnvelope(WaitingTimeRuleResponse waitingTimeRule) {
 }
 
 record ComplianceProfileResponse(
@@ -244,6 +248,82 @@ record ComplianceDocumentResponse(
             document.isActive(),
             ComplianceWording.DOCUMENT_CAVEAT
         );
+    }
+}
+
+record WaitingTimeRuleResponse(
+    String id,
+    String thresholdHours,
+    String ratePerTonHour,
+    String currency,
+    LocalDate effectiveFrom,
+    LocalDate effectiveTo,
+    String sourceUrl,
+    Instant reviewedAt,
+    ComplianceRuleStatus ruleStatus,
+    RuleConfidence confidence,
+    String advisoryText,
+    Instant createdAt,
+    Instant updatedAt
+) {
+
+    static WaitingTimeRuleResponse from(WaitingTimeRule rule) {
+        return new WaitingTimeRuleResponse(
+            rule.getId(),
+            rule.getThresholdHours().toPlainString(),
+            rule.getRatePerTonHour().toPlainString(),
+            rule.getCurrency(),
+            rule.getEffectiveFrom(),
+            rule.getEffectiveTo(),
+            rule.getSourceUrl(),
+            rule.getReviewedAt(),
+            ruleStatus(rule.getFreshnessStatus(), rule.getReviewedAt(), rule.getSourceUrl()),
+            rule.getConfidence(),
+            "Waiting-time impact is an advisory estimate. Confirm official rules and contract terms before charging or disputing a customer.",
+            rule.getCreatedAt(),
+            rule.getUpdatedAt()
+        );
+    }
+
+    static WaitingTimeRuleResponse missing(LocalDate effectiveDate) {
+        return new WaitingTimeRuleResponse(
+            null,
+            null,
+            null,
+            "BRL",
+            effectiveDate,
+            null,
+            null,
+            null,
+            ComplianceRuleStatus.MISSING,
+            RuleConfidence.UNKNOWN,
+            "No source-backed waiting-time rule is configured for this date. Keep customer-charge guidance conservative.",
+            null,
+            null
+        );
+    }
+
+    private static ComplianceRuleStatus ruleStatus(
+        ComplianceRuleFreshnessStatus freshnessStatus,
+        Instant reviewedAt,
+        String sourceUrl
+    ) {
+        if (sourceUrl == null || sourceUrl.isBlank()) {
+            return ComplianceRuleStatus.MISSING;
+        }
+        if (reviewedAt == null) {
+            return ComplianceRuleStatus.UNKNOWN;
+        }
+        if (reviewedAt.isBefore(Instant.now().minus(Duration.ofDays(370)))) {
+            return ComplianceRuleStatus.STALE;
+        }
+        if (freshnessStatus == ComplianceRuleFreshnessStatus.STALE || freshnessStatus == ComplianceRuleFreshnessStatus.FAILED) {
+            return ComplianceRuleStatus.STALE;
+        }
+        if (freshnessStatus == ComplianceRuleFreshnessStatus.CURRENT) {
+            return ComplianceRuleStatus.CURRENT;
+        }
+        return ComplianceRuleStatus.UNKNOWN;
     }
 }
 

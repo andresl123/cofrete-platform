@@ -1,6 +1,8 @@
 package com.cofrete.coreapi.profile;
 
 import java.time.Instant;
+import java.time.Duration;
+import java.time.LocalDate;
 
 record DriverEnvelope(DriverResponse driver) {
 }
@@ -15,6 +17,12 @@ record TruckConsumptionProfileEnvelope(TruckConsumptionProfileResponse truckCons
 }
 
 record TaxProfileEnvelope(TaxProfileResponse taxProfile) {
+}
+
+record IpvaRuleEnvelope(IpvaRuleResponse ipvaRule) {
+}
+
+record TaxRuleYearEnvelope(TaxRuleYearResponse taxRuleYear) {
 }
 
 record DriverResponse(
@@ -175,5 +183,148 @@ record TaxProfileResponse(
             taxProfile.getFreshnessStatus(),
             "Tax values are planning metadata. Confirm obligations with Receita Federal or a qualified accountant."
         );
+    }
+}
+
+record IpvaRuleResponse(
+    String id,
+    String state,
+    VehicleType vehicleType,
+    int effectiveYear,
+    String ratePercent,
+    String currency,
+    String sourceUrl,
+    Instant reviewedAt,
+    RuleStatus ipvaStatus,
+    String licensingSourceUrl,
+    Instant licensingReviewedAt,
+    RuleStatus licensingStatus,
+    String advisoryText,
+    Instant createdAt,
+    Instant updatedAt
+) {
+
+    static IpvaRuleResponse from(IpvaRule rule) {
+        return new IpvaRuleResponse(
+            rule.getId(),
+            rule.getState(),
+            rule.getVehicleType(),
+            rule.getEffectiveYear(),
+            rule.getRatePercent() == null ? null : rule.getRatePercent().toPlainString(),
+            rule.getCurrency(),
+            rule.getSourceUrl(),
+            rule.getReviewedAt(),
+            SourceRuleStatus.ruleStatus(rule.getFreshnessStatus(), rule.getReviewedAt(), rule.getSourceUrl()),
+            rule.getLicensingSourceUrl(),
+            rule.getLicensingReviewedAt(),
+            SourceRuleStatus.ruleStatus(rule.getLicensingFreshnessStatus(), rule.getLicensingReviewedAt(), rule.getLicensingSourceUrl()),
+            "IPVA and licensing reminders are advisory. Confirm official values, due dates, and payment channels with the state DETRAN or SEFAZ.",
+            rule.getCreatedAt(),
+            rule.getUpdatedAt()
+        );
+    }
+
+    static IpvaRuleResponse missing(String state, VehicleType vehicleType, int effectiveYear) {
+        return new IpvaRuleResponse(
+            null,
+            state,
+            vehicleType,
+            effectiveYear,
+            null,
+            "BRL",
+            null,
+            null,
+            RuleStatus.MISSING,
+            null,
+            null,
+            RuleStatus.MISSING,
+            "No source-backed state rule is configured. Do not estimate IPVA or licensing from a national hardcoded percentage.",
+            null,
+            null
+        );
+    }
+}
+
+record TaxRuleYearResponse(
+    String id,
+    TaxRegime regime,
+    int planningYear,
+    String annualGrossLimit,
+    String currency,
+    String formulaMetadata,
+    String cargoTransportTaxablePercent,
+    LocalDate effectiveFrom,
+    LocalDate effectiveTo,
+    String sourceUrl,
+    Instant reviewedAt,
+    RuleStatus ruleStatus,
+    String advisoryText,
+    Instant createdAt,
+    Instant updatedAt
+) {
+
+    static TaxRuleYearResponse from(TaxRuleYear rule) {
+        return new TaxRuleYearResponse(
+            rule.getId(),
+            rule.getRegime(),
+            rule.getPlanningYear(),
+            rule.getAnnualGrossLimit() == null ? null : rule.getAnnualGrossLimit().toPlainString(),
+            rule.getCurrency(),
+            rule.getFormulaMetadata(),
+            rule.getCargoTransportTaxablePercent() == null ? null : rule.getCargoTransportTaxablePercent().toPlainString(),
+            rule.getEffectiveFrom(),
+            rule.getEffectiveTo(),
+            rule.getSourceUrl(),
+            rule.getReviewedAt(),
+            SourceRuleStatus.ruleStatus(rule.getFreshnessStatus(), rule.getReviewedAt(), rule.getSourceUrl()),
+            "Tax outputs are planning estimates. Confirm Receita Federal, state, municipal, and accountant guidance before filing or changing regime.",
+            rule.getCreatedAt(),
+            rule.getUpdatedAt()
+        );
+    }
+
+    static TaxRuleYearResponse missing(TaxRegime regime, int planningYear) {
+        return new TaxRuleYearResponse(
+            null,
+            regime,
+            planningYear,
+            null,
+            "BRL",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            RuleStatus.MISSING,
+            "No source-backed tax rule is configured for this regime and year. Keep tax reserve output conservative.",
+            null,
+            null
+        );
+    }
+}
+
+final class SourceRuleStatus {
+
+    private SourceRuleStatus() {
+    }
+
+    static RuleStatus ruleStatus(FreshnessStatus freshnessStatus, Instant reviewedAt, String sourceUrl) {
+        if (sourceUrl == null || sourceUrl.isBlank()) {
+            return RuleStatus.MISSING;
+        }
+        if (reviewedAt == null) {
+            return RuleStatus.UNKNOWN;
+        }
+        if (reviewedAt.isBefore(Instant.now().minus(Duration.ofDays(370)))) {
+            return RuleStatus.STALE;
+        }
+        if (freshnessStatus == FreshnessStatus.STALE || freshnessStatus == FreshnessStatus.FAILED) {
+            return RuleStatus.STALE;
+        }
+        if (freshnessStatus == FreshnessStatus.CURRENT) {
+            return RuleStatus.CURRENT;
+        }
+        return RuleStatus.UNKNOWN;
     }
 }

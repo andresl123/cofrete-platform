@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ROU-225 Financial Health Dashboard Explainer</title>
+</head>
+<body>
+  <main>
+    <h1>ROU-225 Financial Health Dashboard</h1>
+    <p>The mobile dashboard now renders a live advisory financial-health view instead of static reference content.</p>
+    <h2>What changed</h2>
+    <ul>
+      <li>Mobile composes financial health, reserve wallets, overdue receivables, and compliance profile data.</li>
+      <li>The dashboard shows score, safe withdrawal, reserve coverage, receivable risk, compliance alerts, and source caveats.</li>
+      <li>Pass-through toll reimbursement and Vale-Pedagio stay visibly outside profit and safe withdrawal.</li>
+      <li>The mobile Core API client now has typed receivable contracts and a `GET /api/receivables?status=overdue` call.</li>
+    </ul>
+    <h2>Affected areas</h2>
+    <ul>
+      <li><code>mobile-app/src/MobileApp.tsx</code></li>
+      <li><code>mobile-app/src/api/client.ts</code></li>
+      <li><code>mobile-app/src/api/contracts.ts</code></li>
+      <li><code>mobile-app/src/__tests__/MobileApp.test.tsx</code></li>
+      <li><code>docs/architecture/api-contracts.md</code></li>
+    </ul>
+    <h2>Validation</h2>
+    <p><code>cd mobile-app &amp;&amp; npm run typecheck</code> passed.</p>
+    <p><code>cd mobile-app &amp;&amp; npm run lint</code> passed.</p>
+    <p><code>cd mobile-app &amp;&amp; npm run test:ci -- --runTestsByPath src/__tests__/MobileApp.test.tsx</code> passed.</p>
+    <h2>Unblocks</h2>
+    <p>This gives the MVP smoke/demo path a first screen that combines reserves, receivables, compliance, and source freshness caveats.</p>
+  </main>
+</body>
+</html>

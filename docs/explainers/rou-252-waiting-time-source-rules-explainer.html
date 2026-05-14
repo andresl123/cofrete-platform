@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ROU-252 Waiting Time Source Rules Explainer</title>
+</head>
+<body>
+  <main>
+    <h1>ROU-252 Waiting-Time Source Rules</h1>
+    <p>Waiting-time charge assumptions now use a source-backed Core API rule and a deterministic Finance Worker calculator.</p>
+    <h2>What changed</h2>
+    <ul>
+      <li>Added <code>POST /api/source-rules/waiting-time</code> for threshold/rate/effective-date configuration.</li>
+      <li>Added <code>GET /api/source-rules/waiting-time</code> to return the effective rule or explicit missing status.</li>
+      <li>Added <code>waiting_time_rules</code> with source URL, reviewed timestamp, freshness, and confidence.</li>
+      <li>Added <code>WaitingTimeChargeCalculator</code> for auditable excess-hours and ton-hour charge calculation.</li>
+    </ul>
+    <h2>Affected areas</h2>
+    <ul>
+      <li><code>core-api/src/main/java/com/cofrete/coreapi/compliance/</code></li>
+      <li><code>finance-worker/src/main/java/com/cofrete/financeworker/calculation/</code></li>
+      <li><code>finance-worker/src/test/java/com/cofrete/financeworker/calculation/WaitingTimeChargeCalculatorTests.java</code></li>
+      <li><code>docs/architecture/api-contracts.md</code></li>
+      <li><code>docs/architecture/data-model.md</code></li>
+    </ul>
+    <h2>Validation</h2>
+    <p><code>cd core-api &amp;&amp; mvn -q -Dtest=ProfileEndpointTests,ComplianceEndpointTests test</code> passed.</p>
+    <p><code>cd finance-worker &amp;&amp; mvn -q -Dtest=WaitingTimeChargeCalculatorTests test</code> passed.</p>
+    <h2>Risk boundary</h2>
+    <p>Waiting-time impact is advisory. Copy explicitly tells drivers to confirm official rules and contract terms before charging or disputing a customer.</p>
+  </main>
+</body>
+</html>

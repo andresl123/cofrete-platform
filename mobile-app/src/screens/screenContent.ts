@@ -79,6 +79,7 @@ export const screenContentByRoute: Record<AppRouteId, ScreenContent> = {
     endpoints: [
       CORE_API_ENDPOINTS.financialHealthScore,
       CORE_API_ENDPOINTS.reserveWallets,
+      CORE_API_ENDPOINTS.receivablesOverdue,
       CORE_API_ENDPOINTS.complianceProfile,
     ],
     metrics: [

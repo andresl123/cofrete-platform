@@ -57,6 +57,13 @@ enum FreshnessStatus {
     UNKNOWN
 }
 
+enum RuleStatus {
+    CURRENT,
+    STALE,
+    MISSING,
+    UNKNOWN
+}
+
 enum InsurancePolicyType {
     RCTR_C,
     RC_DC,

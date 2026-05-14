@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ROU-248 IPVA Licensing Source Rules Explainer</title>
+</head>
+<body>
+  <main>
+    <h1>ROU-248 IPVA And Licensing Source Rules</h1>
+    <p>Core API now exposes state/year/vehicle-type IPVA and licensing rules as source-backed records.</p>
+    <h2>What changed</h2>
+    <ul>
+      <li>Added <code>POST /api/source-rules/ipva</code> for creating or updating reviewed IPVA/licensing metadata.</li>
+      <li>Added <code>GET /api/source-rules/ipva</code> to return a rule or an explicit <code>MISSING</code> status.</li>
+      <li>Extended <code>ipva_rules</code> with IPVA freshness, licensing source URL, licensing review timestamp, and licensing freshness.</li>
+      <li>Tests cover missing, current, and stale source review behavior.</li>
+    </ul>
+    <h2>Affected areas</h2>
+    <ul>
+      <li><code>core-api/src/main/java/com/cofrete/coreapi/profile/</code></li>
+      <li><code>core-api/src/main/resources/db/migration/V10__source_backed_tax_ipva_waiting_time_rules.sql</code></li>
+      <li><code>core-api/src/test/java/com/cofrete/coreapi/profile/ProfileEndpointTests.java</code></li>
+      <li><code>docs/architecture/api-contracts.md</code></li>
+      <li><code>docs/architecture/data-model.md</code></li>
+    </ul>
+    <h2>Validation</h2>
+    <p><code>cd core-api &amp;&amp; mvn -q -Dtest=ProfileEndpointTests,ComplianceEndpointTests test</code> passed.</p>
+    <h2>Risk boundary</h2>
+    <p>Core does not fall back to a national hardcoded truck IPVA percentage. Missing source-backed state rules remain explicit.</p>
+  </main>
+</body>
+</html>
