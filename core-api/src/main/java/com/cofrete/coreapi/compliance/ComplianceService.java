@@ -22,6 +22,7 @@ class ComplianceService {
     private final ComplianceScoreSnapshotRepository scoreSnapshots;
     private final ComplianceCalendarItemRepository calendarItems;
     private final WaitingTimeRuleRepository waitingTimeRules;
+    private final InsuranceRequirementRuleRepository insuranceRequirementRules;
     private final Clock clock;
 
     ComplianceService(
@@ -32,7 +33,8 @@ class ComplianceService {
         ComplianceAlertRepository alerts,
         ComplianceScoreSnapshotRepository scoreSnapshots,
         ComplianceCalendarItemRepository calendarItems,
-        WaitingTimeRuleRepository waitingTimeRules
+        WaitingTimeRuleRepository waitingTimeRules,
+        InsuranceRequirementRuleRepository insuranceRequirementRules
     ) {
         this.profiles = profiles;
         this.complianceProfiles = complianceProfiles;
@@ -42,6 +44,7 @@ class ComplianceService {
         this.scoreSnapshots = scoreSnapshots;
         this.calendarItems = calendarItems;
         this.waitingTimeRules = waitingTimeRules;
+        this.insuranceRequirementRules = insuranceRequirementRules;
         clock = Clock.systemUTC();
     }
 
@@ -61,7 +64,7 @@ class ComplianceService {
                 profile.getLatestCiotStatus(),
                 "CIOT guidance is advisory until confirmed with official or professional sources."
             ),
-            insuranceSummary(activePolicies),
+            insuranceSummary(activePolicies, insuranceSourceReview()),
             documentSummary(activeDocuments),
             score,
             alerts.findByDriverIdOrderByDueOnAscGeneratedAtAsc(driverId).stream().map(ComplianceAlertResponse::from).toList(),
@@ -100,7 +103,7 @@ class ComplianceService {
             : profiles.requireTripOwner(user, request.truckId()).truckId();
         var policy = insurancePolicies.save(new InsurancePolicy(driverId, truckId, request));
         refreshDerivedItems(driverId);
-        return InsurancePolicyResponse.from(policy);
+        return InsurancePolicyResponse.from(policy, insuranceSourceReview(policy.getPolicyType()));
     }
 
     @Transactional(readOnly = true)
@@ -109,7 +112,9 @@ class ComplianceService {
         var results = active == null
             ? insurancePolicies.findByDriverIdOrderByCreatedAtAsc(driverId)
             : insurancePolicies.findByDriverIdAndActiveOrderByCreatedAtAsc(driverId, active);
-        return results.stream().map(InsurancePolicyResponse::from).toList();
+        return results.stream()
+            .map(policy -> InsurancePolicyResponse.from(policy, insuranceSourceReview(policy.getPolicyType())))
+            .toList();
     }
 
     @Transactional
@@ -187,6 +192,31 @@ class ComplianceService {
             .orElseGet(() -> WaitingTimeRuleResponse.missing(date));
     }
 
+    @Transactional
+    InsuranceRequirementRuleResponse createOrUpdateInsuranceRequirementRule(InsuranceRequirementRuleRequest request) {
+        if (request.effectiveTo() != null && request.effectiveTo().isBefore(request.effectiveFrom())) {
+            throw new ComplianceValidationException("effectiveTo cannot be before effectiveFrom.");
+        }
+        var rule = insuranceRequirementRules
+            .findByRequirementScopeAndPolicyTypeAndEffectiveFrom(
+                request.requirementScope().trim(),
+                request.policyType(),
+                request.effectiveFrom()
+            )
+            .orElseGet(() -> new InsuranceRequirementRule(request));
+        rule.updateFrom(request);
+        return InsuranceRequirementRuleResponse.from(insuranceRequirementRules.save(rule));
+    }
+
+    @Transactional(readOnly = true)
+    InsuranceRequirementRuleResponse getInsuranceRequirementRule(LocalDate effectiveDate) {
+        var date = effectiveDate == null ? LocalDate.now(clock) : effectiveDate;
+        return insuranceRequirementRules.findEffectiveRules(date, PageRequest.of(0, 1)).stream()
+            .findFirst()
+            .map(InsuranceRequirementRuleResponse::from)
+            .orElseGet(() -> InsuranceRequirementRuleResponse.missing(date));
+    }
+
     private ComplianceProfile requireOrCreateProfile(String driverId) {
         return complianceProfiles.findByDriverId(driverId)
             .orElseGet(() -> complianceProfiles.save(new ComplianceProfile(driverId)));
@@ -214,13 +244,14 @@ class ComplianceService {
         }
     }
 
-    private InsuranceSummaryResponse insuranceSummary(List<InsurancePolicy> policies) {
+    private InsuranceSummaryResponse insuranceSummary(List<InsurancePolicy> policies, InsuranceSourceReviewResponse sourceReview) {
         var statuses = policies.stream().map(policy -> ComplianceDates.statusFor(policy.getExpiresOn(), clock)).toList();
         return new InsuranceSummaryResponse(
             policies.size(),
             (int) statuses.stream().filter(ComplianceItemStatus.EXPIRING_SOON::equals).count(),
             (int) statuses.stream().filter(ComplianceItemStatus.EXPIRED::equals).count(),
-            ComplianceWording.INSURANCE_CAVEAT
+            sourceReview.advisoryText(),
+            sourceReview
         );
     }
 
@@ -323,7 +354,13 @@ class ComplianceService {
         var generatedCalendar = new ArrayList<ComplianceCalendarItem>();
         complianceProfiles.findByDriverId(driverId).ifPresent(profile -> addRntrcAlert(driverId, profile, generatedAlerts));
         insurancePolicies.findByDriverIdAndActiveOrderByCreatedAtAsc(driverId, true)
-            .forEach(policy -> addInsuranceReminders(driverId, policy, generatedAlerts, generatedCalendar));
+            .forEach(policy -> addInsuranceReminders(
+                driverId,
+                policy,
+                generatedAlerts,
+                generatedCalendar,
+                insuranceSourceReview(policy.getPolicyType())
+            ));
         documents.findByDriverIdAndActiveOrderByCreatedAtAsc(driverId, true)
             .forEach(document -> {
                 document.refreshStatus(clock);
@@ -356,7 +393,8 @@ class ComplianceService {
         String driverId,
         InsurancePolicy policy,
         List<ComplianceAlert> generatedAlerts,
-        List<ComplianceCalendarItem> generatedCalendar
+        List<ComplianceCalendarItem> generatedCalendar,
+        InsuranceSourceReviewResponse sourceReview
     ) {
         var status = ComplianceDates.statusFor(policy.getExpiresOn(), clock);
         if (status != ComplianceItemStatus.EXPIRED && status != ComplianceItemStatus.EXPIRING_SOON) {
@@ -364,6 +402,7 @@ class ComplianceService {
         }
         var severity = status == ComplianceItemStatus.EXPIRED ? ComplianceSeverity.CRITICAL : ComplianceSeverity.WARNING;
         var message = "Insurance policy " + policy.getPolicyType() + " is " + status.name().toLowerCase().replace('_', ' ') + ".";
+        var advisoryText = insuranceAlertAdvisoryText(sourceReview);
         generatedAlerts.add(new ComplianceAlert(
             driverId,
             ComplianceAlertType.INSURANCE_EXPIRATION,
@@ -373,7 +412,7 @@ class ComplianceService {
             policy.getId(),
             policy.getExpiresOn(),
             message,
-            ComplianceWording.INSURANCE_CAVEAT,
+            advisoryText,
             ComplianceWording.INSURANCE_OFFICIAL_ACTION_URL
         ));
         generatedCalendar.add(new ComplianceCalendarItem(
@@ -384,9 +423,31 @@ class ComplianceService {
             policy.getExpiresOn(),
             status,
             severity,
-            ComplianceWording.INSURANCE_CAVEAT,
+            advisoryText,
             ComplianceWording.INSURANCE_OFFICIAL_ACTION_URL
         ));
+    }
+
+    private String insuranceAlertAdvisoryText(InsuranceSourceReviewResponse sourceReview) {
+        return sourceReview.advisoryText()
+            + " Source status: " + sourceReview.ruleStatus()
+            + "; source: " + (sourceReview.sourceUrl() == null ? "not configured" : sourceReview.sourceUrl())
+            + "; reviewedAt: " + (sourceReview.reviewedAt() == null ? "not reviewed" : sourceReview.reviewedAt())
+            + "; confidence: " + sourceReview.confidence() + ".";
+    }
+
+    private InsuranceSourceReviewResponse insuranceSourceReview() {
+        return insuranceRequirementRules.findEffectiveRules(LocalDate.now(clock), PageRequest.of(0, 1)).stream()
+            .findFirst()
+            .map(InsuranceSourceReviewResponse::from)
+            .orElseGet(() -> InsuranceSourceReviewResponse.missing(LocalDate.now(clock)));
+    }
+
+    private InsuranceSourceReviewResponse insuranceSourceReview(InsurancePolicyType policyType) {
+        return insuranceRequirementRules.findEffectiveRulesForPolicy(policyType, LocalDate.now(clock), PageRequest.of(0, 1)).stream()
+            .findFirst()
+            .map(InsuranceSourceReviewResponse::from)
+            .orElseGet(() -> InsuranceSourceReviewResponse.missing(LocalDate.now(clock)));
     }
 
     private void addDocumentReminders(

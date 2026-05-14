@@ -6,6 +6,7 @@ The `pr-checks.yml` workflow runs on `pull_request`, pushes to `main`, and manua
 
 ```sh
 python scripts/agent_harness_check.py
+python scripts/smoke/validate_mvp_demo_flow.py
 ```
 
 The same workflow also contains scaffold-aware jobs for:

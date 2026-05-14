@@ -3,6 +3,8 @@
 Last full-register check: 2026-05-11.
 ROU-220 RNTRC Digital source check: 2026-05-14.
 ROU-247 ANTT freight-floor source check: 2026-05-14.
+ROU-250 RNTRC public-status automation evaluation: 2026-05-14.
+ROU-251 insurance regulatory source-refresh review: 2026-05-14.
 
 Cofrete is not an official government, legal, tax, accounting, or insurance channel. Product behavior must link users back to official sources when a decision can affect compliance, tax, insurance, or legal obligations.
 
@@ -34,3 +36,9 @@ Cofrete is not an official government, legal, tax, accounting, or insurance chan
 ## Review Rule
 
 Re-check this register before launch, before changing compliance copy, and whenever implementation issues automate source ingestion or status lookup.
+
+## ROU-250/ROU-251 Review Notes
+
+- RNTRC Digital remains an official update path requiring gov.br authentication; Cofrete must keep app login separate and must not handle gov.br credentials.
+- ANTT public RNTRC consultation stays link-only for MVP because automation terms, source stability, and anti-abuse behavior are not approved.
+- SUSEP/insurance source guidance is represented as source-review metadata with reviewed timestamp, source URL, freshness, and confidence. Driver-entered policy data remains separate from official/professional guidance.

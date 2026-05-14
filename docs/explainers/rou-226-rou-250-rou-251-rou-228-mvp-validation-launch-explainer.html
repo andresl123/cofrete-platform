@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>ROU-226 ROU-250 ROU-251 ROU-228 MVP Validation And Launch Explainer</title>
+  </head>
+  <body>
+    <main>
+      <h1>ROU-226 ROU-250 ROU-251 ROU-228 MVP Validation And Launch Explainer</h1>
+      <p>
+        This manually maintained explainer is a derived handoff aid. Canonical source-of-truth wording remains in the markdown docs.
+      </p>
+
+      <section>
+        <h2>What Changed</h2>
+        <ul>
+          <li>ROU-226 added a synthetic MVP demo seed, seed/reset scripts, a Python smoke validator, and a local demo smoke runner.</li>
+          <li>ROU-250 documented the RNTRC public-status lookup recommendation: MVP stays manual/link-only and never handles gov.br credentials.</li>
+          <li>ROU-251 added Core API insurance requirement source-review records, endpoints, tests, and advisory source-review metadata in insurance responses and alerts.</li>
+          <li>ROU-228 added an MVP launch runbook, updated the risk register, reviewed official-source register notes, and aligned release docs.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Why It Changed</h2>
+        <p>
+          The MVP now has a repeatable proof path for driver/truck setup assumptions, freight finance, toll pass-through treatment, ANP fixture freshness, RNTRC/insurance advisory metadata, expiration alerts, receivables, reserves, and dashboard rendering.
+        </p>
+        <p>
+          Compliance-source decisions remain conservative: Cofrete links users to official RNTRC and insurance sources without presenting itself as an official channel.
+        </p>
+      </section>
+
+      <section>
+        <h2>Affected Areas</h2>
+        <ul>
+          <li><code>scripts/demo/</code>: synthetic seed and resettable local copy workflow.</li>
+          <li><code>scripts/smoke/</code>: executable MVP demo smoke validation.</li>
+          <li><code>core-api/compliance</code>: insurance source-review source-rule model, API, response metadata, and tests.</li>
+          <li><code>docs/compliance/</code>: RNTRC and insurance source-refresh recommendations.</li>
+          <li><code>docs/runbooks/</code>: demo seed and MVP launch validation path.</li>
+          <li><code>docs/agent-harness/</code>: smoke-test and risk-register updates.</li>
+          <li><code>.github/workflows/pr-checks.yml</code>: CI now runs the fixture smoke validator.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Validation</h2>
+        <ul>
+          <li><code>python scripts/smoke/validate_mvp_demo_flow.py</code>: passed.</li>
+          <li><code>scripts/smoke/local-demo-e2e.sh</code>: passed; web app validation was skipped because <code>web-app/package.json</code> does not exist.</li>
+          <li><code>docker compose config</code>: passed.</li>
+          <li><code>cd core-api &amp;&amp; mvn -q validate test</code>: passed.</li>
+          <li><code>cd finance-worker &amp;&amp; mvn -q validate test</code>: passed.</li>
+          <li><code>cd data-importer-worker &amp;&amp; mvn -q validate test</code>: passed.</li>
+          <li><code>cd mobile-app &amp;&amp; npm run typecheck &amp;&amp; npm run lint &amp;&amp; npm run test:ci</code>: passed.</li>
+          <li><code>python scripts/agent_harness_check.py</code>: passed after retaining harness-required planned smoke script markers.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Review Loops</h2>
+        <ul>
+          <li>ROU-226 grill-with-docs loop: one pass, no meaningful issue found after smoke docs and scripts were aligned.</li>
+          <li>ROU-250 grill-with-docs loop: one pass, no meaningful issue found; recommendation remains manual/link-only RNTRC workflow.</li>
+          <li>ROU-251 grill-with-docs loop: two passes; first pass found insurance alerts lacked source/review metadata, second pass passed after advisory text included source status, URL, reviewed timestamp, and confidence.</li>
+          <li>ROU-228 grill-with-docs loop: one pass, no meaningful issue found after launch runbook and risk register alignment.</li>
+          <li>Final combined grill-with-docs loop: one pass, no meaningful cross-issue mismatch found.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Next Task Unblocked</h2>
+        <p>
+          This unblocks MVP release review work that depends on green smoke validation and documented compliance-source risk boundaries.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

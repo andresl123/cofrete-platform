@@ -67,10 +67,10 @@ Working now:
 - Worktree helper script for task branches.
 - Core API Spring Boot scaffold with health, PostgreSQL local profile, Flyway migration setup, and test skeleton.
 - Data Importer Worker Spring Boot scaffold with health, scheduler/import stubs, synthetic ANP fixture loading, RabbitMQ publisher stubs, and event contract tests.
+- Synthetic MVP demo seed, smoke validator, MVP launch runbook, RNTRC link-only recommendation, and insurance source-refresh workflow.
 
 Planned in follow-up issues:
 
 - Image publishing workflow.
 - Expo mobile app scaffold.
 - React/Vite web app scaffold.
-- Runtime smoke scripts and demo seed/reset scripts.

@@ -73,3 +73,18 @@ record WaitingTimeRuleRequest(
     RuleConfidence confidence
 ) {
 }
+
+record InsuranceRequirementRuleRequest(
+    @NotBlank @Size(max = 120) String requirementScope,
+    @NotNull InsurancePolicyType policyType,
+    Boolean required,
+    @NotNull LocalDate effectiveFrom,
+    LocalDate effectiveTo,
+    @Size(max = 160) String sourceName,
+    @Size(max = 500) String sourceUrl,
+    Instant reviewedAt,
+    ComplianceRuleFreshnessStatus freshnessStatus,
+    RuleConfidence confidence,
+    @Size(max = 700) String notes
+) {
+}

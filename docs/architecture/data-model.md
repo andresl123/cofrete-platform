@@ -50,6 +50,7 @@ This document records the first implementation target. Profile-domain table name
 
 - RntrcProfile: number, category, status, source, and last checked date.
 - InsurancePolicy: RCTR-C, RC-DC, RC-V, truck hull, life/accident, insurer, broker/contact, policy number, dates, annual premium, monthly reserve, linked RNTRC flag, PGR requirement flag, verification status, and document reference.
+- InsuranceRequirementRule: mandatory-insurance source review metadata by requirement scope and policy type, including source name, source URL, effective dates, reviewed timestamp, freshness, confidence, required flag, and notes.
 - ComplianceDocument: document metadata, expiration, object storage reference.
 - ComplianceAlert: advisory alert with source and severity.
 - ComplianceScoreSnapshot: weighted score components for RNTRC, mandatory insurance, expired documents, IPVA/licensing, and CIOT/Vale-Pedagio tracking.
@@ -96,7 +97,7 @@ The implemented Core API trip profitability migration includes:
 - `trip_acceptance_decisions`
 - `trip_recalculation_events`
 
-The implemented Core API fuel and toll import migration includes:
+The implemented Core API fuel, toll, and source-rule migrations include:
 
 - `import_jobs`
 - `fuel_prices`
@@ -108,6 +109,7 @@ The implemented Core API fuel and toll import migration includes:
 - `freight_floor_coefficients`
 - `freight_floor_checks`
 - `waiting_time_rules`
+- `insurance_requirement_rules`
 
 Reserve allocation records keep nullable `tripId` and `freightPaymentId` references until a later migration links reserve allocation subjects to trip and receivable records without disrupting existing allocation idempotency keys.
 
