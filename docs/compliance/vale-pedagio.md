@@ -6,12 +6,18 @@ Vale-Pedagio and toll reimbursements are pass-through or receivable money. They 
 
 | Classification | Meaning | Finance Treatment |
 |---|---|---|
-| `VALE_PEDAGIO_RECEIVED` | Contractor provided toll payment in advance | Pass-through, not income |
-| `DRIVER_PAID_MANUALLY` | Driver paid tolls with own money | Receivable/reimbursement |
-| `VALE_PEDAGIO_NOT_CONFIRMED` | Proof not provided yet | Pre-trip alert |
-| `TOLL_INCLUDED_IN_FREIGHT` | Payer says toll is included in freight | Warning, may distort profit |
-| `NO_TOLL_ON_ROUTE` | Route appears to have no tolls | No toll cost |
+| `PASS_THROUGH` | Vale-Pedagio, toll reimbursement, or driver-paid toll expected as receivable/reimbursement | Pass-through, not income |
+| `DRIVER_PAID_NON_REIMBURSED` | Driver paid tolls with own money and no reimbursement is expected | Direct trip cost that reduces profit |
+| `INCLUDED_IN_FREIGHT` | Payer says toll is included in freight | Warning; exclude known toll component from profit when amount is identified |
+| `NO_TOLL` | Route appears to have no tolls | No toll cost |
 | `UNKNOWN` | App cannot validate toll status | Manual review needed |
+
+Vale-Pedagio proof status is tracked separately from the toll classification:
+
+| Vale-Pedagio Status | Meaning | Finance Treatment |
+|---|---|---|
+| `VALE_PEDAGIO_RECEIVED` | Contractor provided toll payment in advance | Pass-through, not income |
+| `VALE_PEDAGIO_NOT_CONFIRMED` | Proof not provided yet | Pre-trip alert and manual review |
 
 ## Product Wording
 

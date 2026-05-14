@@ -23,6 +23,16 @@ interface ProfitabilitySnapshotRepository extends JpaRepository<ProfitabilitySna
 interface TripAcceptanceDecisionRepository extends JpaRepository<TripAcceptanceDecision, String> {
 }
 
+interface TripTollRepository extends JpaRepository<TripToll, String> {
+
+    List<TripToll> findByTripOrderByCreatedAtAsc(Trip trip);
+}
+
+interface ValePedagioRecordRepository extends JpaRepository<ValePedagioRecord, String> {
+
+    List<ValePedagioRecord> findByTripOrderByCreatedAtAsc(Trip trip);
+}
+
 interface TripRecalculationEventRepository extends JpaRepository<TripRecalculationEventRecord, String> {
 
     List<TripRecalculationEventRecord> findByTripIdOrderByInputRevisionAsc(String tripId);

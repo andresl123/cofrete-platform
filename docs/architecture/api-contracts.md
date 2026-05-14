@@ -512,6 +512,7 @@ Toll semantics:
 
 - Vale-Pedagio and toll reimbursement are pass-through money, not profit.
 - `DRIVER_PAID_NON_REIMBURSED` tolls reduce profitability.
+- Known `INCLUDED_IN_FREIGHT` toll components must stay visible and be excluded from profit when the amount is identified.
 - `UNKNOWN` classification must keep the estimate conservative and visible.
 
 ## Compliance

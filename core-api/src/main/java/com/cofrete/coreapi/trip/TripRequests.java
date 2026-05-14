@@ -90,3 +90,39 @@ record AcceptanceDecisionRequest(
         reasonCodes = reasonCodes == null ? List.of() : List.copyOf(reasonCodes);
     }
 }
+
+record TollEstimateRequest(
+    String tripId,
+    @NotNull @Valid RoutePointRequest origin,
+    @NotNull @Valid RoutePointRequest destination,
+    @DecimalMin(value = "0.00", inclusive = false) @Digits(integer = 12, fraction = 2) BigDecimal distanceKm,
+    @NotNull @Min(1) @Max(12) Integer axles,
+    @NotBlank @Size(max = 40) String vehicleType
+) {
+}
+
+record ManualTollPaymentRequest(
+    @Size(max = 160) String plazaName,
+    @NotNull @DecimalMin("0.00") @Digits(integer = 12, fraction = 2) BigDecimal amount,
+    @NotBlank @Pattern(regexp = "BRL") String currency,
+    TollPaidBy paidBy,
+    @NotNull TollClassification classification,
+    @Size(max = 80) String confidence,
+    @Size(max = 120) String source,
+    @Size(max = 160) String sourceReference,
+    Instant paidAt,
+    @Size(max = 500) String note
+) {
+}
+
+record ValePedagioRequest(
+    @Size(max = 160) String provider,
+    @Size(max = 160) String proofReference,
+    @NotNull @DecimalMin("0.00") @Digits(integer = 12, fraction = 2) BigDecimal amount,
+    @NotBlank @Pattern(regexp = "BRL") String currency,
+    @NotNull ValePedagioStatus receivedStatus,
+    @Size(max = 80) String confidence,
+    Instant receivedAt,
+    @Size(max = 500) String note
+) {
+}

@@ -38,3 +38,23 @@ enum RecalculationReason {
     IMPORT_DATA_REFRESHED,
     MANUAL_RECALCULATION
 }
+
+enum TollClassification {
+    PASS_THROUGH,
+    DRIVER_PAID_NON_REIMBURSED,
+    INCLUDED_IN_FREIGHT,
+    NO_TOLL,
+    UNKNOWN
+}
+
+enum TollPaidBy {
+    DRIVER,
+    CONTRACTOR,
+    SHIPPER,
+    UNKNOWN
+}
+
+enum ValePedagioStatus {
+    VALE_PEDAGIO_RECEIVED,
+    VALE_PEDAGIO_NOT_CONFIRMED
+}
