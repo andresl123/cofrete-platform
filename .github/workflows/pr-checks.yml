@@ -31,6 +31,9 @@ jobs:
       - name: Run harness validation
         run: python scripts/agent_harness_check.py
 
+      - name: Run MVP demo smoke fixture validation
+        run: python scripts/smoke/validate_mvp_demo_flow.py
+
   java-services:
     name: Java service checks
     runs-on: ubuntu-latest

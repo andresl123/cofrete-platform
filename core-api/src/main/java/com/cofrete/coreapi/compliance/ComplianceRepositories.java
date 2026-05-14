@@ -73,3 +73,33 @@ interface WaitingTimeRuleRepository extends JpaRepository<WaitingTimeRule, Strin
         """)
     List<WaitingTimeRule> findEffectiveRules(@Param("effectiveDate") LocalDate effectiveDate, Pageable pageable);
 }
+
+interface InsuranceRequirementRuleRepository extends JpaRepository<InsuranceRequirementRule, String> {
+
+    Optional<InsuranceRequirementRule> findByRequirementScopeAndPolicyTypeAndEffectiveFrom(
+        String requirementScope,
+        InsurancePolicyType policyType,
+        LocalDate effectiveFrom
+    );
+
+    @Query("""
+        select rule from InsuranceRequirementRule rule
+        where rule.effectiveFrom <= :effectiveDate
+          and (rule.effectiveTo is null or rule.effectiveTo >= :effectiveDate)
+        order by rule.effectiveFrom desc
+        """)
+    List<InsuranceRequirementRule> findEffectiveRules(@Param("effectiveDate") LocalDate effectiveDate, Pageable pageable);
+
+    @Query("""
+        select rule from InsuranceRequirementRule rule
+        where rule.policyType = :policyType
+          and rule.effectiveFrom <= :effectiveDate
+          and (rule.effectiveTo is null or rule.effectiveTo >= :effectiveDate)
+        order by rule.effectiveFrom desc
+        """)
+    List<InsuranceRequirementRule> findEffectiveRulesForPolicy(
+        @Param("policyType") InsurancePolicyType policyType,
+        @Param("effectiveDate") LocalDate effectiveDate,
+        Pageable pageable
+    );
+}

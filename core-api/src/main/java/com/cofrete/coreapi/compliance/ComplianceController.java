@@ -113,4 +113,23 @@ class ComplianceController {
         users.requireUser(authentication);
         return new WaitingTimeRuleEnvelope(compliance.getWaitingTimeRule(effectiveDate));
     }
+
+    @PostMapping(ApiRoutingConventions.API_PREFIX + "/source-rules/insurance-requirements")
+    @ResponseStatus(HttpStatus.CREATED)
+    InsuranceRequirementRuleEnvelope upsertInsuranceRequirementRule(
+        Authentication authentication,
+        @Valid @RequestBody InsuranceRequirementRuleRequest request
+    ) {
+        users.requireUser(authentication);
+        return new InsuranceRequirementRuleEnvelope(compliance.createOrUpdateInsuranceRequirementRule(request));
+    }
+
+    @GetMapping(ApiRoutingConventions.API_PREFIX + "/source-rules/insurance-requirements")
+    InsuranceRequirementRuleEnvelope getInsuranceRequirementRule(
+        Authentication authentication,
+        @RequestParam(required = false) LocalDate effectiveDate
+    ) {
+        users.requireUser(authentication);
+        return new InsuranceRequirementRuleEnvelope(compliance.getInsuranceRequirementRule(effectiveDate));
+    }
 }

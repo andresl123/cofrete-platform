@@ -201,6 +201,92 @@ class ComplianceEndpointTests {
                 "Waiting-time impact is an advisory estimate. Confirm official rules and contract terms before charging or disputing a customer."));
     }
 
+    @Test
+    @WithMockUser(username = "insurance-source-rule@example.test")
+    void upsertsInsuranceRequirementRuleAndThreadsSourceReviewIntoPolicyAlerts() throws Exception {
+        createDriver("Insurance Source Rule", "52345678").andExpect(status().isCreated());
+        var expiresOn = LocalDate.now().plusDays(30);
+
+        mockMvc.perform(post("/api/source-rules/insurance-requirements")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "requirementScope": "MVP mandatory transport liability",
+                      "policyType": "RCTR_C",
+                      "required": true,
+                      "effectiveFrom": "2026-01-01",
+                      "sourceName": "SUSEP transport liability review",
+                      "sourceUrl": "https://www.gov.br/susep/pt-br/central-de-conteudos/noticias/2026/marco/cnsp-altera-norma-sobre-seguro-obrigatorio-de-responsabilidade-civil-para-transporte-rodoviario-de-cargas",
+                      "reviewedAt": "2026-05-14T00:00:00Z",
+                      "freshnessStatus": "CURRENT",
+                      "confidence": "MEDIUM",
+                      "notes": "Advisory source review for MVP wording only."
+                    }
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.insuranceRequirementRule.ruleStatus").value("CURRENT"))
+            .andExpect(jsonPath("$.insuranceRequirementRule.confidence").value("MEDIUM"))
+            .andExpect(jsonPath("$.insuranceRequirementRule.advisoryText").value(
+                "Insurance regulatory source metadata is current for advisory reminders, but Cofrete does not certify coverage or recommend policies."));
+
+        mockMvc.perform(post("/api/compliance/insurance-policies")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "policyType": "RCTR_C",
+                      "insurer": "Example Seguros",
+                      "policyNumberLast4": "6789",
+                      "startsOn": "%s",
+                      "expiresOn": "%s",
+                      "annualPremium": "3600.00",
+                      "monthlyReserve": "300.00",
+                      "currency": "BRL",
+                      "linkedRntrc": true,
+                      "pgrRequired": true,
+                      "verificationStatus": "VERIFIED_BY_DRIVER"
+                    }
+                    """.formatted(expiresOn.minusYears(1), expiresOn)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.insurancePolicy.sourceReview.ruleStatus").value("CURRENT"))
+            .andExpect(jsonPath("$.insurancePolicy.sourceReview.sourceName").value("SUSEP transport liability review"));
+
+        mockMvc.perform(get("/api/compliance/calendar"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.calendarItems[0].advisoryText").value(
+                "Insurance regulatory source metadata is current for advisory reminders, but Cofrete does not certify coverage or recommend policies. Source status: CURRENT; source: https://www.gov.br/susep/pt-br/central-de-conteudos/noticias/2026/marco/cnsp-altera-norma-sobre-seguro-obrigatorio-de-responsabilidade-civil-para-transporte-rodoviario-de-cargas; reviewedAt: 2026-05-14T00:00:00Z; confidence: MEDIUM."));
+    }
+
+    @Test
+    @WithMockUser(username = "insurance-source-stale@example.test")
+    void insuranceRequirementRuleReturnsMissingOrStaleConservativeStatus() throws Exception {
+        mockMvc.perform(get("/api/source-rules/insurance-requirements")
+                .queryParam("effectiveDate", "2020-01-01"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.insuranceRequirementRule.ruleStatus").value("MISSING"))
+            .andExpect(jsonPath("$.insuranceRequirementRule.advisoryText").value(
+                "No source-backed insurance requirement metadata is configured for this date. Keep mandatory-insurance guidance conservative."));
+
+        mockMvc.perform(post("/api/source-rules/insurance-requirements")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "requirementScope": "Archived liability review",
+                      "policyType": "RC_V",
+                      "required": true,
+                      "effectiveFrom": "2021-01-01",
+                      "sourceName": "SUSEP archived review",
+                      "sourceUrl": "https://www.gov.br/susep/pt-br/",
+                      "reviewedAt": "2021-01-01T00:00:00Z",
+                      "freshnessStatus": "CURRENT",
+                      "confidence": "LOW"
+                    }
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.insuranceRequirementRule.ruleStatus").value("STALE"))
+            .andExpect(jsonPath("$.insuranceRequirementRule.advisoryText").value(
+                "Insurance regulatory source metadata is stale or incomplete. Keep guidance conservative and confirm coverage with SUSEP, insurer, broker, or qualified professional."));
+    }
+
     private org.springframework.test.web.servlet.ResultActions createDriver(String name, String rntrcNumber) throws Exception {
         return mockMvc.perform(post("/api/drivers")
             .contentType(MediaType.APPLICATION_JSON)

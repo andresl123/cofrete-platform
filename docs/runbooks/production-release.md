@@ -5,6 +5,7 @@
 - Repository harness passes.
 - Changed services pass their validation commands.
 - Demo seed and smoke flow pass.
+- MVP launch runbook checklist passes when releasing the MVP surface.
 - Kubernetes manifests render and validate for the target environment.
 - Container images are immutable SHA tags and were built by CI.
 - Staging rollout is healthy before production promotion.
@@ -44,6 +45,8 @@ Review docs and UI copy touching:
 - MEI Caminhoneiro.
 - IPVA/licensing.
 - Tax profiles.
+
+For MVP launch, also run the source checklist in `docs/runbooks/mvp-launch.md`.
 
 ## Release Decision
 

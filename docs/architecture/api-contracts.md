@@ -556,6 +556,8 @@ Compliance APIs expose advisory metadata, reminders, and links to official chann
 | `POST` | `/api/documents` | Create document metadata and upload handoff. | Type, owner reference, expiration, storage metadata. | Document metadata and upload instructions if applicable. | `VALIDATION_ERROR`, `UNSUPPORTED_MEDIA_TYPE` |
 | `POST` | `/api/source-rules/waiting-time` | Create or update source-backed loading/unloading waiting-time rule. | Threshold hours, rate per ton-hour, effective dates, source URL, reviewed timestamp, confidence. | `waitingTimeRule` resource. | `VALIDATION_ERROR` |
 | `GET` | `/api/source-rules/waiting-time` | Return effective waiting-time rule or missing status. | Optional `effectiveDate`. | `waitingTimeRule` with `ruleStatus`. | `UNAUTHENTICATED` |
+| `POST` | `/api/source-rules/insurance-requirements` | Create or update mandatory-insurance source-review metadata. | Requirement scope, policy type, required flag, effective dates, source name/URL, reviewed timestamp, freshness, confidence, notes. | `insuranceRequirementRule` resource. | `VALIDATION_ERROR` |
+| `GET` | `/api/source-rules/insurance-requirements` | Return effective insurance requirement source review or missing status. | Optional `effectiveDate`. | `insuranceRequirementRule` with `ruleStatus`. | `UNAUTHENTICATED` |
 
 Example compliance profile response:
 
@@ -595,6 +597,8 @@ Compliance semantics:
 - `source=driver_entered` means Cofrete is storing app metadata, not asserting official truth.
 - Public checks must not require or store gov.br credentials.
 - Unsupported automation should return a clear advisory response instead of fake precision.
+- RNTRC public-status lookup remains manual/link-only until ANTT public consultation automation terms, source stability, and anti-abuse behavior are approved.
+- Insurance policy records are driver-entered metadata. `insuranceRequirementRule` and `sourceReview` fields record source-review status for advisory wording only; they do not certify coverage or recommend policies.
 - Waiting-time responses are advisory estimates for profitability/customer-risk planning. Copy must tell the driver to confirm official rules and contract terms before charging or disputing a customer.
 
 ## Customers And Receivables

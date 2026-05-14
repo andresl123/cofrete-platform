@@ -35,6 +35,9 @@ record ComplianceDocumentsEnvelope(Iterable<ComplianceDocumentResponse> document
 record WaitingTimeRuleEnvelope(WaitingTimeRuleResponse waitingTimeRule) {
 }
 
+record InsuranceRequirementRuleEnvelope(InsuranceRequirementRuleResponse insuranceRequirementRule) {
+}
+
 record ComplianceProfileResponse(
     String driverId,
     RntrcProfileResponse rntrc,
@@ -75,7 +78,13 @@ record RntrcProfileResponse(
 record CiotResponse(String required, String latestTripStatus, String advisoryText) {
 }
 
-record InsuranceSummaryResponse(int activePolicies, int expiringSoon, int expired, String advisoryText) {
+record InsuranceSummaryResponse(
+    int activePolicies,
+    int expiringSoon,
+    int expired,
+    String advisoryText,
+    InsuranceSourceReviewResponse sourceReview
+) {
 }
 
 record DocumentSummaryResponse(int activeDocuments, int expiringSoon, int expired, String advisoryText) {
@@ -109,10 +118,15 @@ record InsurancePolicyResponse(
     VerificationStatus verificationStatus,
     String documentReference,
     boolean active,
-    String advisoryText
+    String advisoryText,
+    InsuranceSourceReviewResponse sourceReview
 ) {
 
     static InsurancePolicyResponse from(InsurancePolicy policy) {
+        return from(policy, InsuranceSourceReviewResponse.missing(LocalDate.now()));
+    }
+
+    static InsurancePolicyResponse from(InsurancePolicy policy, InsuranceSourceReviewResponse sourceReview) {
         return new InsurancePolicyResponse(
             policy.getId(),
             policy.getDriverId(),
@@ -132,8 +146,52 @@ record InsurancePolicyResponse(
             policy.getVerificationStatus(),
             policy.getDocumentReference(),
             policy.isActive(),
-            ComplianceWording.INSURANCE_CAVEAT
+            ComplianceWording.INSURANCE_CAVEAT,
+            sourceReview
         );
+    }
+}
+
+record InsuranceSourceReviewResponse(
+    ComplianceRuleStatus ruleStatus,
+    String sourceName,
+    String sourceUrl,
+    Instant reviewedAt,
+    RuleConfidence confidence,
+    String advisoryText
+) {
+
+    static InsuranceSourceReviewResponse from(InsuranceRequirementRule rule) {
+        var status = ComplianceRuleStatusEvaluator.ruleStatus(
+            rule.getFreshnessStatus(),
+            rule.getReviewedAt(),
+            rule.getSourceUrl()
+        );
+        return new InsuranceSourceReviewResponse(
+            status,
+            rule.getSourceName(),
+            rule.getSourceUrl(),
+            rule.getReviewedAt(),
+            rule.getConfidence(),
+            insuranceAdvisoryText(status)
+        );
+    }
+
+    static InsuranceSourceReviewResponse missing(LocalDate effectiveDate) {
+        return new InsuranceSourceReviewResponse(
+            ComplianceRuleStatus.MISSING,
+            null,
+            null,
+            null,
+            RuleConfidence.UNKNOWN,
+            ComplianceWording.INSURANCE_SOURCE_MISSING
+        );
+    }
+
+    private static String insuranceAdvisoryText(ComplianceRuleStatus status) {
+        return status == ComplianceRuleStatus.CURRENT
+            ? ComplianceWording.INSURANCE_SOURCE_CURRENT
+            : ComplianceWording.INSURANCE_SOURCE_STALE;
     }
 }
 
@@ -277,7 +335,7 @@ record WaitingTimeRuleResponse(
             rule.getEffectiveTo(),
             rule.getSourceUrl(),
             rule.getReviewedAt(),
-            ruleStatus(rule.getFreshnessStatus(), rule.getReviewedAt(), rule.getSourceUrl()),
+            ComplianceRuleStatusEvaluator.ruleStatus(rule.getFreshnessStatus(), rule.getReviewedAt(), rule.getSourceUrl()),
             rule.getConfidence(),
             "Waiting-time impact is an advisory estimate. Confirm official rules and contract terms before charging or disputing a customer.",
             rule.getCreatedAt(),
@@ -303,7 +361,80 @@ record WaitingTimeRuleResponse(
         );
     }
 
-    private static ComplianceRuleStatus ruleStatus(
+}
+
+record InsuranceRequirementRuleResponse(
+    String id,
+    String requirementScope,
+    InsurancePolicyType policyType,
+    boolean required,
+    LocalDate effectiveFrom,
+    LocalDate effectiveTo,
+    String sourceName,
+    String sourceUrl,
+    Instant reviewedAt,
+    ComplianceRuleStatus ruleStatus,
+    RuleConfidence confidence,
+    String notes,
+    String advisoryText,
+    Instant createdAt,
+    Instant updatedAt
+) {
+
+    static InsuranceRequirementRuleResponse from(InsuranceRequirementRule rule) {
+        var status = ComplianceRuleStatusEvaluator.ruleStatus(
+            rule.getFreshnessStatus(),
+            rule.getReviewedAt(),
+            rule.getSourceUrl()
+        );
+        return new InsuranceRequirementRuleResponse(
+            rule.getId(),
+            rule.getRequirementScope(),
+            rule.getPolicyType(),
+            rule.isRequired(),
+            rule.getEffectiveFrom(),
+            rule.getEffectiveTo(),
+            rule.getSourceName(),
+            rule.getSourceUrl(),
+            rule.getReviewedAt(),
+            status,
+            rule.getConfidence(),
+            rule.getNotes(),
+            status == ComplianceRuleStatus.CURRENT
+                ? ComplianceWording.INSURANCE_SOURCE_CURRENT
+                : ComplianceWording.INSURANCE_SOURCE_STALE,
+            rule.getCreatedAt(),
+            rule.getUpdatedAt()
+        );
+    }
+
+    static InsuranceRequirementRuleResponse missing(LocalDate effectiveDate) {
+        return new InsuranceRequirementRuleResponse(
+            null,
+            null,
+            null,
+            true,
+            effectiveDate,
+            null,
+            null,
+            null,
+            null,
+            ComplianceRuleStatus.MISSING,
+            RuleConfidence.UNKNOWN,
+            null,
+            ComplianceWording.INSURANCE_SOURCE_MISSING,
+            null,
+            null
+        );
+    }
+}
+
+final class ComplianceRuleStatusEvaluator {
+
+    private ComplianceRuleStatusEvaluator() {
+    }
+
+    static ComplianceRuleStatus ruleStatus(
         ComplianceRuleFreshnessStatus freshnessStatus,
         Instant reviewedAt,
         String sourceUrl

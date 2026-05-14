@@ -20,6 +20,12 @@ final class ComplianceWording {
         "Cofrete does not store gov.br credentials or update ANTT records. Use official ANTT consultation or RNTRC Digital for official status.";
     static final String INSURANCE_CAVEAT =
         "Insurance data is organization metadata. Confirm coverage, obligations, and policy validity with the insurer, SUSEP, or a qualified professional.";
+    static final String INSURANCE_SOURCE_CURRENT =
+        "Insurance regulatory source metadata is current for advisory reminders, but Cofrete does not certify coverage or recommend policies.";
+    static final String INSURANCE_SOURCE_STALE =
+        "Insurance regulatory source metadata is stale or incomplete. Keep guidance conservative and confirm coverage with SUSEP, insurer, broker, or qualified professional.";
+    static final String INSURANCE_SOURCE_MISSING =
+        "No source-backed insurance requirement metadata is configured for this date. Keep mandatory-insurance guidance conservative.";
     static final String DOCUMENT_CAVEAT =
         "Document reminders are advisory organization aids and do not certify legal, tax, insurance, or government compliance.";
     static final String GENERAL_CAVEAT =
