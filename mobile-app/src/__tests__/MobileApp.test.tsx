@@ -27,13 +27,16 @@ describe('MobileApp', () => {
 
   it('uses advisory compliance wording', async () => {
     const user = userEvent.setup();
+    queueComplianceLoad();
 
     render(<MobileApp />);
 
     await user.press(screen.getByRole('button', { name: 'Riscos' }));
 
-    expect(screen.getByText('Sem certificacao oficial')).toBeOnTheScreen();
-    expect(screen.getByText(/canais oficiais/)).toBeOnTheScreen();
+    await screen.findByText('Status consultivo');
+    expect(screen.getByText(/Organizador interno/)).toBeOnTheScreen();
+    expect(screen.getByText(/RNTRC Digital e gov.br/)).toBeOnTheScreen();
+    expect(screen.getByText(/Nao atualiza ANTT/)).toBeOnTheScreen();
   });
 
   it('keeps finance caveats visible across MVP routes', async () => {
@@ -148,6 +151,79 @@ describe('MobileApp', () => {
     await screen.findByText('Algum valor nao passou na validacao. Revise os campos e tente novamente.');
     expect(screen.queryByText(/Core API request failed/)).toBeNull();
   });
+
+  it('renders compliance profile, alerts, calendar, insurance, and documents', async () => {
+    const user = userEvent.setup();
+    queueComplianceLoad();
+
+    render(<MobileApp />);
+
+    await user.press(screen.getByRole('button', { name: 'Riscos' }));
+
+    await screen.findByText('Status consultivo');
+    expect(screen.getAllByText('RNTRC').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('ACTIVE')).toBeOnTheScreen();
+    expect(screen.getByText('Seguro vence em 30 dias')).toBeOnTheScreen();
+    expect(screen.getByText('RCTR-C Example Seguros')).toBeOnTheScreen();
+    expect(screen.getByText('CRLV 2026')).toBeOnTheScreen();
+    expect(screen.getByText(/Confirmar em RNTRC Digital/)).toBeOnTheScreen();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('/api/compliance/profile'),
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      expect.stringContaining('/api/documents'),
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('saves RNTRC, insurance, and document metadata through compliance APIs', async () => {
+    const user = userEvent.setup();
+    queueComplianceLoad();
+    fetchMock.mockResolvedValueOnce(okJson({ rntrcProfile: complianceProfileResponse().rntrc }));
+    queueComplianceLoad();
+    fetchMock.mockResolvedValueOnce(okJson({ insurancePolicy: insurancePoliciesResponse()[0] }));
+    queueComplianceLoad();
+    fetchMock.mockResolvedValueOnce(okJson({ document: documentsResponse()[0] }));
+    queueComplianceLoad();
+
+    render(<MobileApp />);
+
+    await user.press(screen.getByRole('button', { name: 'Riscos' }));
+    await screen.findByText('Salvar metadados');
+
+    await user.press(screen.getByRole('button', { name: 'Salvar RNTRC TAC' }));
+    await screen.findByText('RNTRC salvo no Cofrete. Para alteracao oficial, use RNTRC Digital com gov.br.');
+
+    await user.press(screen.getByRole('button', { name: 'Salvar seguro RCTR-C' }));
+    await screen.findByText('Seguro salvo como metadado. Confirme cobertura com seguradora, SUSEP ou profissional qualificado.');
+
+    await user.press(screen.getByRole('button', { name: 'Salvar CRLV' }));
+    await screen.findByText('Documento salvo para lembrete. Cofrete nao certifica regularidade oficial.');
+
+    expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('/api/compliance/rntrc'))).toBe(true);
+    expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('/api/compliance/insurance-policies'))).toBe(true);
+    expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('/api/documents'))).toBe(true);
+  });
+
+  it('shows compliance API errors without raw technical text', async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValueOnce({
+      json: async () => ({ error: 'VALIDATION_ERROR' }),
+      ok: false,
+      status: 400,
+    });
+
+    render(<MobileApp />);
+
+    await user.press(screen.getByRole('button', { name: 'Riscos' }));
+
+    await screen.findByText('Algum valor nao passou na validacao. Revise os campos e tente novamente.');
+    expect(screen.queryByText(/Core API request failed/)).toBeNull();
+  });
 });
 
 function okJson(body: unknown) {
@@ -199,4 +275,146 @@ function profitabilityEstimateResponse() {
     sourceMetadata: [{ area: 'fuel', freshnessStatus: 'CURRENT' }],
     tripId: 'trip_123',
   };
+}
+
+function queueComplianceLoad() {
+  fetchMock
+    .mockResolvedValueOnce(okJson({ complianceProfile: complianceProfileResponse() }))
+    .mockResolvedValueOnce(okJson({ complianceScore: complianceScoreResponse() }))
+    .mockResolvedValueOnce(okJson({ calendarItems: calendarItemsResponse() }))
+    .mockResolvedValueOnce(okJson({ insurancePolicies: insurancePoliciesResponse() }))
+    .mockResolvedValueOnce(okJson({ documents: documentsResponse() }));
+}
+
+function complianceProfileResponse() {
+  return {
+    alerts: [
+      {
+        advisoryText: 'Alerta consultivo. Confirme com seguradora ou canal oficial.',
+        alertType: 'INSURANCE_EXPIRATION',
+        dueOn: '2026-06-13',
+        generatedAt: '2026-05-14T12:00:00Z',
+        id: 'alert_insurance',
+        message: 'Seguro vence em 30 dias',
+        officialActionUrl: 'https://www.gov.br/susep',
+        severity: 'WARNING',
+        status: 'EXPIRING_SOON',
+        subjectId: 'ins_123',
+        subjectType: 'INSURANCE_POLICY',
+      },
+    ],
+    caveats: ['Cofrete is not an official government, legal, tax, accounting, or insurance channel.'],
+    ciot: {
+      advisoryText: 'CIOT guidance is advisory.',
+      latestTripStatus: 'NOT_RECORDED',
+      required: 'UNKNOWN',
+    },
+    documents: {
+      activeDocuments: 1,
+      advisoryText: 'Document reminders are advisory organization aids.',
+      expired: 0,
+      expiringSoon: 1,
+    },
+    driverId: 'driver_123',
+    insurance: {
+      activePolicies: 1,
+      advisoryText: 'Insurance data is organization metadata.',
+      expired: 0,
+      expiringSoon: 1,
+    },
+    rntrc: {
+      advisoryText: 'Confirm RNTRC status in official ANTT channels.',
+      category: 'TAC',
+      guidance: [
+        'Your Cofrete profile is not an official ANTT record. Official updates must be done through ANTT/RNTRC Digital.',
+        'To update your RNTRC, access RNTRC Digital using your gov.br account, level prata or ouro.',
+      ],
+      lastCheckedAt: null,
+      numberMasked: '***4321',
+      officialActionUrl: 'https://www.gov.br/antt',
+      source: 'driver_entered',
+      status: 'ACTIVE',
+    },
+    score: complianceScoreResponse(),
+  };
+}
+
+function complianceScoreResponse() {
+  return {
+    caveats: ['Cofrete is not an official government, legal, tax, accounting, or insurance channel.'],
+    score: {
+      components: [
+        {
+          advisoryText: 'Insurance metadata needs review.',
+          name: 'insurance',
+          status: 'EXPIRING_SOON',
+          weight: '25.00',
+        },
+      ],
+      snapshotAt: '2026-05-14T12:00:00Z',
+      status: 'ATTENTION',
+      value: 72,
+    },
+  };
+}
+
+function calendarItemsResponse() {
+  return [
+    {
+      advisoryText: 'Calendario consultivo. Confirme nos canais oficiais.',
+      dueOn: '2026-06-13',
+      id: 'cal_insurance',
+      officialActionUrl: 'https://www.gov.br/susep',
+      severity: 'WARNING',
+      status: 'EXPIRING_SOON',
+      subjectId: 'ins_123',
+      subjectType: 'INSURANCE_POLICY',
+      title: 'RCTR-C Example Seguros',
+    },
+  ];
+}
+
+function insurancePoliciesResponse() {
+  return [
+    {
+      active: true,
+      advisoryText: 'Insurance data is organization metadata. Confirm coverage with insurer or SUSEP.',
+      annualPremium: '3600.00',
+      currency: 'BRL',
+      driverId: 'driver_123',
+      expiresOn: '2026-06-13',
+      id: 'ins_123',
+      insurer: 'Example Seguros',
+      linkedRntrc: true,
+      monthlyReserve: '300.00',
+      pgrRequired: true,
+      policyNumberLast4: '6789',
+      policyNumberMasked: '***6789',
+      policyType: 'RCTR_C',
+      startsOn: '2025-06-13',
+      status: 'EXPIRING_SOON',
+      verificationStatus: 'VERIFIED_BY_DRIVER',
+    },
+  ];
+}
+
+function documentsResponse() {
+  return [
+    {
+      active: true,
+      advisoryText: 'Document reminders are advisory organization aids.',
+      documentType: 'CRLV',
+      driverId: 'driver_123',
+      expiresOn: '2026-06-28',
+      id: 'doc_123',
+      identifierLast4: '1122',
+      identifierMasked: '***1122',
+      issuedOn: '2025-06-28',
+      notes: 'Confirmar canal oficial.',
+      ownerType: 'DRIVER',
+      source: 'DRIVER_ENTERED',
+      status: 'EXPIRING_SOON',
+      title: 'CRLV 2026',
+    },
+  ];
 }

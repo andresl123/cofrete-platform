@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -15,7 +15,14 @@ import {
 
 import { createCoreApiClient, type CoreApiClient } from './api/client';
 import {
+  type ComplianceCalendarItemResponse,
+  type ComplianceDocumentResponse,
+  type ComplianceItemStatus,
+  type ComplianceProfileResponse,
+  type ComplianceScoreResponse,
+  type ComplianceSeverity,
   type DriverProfileRequest,
+  type InsurancePolicyResponse,
   type ProfitabilityEstimateRequest,
   type ProfitabilityEstimateResponse,
   type RoutePoint,
@@ -64,6 +71,14 @@ type FreightFormState = {
   valePedagio: string;
 };
 
+type ComplianceFormState = {
+  documentLast4: string;
+  documentTitle: string;
+  insuranceLast4: string;
+  insurer: string;
+  rntrcNumber: string;
+};
+
 type OnboardingResult = {
   driverId: string;
   truckId: string;
@@ -72,6 +87,14 @@ type OnboardingResult = {
 type FreightResult = {
   estimate: ProfitabilityEstimateResponse;
   trip: TripResponse;
+};
+
+type ComplianceResult = {
+  calendarItems: ComplianceCalendarItemResponse[];
+  documents: ComplianceDocumentResponse[];
+  insurancePolicies: InsurancePolicyResponse[];
+  profile: ComplianceProfileResponse | null;
+  score: ComplianceScoreResponse | null;
 };
 
 type FieldProps = {
@@ -127,6 +150,14 @@ const defaultFreightForm: FreightFormState = {
   tollReimbursement: '385.70',
   truckId: 'truck_123',
   valePedagio: '214.30',
+};
+
+const defaultComplianceForm: ComplianceFormState = {
+  documentLast4: '1122',
+  documentTitle: 'CRLV 2026',
+  insuranceLast4: '6789',
+  insurer: 'Example Seguros',
+  rntrcNumber: '987654321',
 };
 
 export function MobileApp() {
@@ -216,12 +247,257 @@ function MvpScreen({ activeTruckId, apiClient, onTruckReady, routeId }: MvpScree
             <OnboardingScreen apiClient={apiClient} onTruckReady={onTruckReady} />
           ) : routeId === 'freight' ? (
             <FreightCalculatorScreen apiClient={apiClient} activeTruckId={activeTruckId} />
+          ) : routeId === 'compliance' ? (
+            <ComplianceCenterScreen apiClient={apiClient} />
           ) : (
             <ReferenceScreen routeId={routeId} apiBaseUrl={apiClient.baseUrl} />
           )}
         </ScrollView>
       </View>
     </View>
+  );
+}
+
+function ComplianceCenterScreen({ apiClient }: { apiClient: CoreApiClient }) {
+  const [result, setResult] = useState<ComplianceResult | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSavingRntrc, setIsSavingRntrc] = useState(false);
+  const [isSavingInsurance, setIsSavingInsurance] = useState(false);
+  const [isSavingDocument, setIsSavingDocument] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [form, setForm] = useState(defaultComplianceForm);
+
+  const updateField = (field: keyof ComplianceFormState) => (value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const loadCompliance = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [profile, score, calendarItems, insurancePolicies, documents] = await Promise.all([
+        apiClient.getComplianceProfile(),
+        apiClient.getComplianceScore(),
+        apiClient.getComplianceCalendar(),
+        apiClient.getInsurancePolicies(),
+        apiClient.getDocuments(),
+      ]);
+      setResult({ calendarItems, documents, insurancePolicies, profile, score });
+    } catch (loadError) {
+      setResult({ calendarItems: [], documents: [], insurancePolicies: [], profile: null, score: null });
+      setError(friendlyErrorMessage(loadError, 'Nao foi possivel carregar o centro de conformidade agora.'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiClient]);
+
+  useEffect(() => {
+    void loadCompliance();
+  }, [loadCompliance]);
+
+  const saveRntrc = async () => {
+    setIsSavingRntrc(true);
+    setError(null);
+    setMessage(null);
+    if (!form.rntrcNumber.trim()) {
+      setError('Informe o RNTRC antes de salvar.');
+      return;
+    }
+    try {
+      await apiClient.updateRntrc({
+        ciotRequired: 'UNKNOWN',
+        latestCiotStatus: 'NOT_RECORDED',
+        rntrcCategory: 'TAC',
+        rntrcNumber: form.rntrcNumber.trim(),
+        rntrcStatus: 'ACTIVE',
+      });
+      setMessage('RNTRC salvo no Cofrete. Para alteracao oficial, use RNTRC Digital com gov.br.');
+      await loadCompliance();
+    } catch (saveError) {
+      setError(friendlyErrorMessage(saveError, 'Nao foi possivel salvar o RNTRC agora.'));
+    } finally {
+      setIsSavingRntrc(false);
+    }
+  };
+
+  const saveInsurance = async () => {
+    setIsSavingInsurance(true);
+    setError(null);
+    setMessage(null);
+    if (!form.insurer.trim() || !form.insuranceLast4.trim()) {
+      setError('Informe seguradora e final da apolice.');
+      return;
+    }
+    try {
+      await apiClient.createInsurancePolicy({
+        active: true,
+        annualPremium: '3600.00',
+        currency: 'BRL',
+        expiresOn: nextDate(30),
+        insurer: form.insurer.trim(),
+        linkedRntrc: true,
+        monthlyReserve: '300.00',
+        pgrRequired: true,
+        policyNumberLast4: form.insuranceLast4.trim().slice(-4),
+        policyType: 'RCTR_C',
+        startsOn: nextDate(-335),
+        verificationStatus: 'VERIFIED_BY_DRIVER',
+      });
+      setMessage('Seguro salvo como metadado. Confirme cobertura com seguradora, SUSEP ou profissional qualificado.');
+      await loadCompliance();
+    } catch (saveError) {
+      setError(friendlyErrorMessage(saveError, 'Nao foi possivel salvar o seguro agora.'));
+    } finally {
+      setIsSavingInsurance(false);
+    }
+  };
+
+  const saveDocument = async () => {
+    setIsSavingDocument(true);
+    setError(null);
+    setMessage(null);
+    if (!form.documentTitle.trim() || !form.documentLast4.trim()) {
+      setError('Informe titulo do documento e identificador final.');
+      return;
+    }
+    try {
+      await apiClient.createDocument({
+        active: true,
+        documentType: 'CRLV',
+        expiresOn: nextDate(45),
+        identifierLast4: form.documentLast4.trim().slice(-4),
+        issuedOn: nextDate(-320),
+        notes: 'Organizacao interna. Confirmar canal oficial antes de decisao sensivel.',
+        ownerType: 'DRIVER',
+        source: 'DRIVER_ENTERED',
+        title: form.documentTitle.trim(),
+      });
+      setMessage('Documento salvo para lembrete. Cofrete nao certifica regularidade oficial.');
+      await loadCompliance();
+    } catch (saveError) {
+      setError(friendlyErrorMessage(saveError, 'Nao foi possivel salvar o documento agora.'));
+    } finally {
+      setIsSavingDocument(false);
+    }
+  };
+
+  const profile = result?.profile ?? null;
+  const score = result?.score ?? null;
+  const alerts = profile?.alerts ?? [];
+  const calendarItems = result?.calendarItems ?? [];
+
+  return (
+    <>
+      <View style={styles.resultPanel}>
+        <View style={styles.resultHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Status consultivo</Text>
+            <Text style={styles.sectionNote}>Organizador interno. Nao atualiza ANTT, gov.br, SUSEP ou seguradora.</Text>
+          </View>
+          <View style={styles.statusPill}>
+            <Text style={styles.statusPillText}>{score ? complianceScoreLabel(score.score.status) : 'Sem dado'}</Text>
+          </View>
+        </View>
+        <View style={styles.metricGrid}>
+          <TextMetric label="RNTRC" value={profile?.rntrc.status ?? 'UNKNOWN'} tone="Confirmar em RNTRC Digital" />
+          <TextMetric label="Seguro" value={`${profile?.insurance.expiringSoon ?? 0} a revisar`} tone="Validar com seguradora/SUSEP" />
+          <TextMetric label="Documentos" value={`${profile?.documents.expired ?? 0} vencidos`} tone="Conferir DETRAN, SEFAZ ou canal oficial" />
+          <TextMetric label="Score" value={score ? `${score.score.value}/100` : 'Sem dado'} tone="Indicador consultivo" />
+        </View>
+        <Text style={styles.caveat}>
+          RNTRC Digital e gov.br sao os canais para atualizacao oficial. Cofrete guarda metadados e lembretes.
+        </Text>
+      </View>
+
+      {isLoading ? (
+        <View style={styles.healthRow}>
+          <ActivityIndicator color={colors.accent} />
+          <Text style={styles.sectionNote}>Carregando alertas e calendario.</Text>
+        </View>
+      ) : null}
+      <StatusMessage error={error} />
+      {message ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successTitle}>Registro salvo</Text>
+          <Text style={styles.successCopy}>{message}</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Alertas</Text>
+        {alerts.length === 0 ? (
+          <Text style={styles.sectionNote}>Sem alertas. Continue conferindo canais oficiais antes de rodar.</Text>
+        ) : (
+          alerts.map((alert) => (
+            <View key={alert.id} style={styles.actionRow}>
+              <View style={severityStyle(alert.severity)} />
+              <View style={styles.actionCopy}>
+                <Text style={styles.actionTitle}>{alert.message}</Text>
+                <Text style={styles.actionDetail}>{alert.advisoryText}</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </View>
+
+      <View style={styles.formSection}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Salvar metadados</Text>
+          <Text style={styles.sectionNote}>Use dados informados pelo motorista e confira o canal oficial antes de decisao sensivel.</Text>
+        </View>
+        <Field label="RNTRC" keyboardType="number-pad" value={form.rntrcNumber} onChangeText={updateField('rntrcNumber')} />
+        <View style={styles.inlineFields}>
+          <Field label="Seguradora" value={form.insurer} onChangeText={updateField('insurer')} />
+          <Field label="Final apolice" keyboardType="number-pad" value={form.insuranceLast4} onChangeText={updateField('insuranceLast4')} />
+        </View>
+        <View style={styles.inlineFields}>
+          <Field label="Documento" value={form.documentTitle} onChangeText={updateField('documentTitle')} />
+          <Field label="Final doc." keyboardType="number-pad" value={form.documentLast4} onChangeText={updateField('documentLast4')} />
+        </View>
+        <ActionButton label={isSavingRntrc ? 'Salvando RNTRC' : 'Salvar RNTRC TAC'} loading={isSavingRntrc} onPress={saveRntrc} />
+        <ActionButton label={isSavingInsurance ? 'Salvando seguro' : 'Salvar seguro RCTR-C'} loading={isSavingInsurance} onPress={saveInsurance} />
+        <ActionButton label={isSavingDocument ? 'Salvando documento' : 'Salvar CRLV'} loading={isSavingDocument} onPress={saveDocument} />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Calendario</Text>
+        {calendarItems.length === 0 ? (
+          <Text style={styles.sectionNote}>Nenhum vencimento salvo ainda.</Text>
+        ) : (
+          calendarItems.map((item) => (
+            <ComplianceListRow key={item.id} title={item.title} status={item.status} tone={item.advisoryText} />
+          ))
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Seguros e documentos</Text>
+        {result?.insurancePolicies.map((policy) => (
+          <ComplianceListRow key={policy.id} title={policy.insurer} status={policy.status} tone={policy.advisoryText} />
+        ))}
+        {result?.documents.map((document) => (
+          <ComplianceListRow key={document.id} title={document.title} status={document.status} tone={document.advisoryText} />
+        ))}
+        {(result?.insurancePolicies.length ?? 0) + (result?.documents.length ?? 0) === 0 ? (
+          <Text style={styles.sectionNote}>Use os botoes acima para salvar os primeiros metadados.</Text>
+        ) : null}
+      </View>
+
+      <EndpointPanel
+        apiBaseUrl={apiClient.baseUrl}
+        endpoints={[
+          'GET /api/compliance/profile',
+          'GET /api/compliance/score',
+          'GET /api/compliance/calendar',
+          'PUT /api/compliance/rntrc',
+          'POST /api/compliance/insurance-policies',
+          'GET /api/compliance/insurance-policies',
+          'GET /api/documents',
+          'POST /api/documents',
+        ]}
+      />
+    </>
   );
 }
 
@@ -700,6 +976,78 @@ function MoneyMetric({ label, tone, value }: { label: string; tone: string; valu
   );
 }
 
+function TextMetric({ label, tone, value }: { label: string; tone: string; value: string }) {
+  return (
+    <View style={styles.metricCard}>
+      <Text style={styles.metricLabel}>{label}</Text>
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricTone}>{tone}</Text>
+    </View>
+  );
+}
+
+function ComplianceListRow({
+  status,
+  title,
+  tone,
+}: {
+  status: ComplianceItemStatus;
+  title: string;
+  tone: string;
+}) {
+  return (
+    <View style={styles.actionRow}>
+      <View style={styles.actionCopy}>
+        <Text style={styles.actionTitle}>{title}</Text>
+        <Text style={styles.actionDetail}>{tone}</Text>
+      </View>
+      <View style={styles.statusPill}>
+        <Text style={styles.statusPillText}>{complianceItemLabel(status)}</Text>
+      </View>
+    </View>
+  );
+}
+
+function severityStyle(severity: ComplianceSeverity) {
+  if (severity === 'CRITICAL') {
+    return [styles.actionMarker, styles.actionMarkerCritical];
+  }
+  if (severity === 'WARNING') {
+    return [styles.actionMarker, styles.actionMarkerWarning];
+  }
+  return styles.actionMarker;
+}
+
+function complianceItemLabel(status: ComplianceItemStatus) {
+  switch (status) {
+    case 'CURRENT':
+      return 'Em dia';
+    case 'EXPIRING_SOON':
+      return 'Vence logo';
+    case 'EXPIRED':
+      return 'Vencido';
+    case 'UNKNOWN':
+      return 'Sem dado';
+  }
+}
+
+function complianceScoreLabel(status: ComplianceScoreResponse['score']['status']) {
+  switch (status) {
+    case 'ATTENTION':
+      return 'Atencao';
+    case 'GOOD':
+      return 'Boa';
+    case 'RISK':
+      return 'Risco';
+  }
+}
+
+function nextDate(daysFromToday: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromToday);
+  return date.toISOString().slice(0, 10);
+}
+
 function buildDriverRequest(form: OnboardingFormState): DriverProfileRequest {
   return {
     active: true,
@@ -900,6 +1248,12 @@ const styles = StyleSheet.create({
     height: 10,
     marginTop: 4,
     width: 10,
+  },
+  actionMarkerCritical: {
+    backgroundColor: colors.dangerText,
+  },
+  actionMarkerWarning: {
+    backgroundColor: colors.infoText,
   },
   actionRow: {
     borderTopColor: colors.border,
