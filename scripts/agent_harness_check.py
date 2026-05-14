@@ -88,6 +88,7 @@ REQUIRED_FILES = (
     "docs/agent-harness/validation.md",
     "docs/agent-harness/runtime-smoke-tests.md",
     "docs/agent-harness/worktree-development.md",
+    "docs/agent-harness/frontend-review-loop.md",
     "docs/agent-harness/testing-policy.md",
     "docs/agent-harness/golden-principles.md",
     "docs/agent-harness/observability.md",
@@ -132,6 +133,7 @@ REQUIRED_TEXT = {
     ),
     "docs/agent-harness/workflow.md": (
         "task-specific HTML explainer",
+        "frontend-review-loop.md",
         "Do not commit, push, open a PR, or update an existing PR",
     ),
     "docs/agent-harness/validation.md": (
@@ -141,6 +143,13 @@ REQUIRED_TEXT = {
         "npm run test:ci",
         "docker compose config",
         "task-specific HTML explainer",
+        "frontend-review-loop.md",
+    ),
+    "docs/agent-harness/frontend-review-loop.md": (
+        "Run this loop only when the task changes user-facing frontend or mobile files",
+        "Run up to 15 Impeccable passes",
+        "Do not run the loop for backend-only",
+        "Required Handoff Summary",
     ),
     "scripts/ci/README.md": (
         ".github/workflows/pr-checks.yml",

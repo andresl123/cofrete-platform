@@ -10,6 +10,8 @@ The harness validates durable repository structure and required documentation ar
 
 For implemented Linear issues, task handoff must also include the `grill-with-docs` review-and-fix loop summary described in `linear-review-loop.md`. Run the loop before the final validation pass so any fixes it discovers are covered by the final service checks and harness check.
 
+For tasks that change frontend or mobile files, task handoff must also include the Impeccable review loop summary described in `frontend-review-loop.md`. Run that loop after implementation and after the relevant frontend/mobile checks pass at least once, but before `grill-with-docs` and before the final validation pass.
+
 ## CI Validation Matrix
 
 GitHub Actions runs `.github/workflows/pr-checks.yml` for pull requests, pushes to `main`, and manual dispatches.
@@ -93,6 +95,22 @@ The handoff should state:
 - remaining risks or assumptions.
 
 Stop early when no meaningful issue remains. Do not continue looping only to reach 10 iterations.
+
+## Frontend Review Loop Check
+
+For every task that changes frontend or mobile files, run up to 15 Impeccable review passes before handoff.
+
+The handoff should state:
+
+- why the loop was triggered;
+- number of Impeccable passes executed;
+- commands run in order;
+- issues found;
+- fixes applied;
+- frontend/mobile tests and checks run after the loop;
+- remaining UI risks or assumptions.
+
+Stop early when no meaningful frontend/mobile issue remains. Do not run this loop for backend-only, worker-only, infrastructure-only, or documentation-only tasks unless they also change frontend or mobile files.
 
 ## Future Kubernetes Checks
 

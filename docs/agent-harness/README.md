@@ -16,6 +16,7 @@ Use this directory to find workflow, validation, testing, observability, and ris
 | Topic | Document |
 |---|---|
 | Workflow | `workflow.md` |
+| Frontend review loop | `frontend-review-loop.md` |
 | Linear review loop | `linear-review-loop.md` |
 | Architecture rules | `architecture.md` |
 | Validation | `validation.md` |

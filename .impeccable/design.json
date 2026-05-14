@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-13T23:30:41-03:00",
+  "title": "Design System: Cofrete",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Operational Teal",
+        "canonical": "#0F766E",
+        "tonalRamp": ["#DDEEE9", "#A8CEC4", "#0F766E", "#0A4F4B"]
+      },
+      "accent-border": {
+        "role": "primary",
+        "displayName": "Teal Border",
+        "canonical": "#A8CEC4",
+        "tonalRamp": ["#DDEEE9", "#A8CEC4", "#0F766E"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Cab Paper Surface",
+        "canonical": "#FAF9F4",
+        "tonalRamp": ["#FFFCF2", "#FAF9F4", "#F2F0E8"]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Ink Green-Black",
+        "canonical": "#18231F",
+        "tonalRamp": ["#5E6A64", "#18231F"]
+      },
+      "success-bg": {
+        "role": "semantic",
+        "displayName": "Reserve Success Wash",
+        "canonical": "#E3F1DF",
+        "tonalRamp": ["#E3F1DF", "#245B34"]
+      },
+      "danger-bg": {
+        "role": "semantic",
+        "displayName": "Risk Wash",
+        "canonical": "#F8E7DF",
+        "tonalRamp": ["#F8E7DF", "#8A2D14"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Header brand wordmark only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Primary workflow titles and screen orientation."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section titles and compact panel headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Driver-facing summaries, form values, and explanations."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Fields, metric labels, tabs, chips, and recommendations."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "state-opacity-pressed",
+        "value": "opacity: 0.88",
+        "purpose": "Pressed feedback for primary actions."
+      },
+      {
+        "name": "state-opacity-disabled",
+        "value": "opacity: 0.72",
+        "purpose": "Disabled or loading feedback for primary actions."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "default"
+      }
+    ],
+    "rules": [
+      {
+        "name": "Cab Ledger",
+        "description": "Practical, conservative, and task-first. Separate money categories visibly."
+      },
+      {
+        "name": "Teal Earns Its Place",
+        "description": "Use #0F766E only for primary action, active navigation, and decision emphasis."
+      },
+      {
+        "name": "Flat At Rest",
+        "description": "Use tonal surfaces and one-pixel borders instead of decorative shadows."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action for saving onboarding data or calculating freight.",
+      "html": "<button class=\"ds-btn-primary\">Calcular frete</button>",
+      "css": ".ds-btn-primary { background: #0F766E; color: #F7FBF8; border: none; border-radius: 8px; min-height: 50px; padding: 0 16px; font: 800 15px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; } .ds-btn-primary:active { opacity: 0.88; } .ds-btn-primary:disabled { opacity: 0.72; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Standard mobile form field for driver, truck, route, and cost data.",
+      "html": "<label class=\"ds-field\"><span>Frete bruto</span><input value=\"8000.00\" /></label>",
+      "css": ".ds-field { display: grid; gap: 6px; color: #5E6A64; font: 800 12px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; text-transform: uppercase; } .ds-field input { background: #FFFCF2; border: 1px solid #D9DED6; border-radius: 8px; color: #18231F; min-height: 46px; padding: 10px 12px; font: 400 15px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }"
+    },
+    {
+      "name": "Metric Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Compact finance metric that keeps gross freight, pass-through, costs, reserves, profit, and safe personal withdrawal separate.",
+      "html": "<article class=\"ds-metric\"><span>Repasse de caixa</span><strong>R$ 600,00</strong><p>Reembolso e Vale-Pedagio fora do lucro</p></article>",
+      "css": ".ds-metric { background: #FFFCF2; border: 1px solid #D9DED6; border-radius: 8px; min-height: 104px; padding: 14px; display: grid; gap: 6px; color: #18231F; } .ds-metric span { color: #5E6A64; font: 700 12px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; text-transform: uppercase; } .ds-metric strong { font: 800 21px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; } .ds-metric p { margin: 0; color: #5E6A64; font: 400 12px/16px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }"
+    },
+    {
+      "name": "Bottom Tab",
+      "kind": "nav",
+      "refersTo": "navigation-bottom-tab",
+      "description": "Mobile bottom navigation with teal active state and compact labels.",
+      "html": "<nav class=\"ds-tabs\"><button class=\"active\">Frete</button><button>Reservas</button></nav>",
+      "css": ".ds-tabs { background: #FAF9F4; border-top: 1px solid #D9DED6; display: flex; gap: 6px; padding: 8px; } .ds-tabs button { border: 0; border-radius: 8px; min-height: 52px; padding: 7px 4px; color: #5E6A64; background: transparent; font: 800 11px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; } .ds-tabs button.active { background: #0F766E; color: #F7FBF8; }"
+    }
+  ]
+}
