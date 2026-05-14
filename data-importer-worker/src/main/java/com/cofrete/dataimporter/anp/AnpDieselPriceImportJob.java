@@ -16,7 +16,8 @@ import org.springframework.stereotype.Component;
 public class AnpDieselPriceImportJob {
 
     private static final String SOURCE = "ANP";
-    private static final String DATASET = "synthetic-anp-diesel-price-fixture";
+    private static final String DATASET = "diesel_prices";
+    private static final String FILE_HASH = "synthetic-fixture";
 
     private final AnpDieselPriceFixtureLoader fixtureLoader;
     private final DataImportEventPublisher publisher;
@@ -46,10 +47,15 @@ public class AnpDieselPriceImportJob {
         return new ImportJobResult(
             SOURCE,
             DATASET,
+            records.stream().map(AnpDieselPriceFixtureRecord::sourceUrl).findFirst().orElse(null),
+            records.stream().map(AnpDieselPriceFixtureRecord::periodStart).findFirst().orElse(null),
+            records.stream().map(AnpDieselPriceFixtureRecord::periodEnd).findFirst().orElse(null),
             records.size(),
             freshnessStatus,
             confidence,
             "import_" + UUID.randomUUID(),
+            FILE_HASH,
+            null,
             correlationId,
             Instant.now(clock)
         );
@@ -76,7 +82,7 @@ public class AnpDieselPriceImportJob {
             firstRecord.freshnessStatus().name(),
             firstRecord.confidence(),
             "import_" + UUID.randomUUID(),
-            "synthetic-fixture",
+            FILE_HASH,
             correlationId,
             "data-importer-worker",
             Instant.now(clock)

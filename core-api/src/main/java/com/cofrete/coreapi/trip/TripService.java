@@ -1,6 +1,8 @@
 package com.cofrete.coreapi.trip;
 
 import com.cofrete.coreapi.auth.AppUser;
+import com.cofrete.coreapi.imports.TollDataService;
+import com.cofrete.coreapi.imports.TollEstimateCriteria;
 import com.cofrete.coreapi.profile.ProfileLookupService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -22,6 +24,7 @@ class TripService {
     private final ValePedagioRecordRepository valePedagioRecords;
     private final TripProfitabilityCalculator calculator;
     private final TripRecalculationEventPublisher eventPublisher;
+    private final TollDataService tollData;
 
     TripService(
         ProfileLookupService profileLookup,
@@ -33,7 +36,8 @@ class TripService {
         TripTollRepository tripTolls,
         ValePedagioRecordRepository valePedagioRecords,
         TripProfitabilityCalculator calculator,
-        TripRecalculationEventPublisher eventPublisher
+        TripRecalculationEventPublisher eventPublisher,
+        TollDataService tollData
     ) {
         this.profileLookup = profileLookup;
         this.freights = freights;
@@ -45,6 +49,7 @@ class TripService {
         this.valePedagioRecords = valePedagioRecords;
         this.calculator = calculator;
         this.eventPublisher = eventPublisher;
+        this.tollData = tollData;
     }
 
     @Transactional
@@ -98,7 +103,14 @@ class TripService {
         if (request.tripId() != null && !request.tripId().isBlank()) {
             requireOwnedTrip(user, request.tripId());
         }
-        return TollEstimateResponse.from(request);
+        var importedEstimate = tollData.estimate(new TollEstimateCriteria(
+            request.origin().state(),
+            request.destination().state(),
+            request.distanceKm(),
+            request.axles(),
+            request.vehicleType()
+        ));
+        return TollEstimateResponse.from(request, importedEstimate);
     }
 
     @Transactional(readOnly = true)
@@ -146,7 +158,7 @@ class TripService {
 
     @Transactional(readOnly = true)
     TollDataImportStatusResponse tollDataImportStatus(String source) {
-        return TollDataImportStatusResponse.unknown(source);
+        return TollDataImportStatusResponse.from(tollData.importStatus(source));
     }
 
     private Trip requireOwnedTrip(AppUser user, String tripId) {

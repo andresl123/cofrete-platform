@@ -1,0 +1,3 @@
+plaza_external_id,plaza_name,highway,state,municipality,km_marker,direction,latitude,longitude,vehicle_category,axle_count,amount_brl,currency,effective_start,effective_end,source_url,freshness_status,confidence
+ANTT-GO-060-001,Praca de Pedagio Goiania Sul,BR-060,GO,GOIANIA,12.5,BOTH,-16.7600,-49.3000,TRUCK,6,42.50,BRL,2026-05-01,2026-05-31,https://dados.antt.gov.br/dataset/praca-de-pedagio,CURRENT,SYNTHETIC_FIXTURE
+ANTT-SP-330-001,Praca de Pedagio Anhanguera Norte,SP-330,SP,CAMPINAS,104.2,BOTH,-22.9100,-47.0600,TRUCK,6,95.20,BRL,2026-05-01,2026-05-31,https://dados.antt.gov.br/dataset/praca-de-pedagio,CURRENT,SYNTHETIC_FIXTURE

@@ -307,17 +307,28 @@ class TripEndpointTests {
                     }
                     """))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.tollEstimate.totalEstimatedToll").value("0.00"))
-            .andExpect(jsonPath("$.tollEstimate.freshnessStatus").value("UNKNOWN"))
-            .andExpect(jsonPath("$.tollEstimate.confidence").value("no_imported_toll_data_available"))
+            .andExpect(jsonPath("$.tollEstimate.estimatedTolls", hasSize(2)))
+            .andExpect(jsonPath("$.tollEstimate.estimatedTolls[0].source").value("ANTT_DADOS_ABERTOS"))
+            .andExpect(jsonPath("$.tollEstimate.estimatedTolls[0].importAuditId").value("import_antt_synthetic_20260531"))
+            .andExpect(jsonPath("$.tollEstimate.totalEstimatedToll").value("137.70"))
+            .andExpect(jsonPath("$.tollEstimate.freshnessStatus").value("CURRENT"))
+            .andExpect(jsonPath("$.tollEstimate.confidence").value("imported_antt_fixture_route_state_match"))
             .andExpect(jsonPath("$.tollEstimate.financeTreatment").value("pass_through_or_reimbursement_not_profit"));
 
-        mockMvc.perform(get("/api/toll-data/import-status?source=ANTT"))
+        mockMvc.perform(get("/api/toll-data/import-status?source=ANTT_DADOS_ABERTOS"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.tollDataImportStatus.source").value("ANTT"))
+            .andExpect(jsonPath("$.tollDataImportStatus.source").value("ANTT_DADOS_ABERTOS"))
             .andExpect(jsonPath("$.tollDataImportStatus.dataset").value("toll_plazas_and_tariffs"))
-            .andExpect(jsonPath("$.tollDataImportStatus.freshnessStatus").value("UNKNOWN"))
-            .andExpect(jsonPath("$.tollDataImportStatus.confidence").value("not_imported"));
+            .andExpect(jsonPath("$.tollDataImportStatus.sourceUrl").value("https://dados.antt.gov.br/dataset/praca-de-pedagio"))
+            .andExpect(jsonPath("$.tollDataImportStatus.sourcePeriodStart").value("2026-05-01"))
+            .andExpect(jsonPath("$.tollDataImportStatus.sourcePeriodEnd").value("2026-05-31"))
+            .andExpect(jsonPath("$.tollDataImportStatus.freshnessStatus").value("CURRENT"))
+            .andExpect(jsonPath("$.tollDataImportStatus.confidence").value("SYNTHETIC_FIXTURE"))
+            .andExpect(jsonPath("$.tollDataImportStatus.fileHash").value("synthetic-fixture"))
+            .andExpect(jsonPath("$.tollDataImportStatus.parserErrorSummary").doesNotExist())
+            .andExpect(jsonPath("$.tollDataImportStatus.rowCount").value(2))
+            .andExpect(jsonPath("$.tollDataImportStatus.completedAt").value("2026-05-11T12:00:30Z"))
+            .andExpect(jsonPath("$.tollDataImportStatus.importAuditId").value("import_antt_synthetic_20260531"));
     }
 
     @Test

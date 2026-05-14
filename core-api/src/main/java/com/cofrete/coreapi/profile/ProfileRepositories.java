@@ -21,6 +21,9 @@ interface TruckRepository extends JpaRepository<Truck, String> {
     boolean existsByDriverAndPlate(Driver driver, String plate);
 }
 
+interface TruckConsumptionProfileRepository extends JpaRepository<TruckConsumptionProfile, String> {
+}
+
 interface TaxProfileRepository extends JpaRepository<TaxProfile, String> {
 
     Optional<TaxProfile> findByDriverAndPlanningYear(Driver driver, int planningYear);

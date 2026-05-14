@@ -1,5 +1,8 @@
 package com.cofrete.coreapi.trip;
 
+import com.cofrete.coreapi.imports.TollDataEstimate;
+import com.cofrete.coreapi.imports.TollDataEstimateItem;
+import com.cofrete.coreapi.imports.TollImportStatus;
 import java.time.Instant;
 import java.util.List;
 
@@ -234,7 +237,7 @@ record TollEstimateResponse(
     String confidence
 ) {
 
-    static TollEstimateResponse from(TollEstimateRequest request) {
+    static TollEstimateResponse from(TollEstimateRequest request, TollDataEstimate importedEstimate) {
         String distance = request.distanceKm() == null ? null : TripMoney.money(request.distanceKm());
         return new TollEstimateResponse(
             request.tripId(),
@@ -244,12 +247,12 @@ record TollEstimateResponse(
                 distance
             ),
             new TollVehicleResponse(request.vehicleType(), request.axles()),
-            List.of(),
-            "0.00",
-            TripMoney.BRL,
+            importedEstimate.items().stream().map(EstimatedTollResponse::from).toList(),
+            TripMoney.money(importedEstimate.totalAmount()),
+            importedEstimate.currency(),
             "pass_through_or_reimbursement_not_profit",
-            "UNKNOWN",
-            "no_imported_toll_data_available"
+            importedEstimate.freshnessStatus(),
+            importedEstimate.confidence()
         );
     }
 }
@@ -267,8 +270,28 @@ record EstimatedTollResponse(
     String amount,
     String currency,
     String confidence,
-    TollClassification classification
+    TollClassification classification,
+    String source,
+    String sourceType,
+    String effectiveStart,
+    String importAuditId
 ) {
+
+    static EstimatedTollResponse from(TollDataEstimateItem item) {
+        return new EstimatedTollResponse(
+            item.name(),
+            item.highway(),
+            item.state(),
+            TripMoney.money(item.amount()),
+            item.currency(),
+            item.confidence(),
+            TollClassification.PASS_THROUGH,
+            item.source(),
+            item.sourceType(),
+            item.effectiveStart() == null ? null : item.effectiveStart().toString(),
+            item.importAuditId()
+        );
+    }
 }
 
 record TripTollResponse(
@@ -367,22 +390,36 @@ record TollClassificationTotalsResponse(
 record TollDataImportStatusResponse(
     String source,
     String dataset,
+    String sourceUrl,
+    String sourcePeriodStart,
+    String sourcePeriodEnd,
     String freshnessStatus,
     String confidence,
     String advisoryText,
+    String fileHash,
+    String parserErrorSummary,
+    int rowCount,
     Instant retrievedAt,
+    Instant completedAt,
     String importAuditId
 ) {
 
-    static TollDataImportStatusResponse unknown(String source) {
+    static TollDataImportStatusResponse from(TollImportStatus status) {
         return new TollDataImportStatusResponse(
-            source == null || source.isBlank() ? "ANTT" : source.trim(),
-            "toll_plazas_and_tariffs",
-            "UNKNOWN",
-            "not_imported",
+            status.source(),
+            status.dataset(),
+            status.sourceUrl(),
+            status.sourcePeriodStart(),
+            status.sourcePeriodEnd(),
+            status.freshnessStatus(),
+            status.confidence(),
             "Toll estimates are advisory. Cofrete has no production paid toll provider integration in this module.",
-            null,
-            null
+            status.fileHash(),
+            status.parserErrorSummary(),
+            status.rowCount(),
+            status.retrievedAt(),
+            status.completedAt(),
+            status.importAuditId()
         );
     }
 }

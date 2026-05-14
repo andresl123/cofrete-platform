@@ -92,15 +92,20 @@ The implemented Core API trip profitability migration includes:
 - `trip_acceptance_decisions`
 - `trip_recalculation_events`
 
+The implemented Core API fuel and toll import migration includes:
+
+- `import_jobs`
+- `fuel_prices`
+- `driver_fuel_reports`
+- `truck_consumption_profiles`
+- `toll_plazas`
+- `toll_tariffs`
+
 Reserve allocation records keep nullable `tripId` and `freightPaymentId` references until a later migration links reserve allocation subjects to trip and receivable records without disrupting existing allocation idempotency keys.
 
 Follow-up migration sets should include tables equivalent to:
 
-- `fuel_prices`
 - `fuel_station_prices`
-- `driver_fuel_reports`
-- `toll_plaza`
-- `toll_tariff`
 - `trip_toll`
 - `freight_floor_checks`
 - `waiting_time_records`
