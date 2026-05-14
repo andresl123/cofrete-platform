@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>ROU-223 Mobile Reserve Wallet Explainer</title>
+  </head>
+  <body>
+    <main>
+      <p><strong>Manual derived explainer.</strong> Canonical behavior remains in the mobile app code, tests, API contracts, and product markdown docs.</p>
+      <h1>ROU-223 - COF-019 Build mobile reserve wallet and safe withdrawal screens</h1>
+      <section>
+        <h2>What changed</h2>
+        <p>The mobile Reservas tab now loads the Core API reserve wallet and financial health endpoints instead of showing static reference content.</p>
+        <ul>
+          <li>Added typed mobile contracts for reserve buckets, reserve rules, reserve allocations, wallet transactions, and financial health.</li>
+          <li>Added API client methods for <code>GET /api/reserve-wallets</code>, <code>POST /api/reserve-rules</code>, <code>POST /api/reserve-allocations</code>, and <code>GET /api/financial-health-score</code>.</li>
+          <li>Added a reserve wallet screen with loading, empty, error, wallet balance, transaction history, starter rule, and allocation request states.</li>
+          <li>Kept safe personal withdrawal visually separate from required reserve buckets.</li>
+          <li>Added React Native tests for rendering, empty state, API error state, and reserve write actions.</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Why it changed</h2>
+        <p>ROU-223 turns reserve and safe withdrawal contracts into a usable mobile surface. The UI keeps reserves as virtual planning envelopes and avoids implying bank movement or guaranteed spendable money.</p>
+      </section>
+      <section>
+        <h2>Affected areas</h2>
+        <ul>
+          <li><code>mobile-app/src/MobileApp.tsx</code></li>
+          <li><code>mobile-app/src/api/client.ts</code></li>
+          <li><code>mobile-app/src/api/contracts.ts</code></li>
+          <li><code>mobile-app/src/__tests__/MobileApp.test.tsx</code></li>
+        </ul>
+      </section>
+      <section>
+        <h2>Validation</h2>
+        <ul>
+          <li><code>cd mobile-app &amp;&amp; npm ci</code></li>
+          <li><code>cd mobile-app &amp;&amp; npm run typecheck &amp;&amp; npm run lint &amp;&amp; npm run test:ci</code></li>
+          <li><code>python scripts/agent_harness_check.py</code></li>
+          <li><code>git diff --check</code></li>
+        </ul>
+        <p>Impeccable review triggered because mobile UI changed. Two passes ran: <code>polish</code>, then <code>adapt</code>. The wrapper command was unavailable, so findings were applied manually from the loaded references. Fixes applied: corrected reserve wording and translated backend transaction notes into driver-facing Portuguese.</p>
+        <p><code>grill-with-docs</code> review ran for two loops. Fix applied: changed the allocation action label to reinforce that reserve movement is virtual ledger planning, not money movement.</p>
+      </section>
+      <section>
+        <h2>Unblocks</h2>
+        <p>ROU-223 unblocks reserve and safe-withdrawal mobile inputs for ROU-225 financial health dashboard work.</p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -41,6 +41,9 @@ describe('MobileApp', () => {
 
   it('keeps finance caveats visible across MVP routes', async () => {
     const user = userEvent.setup();
+    fetchMock
+      .mockResolvedValueOnce(okJson({ reserveWallets: reserveWalletsResponse() }))
+      .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse() }));
 
     render(<MobileApp />);
 
@@ -48,8 +51,9 @@ describe('MobileApp', () => {
     expect(screen.getByText('Pedagio reembolsado e Vale-Pedagio nao viram lucro.')).toBeOnTheScreen();
 
     await user.press(screen.getByRole('button', { name: 'Reservas' }));
-    expect(screen.getByText('Planejamento, nao garantia')).toBeOnTheScreen();
-    expect(screen.getByText(/nao representam transferencia bancaria real/)).toBeOnTheScreen();
+    await screen.findByText('Baldes de reserva');
+    expect(screen.getByText('Somente o balde salario do motorista. Reservas obrigatorias continuam separadas.')).toBeOnTheScreen();
+    expect(screen.getByText(/Nao representam transferencia bancaria/)).toBeOnTheScreen();
   });
 
   it('creates driver and truck data from onboarding', async () => {
@@ -180,6 +184,36 @@ describe('MobileApp', () => {
     );
   });
 
+  it('renders reserve wallet balances, transactions, and safe withdrawal separately', async () => {
+    const user = userEvent.setup();
+    fetchMock
+      .mockResolvedValueOnce(okJson({ reserveWallets: reserveWalletsResponse() }))
+      .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse() }));
+
+    render(<MobileApp />);
+
+    await user.press(screen.getByRole('button', { name: 'Reservas' }));
+
+    await screen.findByText('Baldes de reserva');
+    expect(screen.getByText('Saque pessoal seguro')).toBeOnTheScreen();
+    expect(screen.getAllByText('R$ 1.100,00')).toHaveLength(2);
+    expect(screen.getAllByText('Manutencao').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Salario do motorista')).toBeOnTheScreen();
+    expect(screen.getByText('Alvo R$ 5.000,00 (12,00%)')).toBeOnTheScreen();
+    expect(screen.getByText('Movimento virtual de reserva. Nao e transferencia bancaria real.')).toBeOnTheScreen();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('/api/reserve-wallets'),
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('/api/financial-health-score'),
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
   it('saves RNTRC, insurance, and document metadata through compliance APIs', async () => {
     const user = userEvent.setup();
     queueComplianceLoad();
@@ -223,6 +257,74 @@ describe('MobileApp', () => {
 
     await screen.findByText('Algum valor nao passou na validacao. Revise os campos e tente novamente.');
     expect(screen.queryByText(/Core API request failed/)).toBeNull();
+  });
+
+  it('shows reserve wallet empty state and all blueprint buckets', async () => {
+    const user = userEvent.setup();
+    fetchMock
+      .mockResolvedValueOnce(okJson({ reserveWallets: [] }))
+      .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse('0.00', 'UNKNOWN') }));
+
+    render(<MobileApp />);
+
+    await user.press(screen.getByRole('button', { name: 'Reservas' }));
+
+    await screen.findByText('Nenhum balde criado');
+    expect(screen.getByText('Diesel, ARLA e pedagio')).toBeOnTheScreen();
+    expect(screen.getByText('Manutencao')).toBeOnTheScreen();
+    expect(screen.getByText('Pneus')).toBeOnTheScreen();
+    expect(screen.getByText('Seguro')).toBeOnTheScreen();
+    expect(screen.getByText('Impostos e documentos')).toBeOnTheScreen();
+    expect(screen.getByText('Troca do caminhao')).toBeOnTheScreen();
+    expect(screen.getByText('Emergencia')).toBeOnTheScreen();
+    expect(screen.getByText('Salario do motorista')).toBeOnTheScreen();
+    expect(screen.getByText('Lucro')).toBeOnTheScreen();
+  });
+
+  it('shows a reserve wallet API error without raw technical text', async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValueOnce({
+      json: async () => ({ error: 'SOURCE_STALE' }),
+      ok: false,
+      status: 500,
+    });
+
+    render(<MobileApp />);
+
+    await user.press(screen.getByRole('button', { name: 'Reservas' }));
+
+    await screen.findByText('O Core API nao conseguiu responder agora. Tente novamente em alguns minutos.');
+    expect(screen.queryByText(/Core API request failed/)).toBeNull();
+  });
+
+  it('creates reserve rules and requests an allocation from the reserve screen', async () => {
+    const user = userEvent.setup();
+    fetchMock
+      .mockResolvedValueOnce(okJson({ reserveWallets: [] }))
+      .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse('0.00', 'UNKNOWN') }));
+    for (let index = 0; index < 9; index += 1) {
+      fetchMock.mockResolvedValueOnce(okJson({ reserveRule: { id: `reserve_rule_${index}` } }));
+    }
+    fetchMock
+      .mockResolvedValueOnce(okJson({ reserveWallets: reserveWalletsResponse() }))
+      .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse() }))
+      .mockResolvedValueOnce(okJson({ reserveAllocation: reserveAllocationResponse() }))
+      .mockResolvedValueOnce(okJson({ reserveWallets: reserveWalletsResponse() }))
+      .mockResolvedValueOnce(okJson({ financialHealthScore: financialHealthResponse() }));
+
+    render(<MobileApp />);
+
+    await user.press(screen.getByRole('button', { name: 'Reservas' }));
+    await screen.findByText('Nenhum balde criado');
+
+    await user.press(screen.getByRole('button', { name: 'Criar regras starter' }));
+    await screen.findByText('Regras starter registradas. Revise percentuais antes de usar em fretes reais.');
+
+    await user.press(screen.getByRole('button', { name: 'Solicitar alocacao virtual' }));
+    await screen.findByText('Alocacao solicitada. Os saldos mudam quando o worker financeiro confirmar o evento.');
+
+    expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('/api/reserve-rules'))).toBe(true);
+    expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('/api/reserve-allocations'))).toBe(true);
   });
 });
 
@@ -417,4 +519,72 @@ function documentsResponse() {
       title: 'CRLV 2026',
     },
   ];
+}
+
+function reserveWalletsResponse() {
+  return [
+    {
+      bucket: 'MAINTENANCE',
+      currency: 'BRL',
+      currentBalance: '600.00',
+      lastAllocationAt: '2026-05-11T12:00:11Z',
+      policy: 'PERCENT_OF_AMOUNT',
+      targetBalance: '5000.00',
+      transactions: [
+        {
+          amount: '600.00',
+          balanceAfter: '600.00',
+          bucket: 'MAINTENANCE',
+          createdAt: '2026-05-11T12:00:11Z',
+          currency: 'BRL',
+          id: 'reserve_txn_maint',
+          note: 'Virtual reserve ledger movement. Not a real money transfer.',
+          sourceReference: 'reserve-trip_123-pay_123-v1',
+          sourceType: 'RESERVE_ALLOCATION',
+          type: 'CREDIT',
+        },
+      ],
+    },
+    {
+      bucket: 'DRIVER_SALARY',
+      currency: 'BRL',
+      currentBalance: '1100.00',
+      lastAllocationAt: '2026-05-11T12:00:11Z',
+      policy: 'PERCENT_OF_AMOUNT',
+      targetBalance: null,
+      transactions: [],
+    },
+  ];
+}
+
+function financialHealthResponse(safePersonalWithdrawalAvailable = '1100.00', status = 'GOOD') {
+  return {
+    advisoryText: 'Financial health is advisory planning output.',
+    components: [],
+    currency: 'BRL',
+    reserveCoveragePercent: status === 'UNKNOWN' ? '0.00' : '88.00',
+    safePersonalWithdrawalAvailable,
+    score: status === 'UNKNOWN' ? 0 : 88,
+    status,
+    traceId: 'financial_health_test',
+  };
+}
+
+function reserveAllocationResponse() {
+  return {
+    advisoryText: 'Reserve allocations are virtual ledger movements.',
+    allocatableAmount: '7400.00',
+    bucketAllocations: {},
+    currency: 'BRL',
+    duplicate: false,
+    grossAmount: '8000.00',
+    id: 'reserve_alloc_123',
+    idempotencyKey: 'mobile-reserve-test',
+    passThroughAmount: '600.00',
+    requestStatus: 'REQUESTED',
+    requiredReserveAmount: '0.00',
+    safePersonalWithdrawal: '0.00',
+    status: 'REQUESTED',
+    transactions: [],
+  };
 }

@@ -589,6 +589,20 @@ Compliance semantics:
 | `GET` | `/api/receivables?status=overdue` | List receivables by status and date filters. | Status, date range optional. | `receivables[]`, totals. | `VALIDATION_ERROR` |
 | `PUT` | `/api/receivables/{receivableId}/mark-paid` | Mark receivable paid. | Paid amount, paid date, method, note optional. | Updated `receivable`. | `VALIDATION_ERROR`, `NOT_FOUND`, `CONFLICT` |
 
+Example customer request:
+
+```json
+{
+  "name": "Transportadora Exemplo",
+  "taxIdType": "CNPJ",
+  "taxIdLast4": "1234",
+  "contactName": "Financeiro",
+  "contactPhone": "+55 62 99999-0000",
+  "paymentTermsDays": 21,
+  "notes": "Receives balance by Pix after delivery."
+}
+```
+
 Example receivable request:
 
 ```json
@@ -604,6 +618,52 @@ Example receivable request:
 }
 ```
 
+Example receivable response:
+
+```json
+{
+  "receivable": {
+    "id": "recv_123",
+    "customerId": "cust_123",
+    "tripId": "trip_123",
+    "type": "BALANCE",
+    "status": "PARTIALLY_PAID",
+    "amount": "5000.00",
+    "paidAmount": "2000.00",
+    "remainingAmount": "3000.00",
+    "currency": "BRL",
+    "dueDate": "2026-06-10",
+    "paymentMethod": "PIX",
+    "payments": [
+      {
+        "id": "recv_pay_123",
+        "amount": "2000.00",
+        "currency": "BRL",
+        "paidDate": "2026-06-12",
+        "paymentMethod": "PIX"
+      }
+    ],
+    "statusChanges": [
+      {
+        "id": "recv_status_123",
+        "previousStatus": "LATE",
+        "newStatus": "PARTIALLY_PAID",
+        "reason": "PAYMENT_RECORDED"
+      }
+    ],
+    "advisoryText": "Receivables are cash-flow planning records only. Cofrete does not move money or guarantee payment."
+  }
+}
+```
+
+Receivable status values:
+
+- `EXPECTED`
+- `PAID`
+- `LATE`
+- `PARTIALLY_PAID`
+- `CANCELED`
+
 Example customer profitability response:
 
 ```json
@@ -616,10 +676,20 @@ Example customer profitability response:
   "averagePaymentDelayDays": "8.50",
   "lateReceivables": "2400.00",
   "currency": "BRL",
+  "receivableRiskStatus": "HIGH",
+  "receivableRiskInputs": {
+    "receivableCount": 8,
+    "paidReceivableCount": 5,
+    "lateReceivableCount": 2,
+    "openReceivableAmount": "7400.00",
+    "overdueReceivableAmount": "2400.00",
+    "maxPaymentDelayDays": "19"
+  },
   "qualitySignals": {
     "ciotStatus": "MIXED",
     "valePedagioStatus": "MIXED",
-    "loadingDelayStatus": "ATTENTION"
+    "loadingDelayStatus": "ATTENTION",
+    "paymentDelayStatus": "HIGH"
   },
   "advisoryText": "Customer profitability is based on Cofrete records and may not include all external obligations."
 }
@@ -629,6 +699,9 @@ Receivable semantics:
 
 - Receivables are tracking records, not bank integrations.
 - Late payment affects cash-flow risk and customer profitability.
+- Customer tax ID metadata must be minimized in normal API responses; MVP customer records store type and last four digits only.
+- Receivable status changes must be auditable through status history records.
+- `expectedProfit` remains `0.00` when customer profitability is based only on receivable records without linked trip profitability cost inputs.
 - Marking a receivable paid may trigger reserve allocation if the payment becomes allocatable.
 
 ## Validation And Error Conventions

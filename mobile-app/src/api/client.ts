@@ -6,11 +6,16 @@ import {
   type ComplianceScoreResponse,
   type DriverProfileRequest,
   type DriverProfileResponse,
+  type FinancialHealthResponse,
   type InsurancePolicyRequest,
   type InsurancePolicyResponse,
   type ProfitabilityEstimateRequest,
   type ProfitabilityEstimateResponse,
-  type ReserveWalletSummary,
+  type ReserveAllocationRequest,
+  type ReserveAllocationResponse,
+  type ReserveRuleRequest,
+  type ReserveRuleResponse,
+  type ReserveWalletResponse,
   type RntrcMetadataRequest,
   type RntrcProfileResponse,
   type TripRequest,
@@ -30,14 +35,17 @@ export type CoreApiClient = {
   createDocument: (draft: ComplianceDocumentRequest) => Promise<ComplianceDocumentResponse>;
   createDriverProfile: (draft: DriverProfileRequest) => Promise<DriverProfileResponse>;
   createInsurancePolicy: (draft: InsurancePolicyRequest) => Promise<InsurancePolicyResponse>;
+  createReserveAllocation: (draft: ReserveAllocationRequest) => Promise<ReserveAllocationResponse>;
+  createReserveRule: (draft: ReserveRuleRequest) => Promise<ReserveRuleResponse>;
   createTrip: (draft: TripRequest) => Promise<TripResponse>;
   createTruckProfile: (draft: TruckProfileRequest) => Promise<TruckProfileResponse>;
   getComplianceCalendar: () => Promise<ComplianceCalendarItemResponse[]>;
   getComplianceProfile: () => Promise<ComplianceProfileResponse>;
   getComplianceScore: () => Promise<ComplianceScoreResponse>;
   getDocuments: () => Promise<ComplianceDocumentResponse[]>;
+  getFinancialHealthScore: () => Promise<FinancialHealthResponse>;
   getInsurancePolicies: () => Promise<InsurancePolicyResponse[]>;
-  getReserveWallets: () => Promise<ReserveWalletSummary>;
+  getReserveWallets: () => Promise<ReserveWalletResponse[]>;
   getTrip: (tripId: string) => Promise<TripResponse>;
   requestProfitabilityEstimate: (
     tripId: string,
@@ -86,6 +94,18 @@ export function createCoreApiClient(baseUrl: string): CoreApiClient {
         method: 'POST',
         path: '/api/compliance/insurance-policies',
       }).then((envelope) => envelope.insurancePolicy),
+    createReserveAllocation: (draft) =>
+      request<{ reserveAllocation: ReserveAllocationResponse }>({
+        body: draft,
+        method: 'POST',
+        path: '/api/reserve-allocations',
+      }).then((envelope) => envelope.reserveAllocation),
+    createReserveRule: (draft) =>
+      request<{ reserveRule: ReserveRuleResponse }>({
+        body: draft,
+        method: 'POST',
+        path: '/api/reserve-rules',
+      }).then((envelope) => envelope.reserveRule),
     createTrip: (draft) =>
       request<{ trip: TripResponse }>({
         body: draft,
@@ -98,11 +118,16 @@ export function createCoreApiClient(baseUrl: string): CoreApiClient {
         method: 'POST',
         path: '/api/trucks',
       }).then((envelope) => envelope.truck),
+    getFinancialHealthScore: () =>
+      request<{ financialHealthScore: FinancialHealthResponse }>({
+        method: 'GET',
+        path: '/api/financial-health-score',
+      }).then((envelope) => envelope.financialHealthScore),
     getReserveWallets: () =>
-      request<ReserveWalletSummary>({
+      request<{ reserveWallets: ReserveWalletResponse[] }>({
         method: 'GET',
         path: '/api/reserve-wallets',
-      }),
+      }).then((envelope) => envelope.reserveWallets),
     getComplianceCalendar: () =>
       request<{ calendarItems: ComplianceCalendarItemResponse[] }>({
         method: 'GET',
