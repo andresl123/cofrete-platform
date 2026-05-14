@@ -1,12 +1,14 @@
 # Official Source Register
 
-Last checked: 2026-05-11.
+Last full-register check: 2026-05-11.
+ROU-220 RNTRC Digital source check: 2026-05-14.
 
 Cofrete is not an official government, legal, tax, accounting, or insurance channel. Product behavior must link users back to official sources when a decision can affect compliance, tax, insurance, or legal obligations.
 
 | Topic | Official Source | URL | Product Use |
 |---|---|---|---|
 | RNTRC / ANTT | ANTT RNTRC page | https://www.gov.br/antt/pt-br/assuntos/cargas/rntrc-1/rntrc-capa | RNTRC explanatory text and official update link |
+| RNTRC Digital updates | ANTT Como obter e atualizar | https://www.gov.br/antt/pt-br/assuntos/cargas/rntrc-1/como-obter-e-atualizar | RNTRC Digital/gov.br prata-ou-ouro guidance and official update caveat |
 | RNTRC consultation | ANTT Consulta Publica RNTRC | https://consultapublica.antt.gov.br/ | Public status check links and advisory wording |
 | Road cargo transport / CIOT / VPO | ANTT cargo transport overview | https://www.gov.br/antt/pt-br/a-antt/o-transporte-de-cargas | Compliance center wording and transport concepts |
 | CIOT | ANTT CIOT | https://www.gov.br/antt/pt-br/assuntos/cargas/pagamento-eletronico-de-fretes-pef-ciot/ciot | Pre-trip checklist and CIOT warning copy |

@@ -16,6 +16,13 @@ public class ProfileLookupService {
     }
 
     @Transactional(readOnly = true)
+    public ProfileDriverOwner requireDriverOwner(AppUser user) {
+        var driver = drivers.findByUser(user)
+            .orElseThrow(() -> new ProfileNotFoundException("Driver profile not found."));
+        return new ProfileDriverOwner(driver.getId(), user.getAccountId());
+    }
+
+    @Transactional(readOnly = true)
     public ProfileTripOwner requireTripOwner(AppUser user, String truckId) {
         var driver = drivers.findByUser(user)
             .orElseThrow(() -> new ProfileNotFoundException("Driver profile not found."));
