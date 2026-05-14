@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ROU-222 / COF-018 Mobile Onboarding and Freight Calculator Explainer</title>
+    <style>
+      body {
+        color: #111827;
+        font-family: Arial, sans-serif;
+        line-height: 1.5;
+        margin: 0 auto;
+        max-width: 920px;
+        padding: 32px;
+      }
+      code {
+        background: #f3f4f6;
+        border-radius: 4px;
+        padding: 2px 4px;
+      }
+      h1,
+      h2 {
+        line-height: 1.2;
+      }
+      li {
+        margin: 8px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ROU-222 / COF-018 Mobile Onboarding and Freight Calculator</h1>
+    <p>
+      This manually maintained derived summary covers the mobile implementation for
+      driver onboarding and the new freight profitability workflow. Canonical wording
+      remains in <code>docs/product/mvp-scope.md</code>,
+      <code>docs/product/brazil-trucker-finance-blueprint.md</code>, and
+      <code>docs/architecture/api-contracts.md</code>.
+    </p>
+
+    <h2>What Changed</h2>
+    <ul>
+      <li>Added mobile driver and truck onboarding forms that call <code>POST /api/drivers</code> and <code>POST /api/trucks</code>.</li>
+      <li>Added a new freight calculator form for route, gross freight, loaded and empty kilometers, diesel assumptions, tolls, ARLA, direct costs, financing allocation, pass-through values, and payment timing.</li>
+      <li>Extended the mobile Core API client and TypeScript contracts to consume <code>POST /api/trips</code>, <code>GET /api/trips/{tripId}</code>, and <code>POST /api/trips/{tripId}/profitability-estimate</code>.</li>
+      <li>Added a profitability result screen that separates gross freight, pass-through cash flow, real trip cost, required reserves, expected profit, and safe personal withdrawal.</li>
+      <li>Added mobile tests for route rendering, conservative advisory copy, onboarding API submission, freight calculator happy path, and required input validation.</li>
+      <li>Added <code>PRODUCT.md</code>, <code>DESIGN.md</code>, and <code>.impeccable/design.json</code> so the frontend design workflow has durable product and visual-system context for future UI work.</li>
+      <li>Ran an Impeccable quality loop over polish, adapt, audit, harden, clarify, layout, and typeset passes.</li>
+      <li>Documented the end-of-task Impeccable review loop in <code>docs/agent-harness/frontend-review-loop.md</code> and wired it into the agent workflow for future frontend/mobile changes.</li>
+    </ul>
+
+    <h2>Why It Changed</h2>
+    <p>
+      ROU-215 introduced the backend trip profitability APIs. ROU-222 connects those APIs
+      to the primary MVP mobile workflow: the driver enters freight and trip assumptions,
+      sees deterministic planning output, and can decide whether to accept, reject, or
+      renegotiate the freight.
+    </p>
+
+    <h2>Affected Areas</h2>
+    <ul>
+      <li><code>mobile-app/src/MobileApp.tsx</code>: mobile onboarding and freight calculator UI.</li>
+      <li><code>mobile-app/src/api/client.ts</code>: Core API client methods for driver, truck, trip, and profitability calls.</li>
+      <li><code>mobile-app/src/api/contracts.ts</code>: mobile request and response types aligned with the API contract.</li>
+      <li><code>mobile-app/src/__tests__/MobileApp.test.tsx</code>: mobile route, copy, validation, and workflow tests.</li>
+      <li><code>PRODUCT.md</code>: durable product context for future Impeccable UI work.</li>
+      <li><code>docs/agent-harness/frontend-review-loop.md</code>, <code>docs/agent-harness/workflow.md</code>, <code>docs/agent-harness/validation.md</code>, <code>AGENTS.md</code>, and <code>mobile-app/AGENTS.md</code>: future-agent workflow rules for end-of-task Impeccable loops.</li>
+    </ul>
+
+    <h2>Risk Boundaries</h2>
+    <ul>
+      <li>Calculator output is advisory planning output, not guaranteed earnings or professional financial advice.</li>
+      <li>Toll reimbursement and Vale-Pedagio are shown as pass-through cash flow and do not increase profit or safe personal withdrawal.</li>
+      <li>Profile data captured by Cofrete is app-maintained data and does not update ANTT, RNTRC Digital, gov.br, Receita Federal, DETRAN, SEFAZ, SUSEP, or insurer records.</li>
+      <li>The UI consumes the current API contracts but does not introduce authentication storage, secure credential handling, or production navigation beyond the MVP scaffold.</li>
+      <li>The Impeccable review loop is intentionally triggered only by frontend/mobile file changes, not backend-only or documentation-only tasks.</li>
+    </ul>
+
+    <h2>Validation</h2>
+    <ul>
+      <li><code>cd mobile-app &amp;&amp; npm run typecheck</code></li>
+      <li><code>cd mobile-app &amp;&amp; npm run lint</code></li>
+      <li><code>cd mobile-app &amp;&amp; npm run test:ci</code></li>
+      <li><code>python scripts/agent_harness_check.py</code></li>
+      <li><code>git diff --check</code></li>
+      <li><code>.impeccable/design.json</code> parsed as valid JSON.</li>
+      <li><code>grill-with-docs</code> review loop executed for ROU-222 before final handoff.</li>
+    </ul>
+
+    <h2>Unblocks</h2>
+    <p>
+      This slice unblocks later mobile and dashboard issues such as ROU-223, ROU-224, and
+      ROU-225 by giving the app a working driver setup and freight decision surface.
+    </p>
+  </body>
+</html>

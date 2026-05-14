@@ -1,7 +1,13 @@
 import {
-  type DriverProfileDraft,
+  type DriverProfileRequest,
+  type DriverProfileResponse,
+  type ProfitabilityEstimateRequest,
+  type ProfitabilityEstimateResponse,
   type ReserveWalletSummary,
-  type TripDraft,
+  type TripRequest,
+  type TripResponse,
+  type TruckProfileRequest,
+  type TruckProfileResponse,
 } from './contracts';
 
 type RequestOptions = {
@@ -12,9 +18,15 @@ type RequestOptions = {
 
 export type CoreApiClient = {
   baseUrl: string;
-  createDriverProfile: (draft: DriverProfileDraft) => Promise<DriverProfileDraft>;
-  createTripDraft: (draft: TripDraft) => Promise<TripDraft>;
+  createDriverProfile: (draft: DriverProfileRequest) => Promise<DriverProfileResponse>;
+  createTrip: (draft: TripRequest) => Promise<TripResponse>;
+  createTruckProfile: (draft: TruckProfileRequest) => Promise<TruckProfileResponse>;
   getReserveWallets: () => Promise<ReserveWalletSummary>;
+  getTrip: (tripId: string) => Promise<TripResponse>;
+  requestProfitabilityEstimate: (
+    tripId: string,
+    draft: ProfitabilityEstimateRequest
+  ) => Promise<ProfitabilityEstimateResponse>;
 };
 
 export function createCoreApiClient(baseUrl: string): CoreApiClient {
@@ -40,21 +52,38 @@ export function createCoreApiClient(baseUrl: string): CoreApiClient {
   return {
     baseUrl: normalizedBaseUrl,
     createDriverProfile: (draft) =>
-      request<DriverProfileDraft>({
+      request<{ driver: DriverProfileResponse }>({
         body: draft,
         method: 'POST',
         path: '/api/drivers',
-      }),
-    createTripDraft: (draft) =>
-      request<TripDraft>({
+      }).then((envelope) => envelope.driver),
+    createTrip: (draft) =>
+      request<{ trip: TripResponse }>({
         body: draft,
         method: 'POST',
         path: '/api/trips',
-      }),
+      }).then((envelope) => envelope.trip),
+    createTruckProfile: (draft) =>
+      request<{ truck: TruckProfileResponse }>({
+        body: draft,
+        method: 'POST',
+        path: '/api/trucks',
+      }).then((envelope) => envelope.truck),
     getReserveWallets: () =>
       request<ReserveWalletSummary>({
         method: 'GET',
         path: '/api/reserve-wallets',
       }),
+    getTrip: (tripId) =>
+      request<{ trip: TripResponse }>({
+        method: 'GET',
+        path: `/api/trips/${tripId}`,
+      }).then((envelope) => envelope.trip),
+    requestProfitabilityEstimate: (tripId, draft) =>
+      request<{ profitabilityEstimate: ProfitabilityEstimateResponse }>({
+        body: draft,
+        method: 'POST',
+        path: `/api/trips/${tripId}/profitability-estimate`,
+      }).then((envelope) => envelope.profitabilityEstimate),
   };
 }

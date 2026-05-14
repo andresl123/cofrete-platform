@@ -30,6 +30,7 @@ This file is intentionally short. Durable project knowledge belongs in versioned
 | Event contracts | `docs/architecture/event-contracts.md` |
 | Runtime smoke tests | `docs/agent-harness/runtime-smoke-tests.md` |
 | Validation | `docs/agent-harness/validation.md` |
+| Frontend review loop | `docs/agent-harness/frontend-review-loop.md` |
 | Linear review loop | `docs/agent-harness/linear-review-loop.md` |
 | Testing policy | `docs/agent-harness/testing-policy.md` |
 | Golden principles | `docs/agent-harness/golden-principles.md` |
@@ -42,7 +43,8 @@ This file is intentionally short. Durable project knowledge belongs in versioned
 - Prefer `scripts/start_task_worktree.sh <task-name> [base-branch]` when starting a new task worktree.
 - always make sure you have the newest data from origin/main
 - For every new task, invoke the `caveman` skill in `lite` mode and keep responses concise, professional, and technically complete unless the user asks for normal mode.
-- For any frontend interface change, invoke the `impeccable` skill before editing UI files and follow its required preflight, design, validation, and handoff workflow.
+- For any frontend interface change, invoke the `impeccable` skill before editing UI files for required context loading, register selection, and design preflight.
+- At the end of any task that changes frontend or mobile files, run the Impeccable review loop described in `docs/agent-harness/frontend-review-loop.md`.
 - Read the nearest `AGENTS.md` before editing a service.
 - Keep service-specific changes inside that service unless the task requires shared repo updates.
 - Run `python scripts/agent_harness_check.py` before opening a PR that changes repository structure.
