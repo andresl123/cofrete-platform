@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ROU-212 / COF-008 Mobile App Scaffold Explainer</title>
+    <style>
+      body {
+        color: #111827;
+        font-family: Arial, sans-serif;
+        line-height: 1.5;
+        margin: 0 auto;
+        max-width: 920px;
+        padding: 32px;
+      }
+      code {
+        background: #f3f4f6;
+        border-radius: 4px;
+        padding: 2px 4px;
+      }
+      h1,
+      h2 {
+        line-height: 1.2;
+      }
+      li {
+        margin: 8px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ROU-212 / COF-008 Mobile App Scaffold</h1>
+    <p>
+      This task creates the Expo TypeScript foundation for the Cofrete mobile app. It turns
+      <code>mobile-app/</code> from a placeholder directory into a runnable client with validation
+      scripts, API client stubs, environment configuration, and React Navigation MVP route placeholders.
+    </p>
+
+    <h2>What Changed</h2>
+    <ul>
+      <li>Generated an Expo app using the blank TypeScript template.</li>
+      <li>Added a Cofrete mobile shell with React Navigation bottom tabs for dashboard, onboarding, freight, reserves, and compliance.</li>
+      <li>Added Core API endpoint constants and a typed client stub for future integration work.</li>
+      <li>Added TypeScript, ESLint, and Jest validation commands.</li>
+      <li>Updated mobile README and agent instructions with setup and validation commands.</li>
+      <li>Documented the required <code>grill-with-docs</code> review-and-fix loop for future Linear issue handoffs.</li>
+    </ul>
+
+    <h2>Risk Boundaries</h2>
+    <ul>
+      <li>Compliance copy stays advisory and points users back to official channels.</li>
+      <li>Vale-Pedagio and toll reimbursement wording keeps pass-through money outside profit.</li>
+      <li>Mobile owns presentation and client calls only; finance math remains backend-owned.</li>
+    </ul>
+
+    <h2>Validation</h2>
+    <ul>
+      <li><code>cd mobile-app &amp;&amp; npm run typecheck</code></li>
+      <li><code>cd mobile-app &amp;&amp; npm run lint</code></li>
+      <li><code>cd mobile-app &amp;&amp; npm run test:ci</code></li>
+      <li><code>python scripts/agent_harness_check.py</code></li>
+      <li><code>grill-with-docs</code> review loop: 8 loops executed for ROU-212, then stopped when no new meaningful issue remained.</li>
+    </ul>
+
+    <h2>Unblocks</h2>
+    <p>
+      This scaffold unblocks COF-018 mobile onboarding and freight calculator screens, COF-019
+      reserve wallet screens, COF-020 compliance center screens, and the mobile surface of COF-021
+      financial health dashboard work.
+    </p>
+  </body>
+</html>
