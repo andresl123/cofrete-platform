@@ -80,10 +80,107 @@ export type TripResponse = TripRequest & {
   totalDistanceKm: string;
 };
 
-export type ReserveWalletSummary = {
-  availableForWithdrawal: string;
-  bucketCount: number;
+export type ReserveBucket =
+  | 'FUEL_ARLA_TOLL_CASH_FLOW'
+  | 'MAINTENANCE'
+  | 'TIRES'
+  | 'INSURANCE'
+  | 'TAXES_AND_DOCUMENTS'
+  | 'TRUCK_REPLACEMENT'
+  | 'EMERGENCY'
+  | 'DRIVER_SALARY'
+  | 'PROFIT';
+
+export type ReserveRulePolicy = 'PERCENT_OF_AMOUNT' | 'FIXED_AMOUNT' | 'PER_KM';
+
+export type ReserveAllocationReason = 'FREIGHT_PAYMENT_RECEIVED' | 'MANUAL_CORRECTION';
+
+export type ReserveRuleRequest = {
+  active: boolean;
+  bucket: ReserveBucket;
   currency: CurrencyCode;
+  effectiveFrom?: string;
+  policy: ReserveRulePolicy;
+  rate?: string;
+  sourceAssumption: string;
+  targetBalance?: string;
+};
+
+export type ReserveRuleResponse = ReserveRuleRequest & {
+  id: string;
+};
+
+export type ReserveTransactionResponse = {
+  amount: string;
+  balanceAfter: string;
+  bucket: ReserveBucket;
+  createdAt: string;
+  currency: CurrencyCode;
+  id: string;
+  note: string;
+  sourceReference: string;
+  sourceType: string;
+  type: 'CREDIT' | 'DEBIT' | 'ADJUSTMENT';
+};
+
+export type ReserveWalletResponse = {
+  bucket: ReserveBucket;
+  currency: CurrencyCode;
+  currentBalance: string;
+  lastAllocationAt: string | null;
+  policy: ReserveRulePolicy | null;
+  targetBalance: string | null;
+  transactions: ReserveTransactionResponse[];
+};
+
+export type ReserveAllocationRequest = {
+  allocationRevision: number;
+  allocationSubjectId: string;
+  currency: CurrencyCode;
+  distanceKm?: string;
+  grossAmount: string;
+  idempotencyKey: string;
+  passThroughAmount: string;
+  reason: ReserveAllocationReason;
+  requestedAt: string;
+};
+
+export type ReserveAllocationResponse = {
+  advisoryText: string;
+  allocatableAmount: string;
+  bucketAllocations: Partial<Record<ReserveBucket, string>>;
+  currency: CurrencyCode;
+  duplicate: boolean;
+  grossAmount: string;
+  id: string;
+  idempotencyKey: string;
+  passThroughAmount: string;
+  requestStatus: 'REQUESTED' | 'ALLOCATED' | 'DUPLICATE_IGNORED';
+  requiredReserveAmount: string;
+  safePersonalWithdrawal: string;
+  status: 'REQUESTED' | 'ALLOCATED' | 'FAILED';
+  transactions: ReserveTransactionResponse[];
+};
+
+export type FinancialHealthStatus = 'GOOD' | 'ATTENTION' | 'RISK' | 'UNKNOWN';
+
+export type FinancialHealthComponentResponse = {
+  bucket: ReserveBucket;
+  coveragePercent: string;
+  currentBalance: string;
+  status: FinancialHealthStatus;
+  targetBalance: string | null;
+};
+
+export type FinancialHealthResponse = {
+  advisoryText: string;
+  components: FinancialHealthComponentResponse[];
+  currency: CurrencyCode;
+  reserveCoveragePercent: string;
+  safePersonalWithdrawalAvailable: string;
+  score: number;
+  status: FinancialHealthStatus;
+  traceId: string;
 };
 
 export type ReservePolicyRequest = {
