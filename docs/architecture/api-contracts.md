@@ -248,7 +248,7 @@ The MVP starts from the driver workflow: "Should I accept this freight/trip?" Fr
 | `POST` | `/api/trips` | Create a trip/freight decision draft. | Route, dates, truck, gross freight, payment timing, load details. | `trip` resource. | `VALIDATION_ERROR`, `NOT_FOUND` |
 | `GET` | `/api/trips/{tripId}` | Return trip and current decision state. | Path `tripId`. | `trip` resource with latest snapshot links. | `NOT_FOUND`, `FORBIDDEN` |
 | `POST` | `/api/trips/{tripId}/profitability-estimate` | Request synchronous estimate from provided or persisted inputs. | Cost assumptions, fuel/toll overrides, reserve policy overrides. | Estimate with trace ID and advisory caveats. | `VALIDATION_ERROR`, `NOT_FOUND`, `CALCULATION_UNAVAILABLE` |
-| `GET` | `/api/trips/{tripId}/profitability-snapshot` | Return latest persisted finance-worker snapshot. | Path `tripId`. | Snapshot and calculation trace. | `NOT_FOUND`, `SNAPSHOT_PENDING` |
+| `GET` | `/api/trips/{tripId}/profitability-snapshot` | Return latest persisted profitability snapshot. | Path `tripId`. | Snapshot and calculation trace. | `NOT_FOUND`, `SNAPSHOT_PENDING` |
 | `POST` | `/api/trips/{tripId}/acceptance-decision` | Record accept, reject, or renegotiate decision. | Decision, reason codes, note. | Decision record. | `VALIDATION_ERROR`, `NOT_FOUND`, `CONFLICT` |
 
 Example trip creation request:
@@ -317,6 +317,7 @@ Finance semantics:
 - `directTripCost` includes fuel, ARLA, non-reimbursed tolls, meals/lodging, and similar trip costs.
 - `requiredReserves` includes maintenance, tires, taxes, insurance, replacement, emergency, and other configured reserve allocations.
 - `safePersonalWithdrawal` is advisory and must be derived from deterministic calculation inputs.
+- ROU-215 persists synchronous Core API estimate snapshots as the temporary MVP read path. Finance Worker remains the long-term calculation owner for async recalculation results; the worker result persistence path must preserve the same monetary semantics and `calculationTraceId` auditability.
 
 ## Expenses And Reserves
 
@@ -430,7 +431,7 @@ Reserve semantics:
 - Each account can have at most one active reserve rule per bucket; inactive rules are historical and do not participate in allocation.
 - Reserve rule policy inputs are mutually exclusive: `PERCENT_OF_AMOUNT` accepts `rate`, `FIXED_AMOUNT` accepts `fixedAmount`, and `PER_KM` accepts `perKmAmount`.
 - Active `PER_KM` reserve rules require `distanceKm` on allocation requests; missing distance must fail rather than silently allocate zero.
-- ROU-217 stores `tripId`, `freightPaymentId`, and `allocationSubjectId` as references without foreign-key validation until ROU-215 introduces durable trip/profitability records.
+- ROU-215 introduces durable trip/profitability records. Reserve allocation `tripId`, `freightPaymentId`, and `allocationSubjectId` remain stored as references until a later migration links allocation subjects without disrupting existing idempotency keys.
 - `allocationSubjectId` is required for every reserve allocation request and is the stable domain subject used for audit and future async event idempotency.
 - Monetary request fields use decimal strings with at most 2 fraction digits; reserve rule `perKmAmount` uses at most 4 fraction digits and `rate` uses at most 6 fraction digits.
 - `passThroughAmount` is excluded before bucket allocation and safe-withdrawal calculation.

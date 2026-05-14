@@ -83,7 +83,16 @@ The implemented Core API reserve migration includes:
 - `reserve_allocations`
 - `reserve_transactions`
 
-ROU-217 stores reserve allocation trip and payment identifiers as external references until ROU-215 introduces durable trip and profitability records that can be linked by foreign key.
+The implemented Core API trip profitability migration includes:
+
+- `freights`
+- `trips`
+- `trip_cost_inputs`
+- `profitability_snapshots`
+- `trip_acceptance_decisions`
+- `trip_recalculation_events`
+
+Reserve allocation records keep nullable `tripId` and `freightPaymentId` references until a later migration links reserve allocation subjects to trip and receivable records without disrupting existing allocation idempotency keys.
 
 Follow-up migration sets should include tables equivalent to:
 
@@ -93,7 +102,6 @@ Follow-up migration sets should include tables equivalent to:
 - `toll_plaza`
 - `toll_tariff`
 - `trip_toll`
-- `trip_profitability_snapshots`
 - `freight_floor_checks`
 - `waiting_time_records`
 
