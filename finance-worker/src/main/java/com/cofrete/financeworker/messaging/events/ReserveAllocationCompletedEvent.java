@@ -1,9 +1,9 @@
 package com.cofrete.financeworker.messaging.events;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.Map;
 
-public record ReserveAllocationRequestedEvent(
+public record ReserveAllocationCompletedEvent(
     String eventType,
     int version,
     String eventId,
@@ -11,17 +11,17 @@ public record ReserveAllocationRequestedEvent(
     String accountId,
     String allocationSubjectId,
     int allocationRevision,
-    String freightPaymentId,
-    String tripId,
     String driverId,
     String grossAmount,
     String passThroughAmount,
-    String distanceKm,
+    String allocatableAmount,
+    String requiredReserveAmount,
+    String safePersonalWithdrawal,
     String currency,
-    String reason,
-    List<ReserveAllocationRuleEvent> rules,
+    Map<String, String> bucketAllocations,
+    String allocationTraceId,
     String correlationId,
     String producer,
-    Instant requestedAt
+    Instant allocatedAt
 ) {
 }

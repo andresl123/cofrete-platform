@@ -16,6 +16,15 @@ public class CoreApiRabbitProperties {
     @NotBlank
     private String tripRecalculationRequestedRoutingKey = TripRecalculationEventRecord.EVENT_TYPE;
 
+    @NotBlank
+    private String reserveAllocationRequestedRoutingKey = "reserve.allocation.requested";
+
+    @NotBlank
+    private String reserveAllocationCompletedQueue = "core-api.reserve-allocation.completed";
+
+    @NotBlank
+    private String reserveAllocationCompletedRoutingKey = "reserve.allocation.completed";
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -38,5 +47,29 @@ public class CoreApiRabbitProperties {
 
     public void setTripRecalculationRequestedRoutingKey(String tripRecalculationRequestedRoutingKey) {
         this.tripRecalculationRequestedRoutingKey = tripRecalculationRequestedRoutingKey;
+    }
+
+    public String getReserveAllocationRequestedRoutingKey() {
+        return reserveAllocationRequestedRoutingKey;
+    }
+
+    public void setReserveAllocationRequestedRoutingKey(String reserveAllocationRequestedRoutingKey) {
+        this.reserveAllocationRequestedRoutingKey = reserveAllocationRequestedRoutingKey;
+    }
+
+    public String getReserveAllocationCompletedQueue() {
+        return reserveAllocationCompletedQueue;
+    }
+
+    public void setReserveAllocationCompletedQueue(String reserveAllocationCompletedQueue) {
+        this.reserveAllocationCompletedQueue = reserveAllocationCompletedQueue;
+    }
+
+    public String getReserveAllocationCompletedRoutingKey() {
+        return reserveAllocationCompletedRoutingKey;
+    }
+
+    public void setReserveAllocationCompletedRoutingKey(String reserveAllocationCompletedRoutingKey) {
+        this.reserveAllocationCompletedRoutingKey = reserveAllocationCompletedRoutingKey;
     }
 }

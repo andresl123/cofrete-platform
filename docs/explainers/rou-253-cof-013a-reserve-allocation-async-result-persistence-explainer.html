@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ROU-253 Reserve Allocation Async Result Persistence Explainer</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.5;
+        margin: 0;
+        color: #16201a;
+        background: #f7faf8;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 40px 20px 56px;
+      }
+      h1, h2 {
+        line-height: 1.15;
+      }
+      h1 {
+        margin-bottom: 8px;
+      }
+      .note {
+        border-left: 4px solid #16a34a;
+        background: #ecfdf3;
+        padding: 12px 16px;
+      }
+      code {
+        background: #e8eee9;
+        border-radius: 4px;
+        padding: 2px 5px;
+      }
+      li {
+        margin: 6px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ROU-253 / COF-013A Reserve Allocation Async Result Persistence</h1>
+      <p class="note">
+        Manually maintained derived summary. Canonical source of truth remains the Markdown docs and service code.
+      </p>
+
+      <h2>What Changed</h2>
+      <ul>
+        <li>Core API now records reserve allocation requests as <code>REQUESTED</code> instead of doing reserve math synchronously.</li>
+        <li>Core API publishes <code>reserve.allocation.requested</code> with active reserve rules, money inputs, idempotency metadata, and correlation data.</li>
+        <li>Finance Worker consumes the request, calculates deterministic bucket allocations, and publishes <code>reserve.allocation.completed</code>.</li>
+        <li>Core API consumes the completed event and persists wallet credits and reserve transactions idempotently.</li>
+      </ul>
+
+      <h2>Why It Changed</h2>
+      <p>
+        ROU-217 intentionally duplicated reserve allocation math in Core API so mobile and dashboard work could use durable reserve wallets early. ROU-253 removes that temporary ownership gap and makes Finance Worker the reserve allocation math owner while Core API remains the persistence owner.
+      </p>
+
+      <h2>Affected Areas</h2>
+      <ul>
+        <li><code>core-api/src/main/java/com/cofrete/coreapi/reserve</code>: async request creation, result listener, idempotent result persistence, allocation status changes.</li>
+        <li><code>finance-worker/src/main/java/com/cofrete/financeworker</code>: event-backed reserve snapshots and completed result publishing.</li>
+        <li><code>docs/architecture/event-contracts.md</code>: new <code>reserve.allocation.completed</code> contract and enriched request payload.</li>
+        <li><code>docs/architecture/api-contracts.md</code>: reserve allocation endpoint now returns request status before worker result persistence.</li>
+        <li><code>docs/architecture/service-boundaries.md</code>, service READMEs, and ADR wording now reflect async ownership.</li>
+      </ul>
+
+      <h2>Validation</h2>
+      <ul>
+        <li><code>cd core-api &amp;&amp; mvn -q validate test</code></li>
+        <li><code>cd finance-worker &amp;&amp; mvn -q validate test</code></li>
+        <li><code>python scripts/agent_harness_check.py</code></li>
+      </ul>
+
+      <h2>Unblocks</h2>
+      <p>
+        This unblocks reserve wallet UX, financial health dashboard work, and smoke/demo validation with the intended worker-owned reserve allocation path.
+      </p>
+    </main>
+  </body>
+</html>

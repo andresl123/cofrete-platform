@@ -22,10 +22,6 @@ final class ReserveMoney {
         }
     }
 
-    static BigDecimal roundMoney(BigDecimal value) {
-        return value.setScale(2, RoundingMode.HALF_UP);
-    }
-
     static BigDecimal distance(BigDecimal value) {
         try {
             return value.setScale(2, RoundingMode.UNNECESSARY);

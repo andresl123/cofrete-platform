@@ -9,6 +9,7 @@ The canonical MVP events are:
 - `trip.recalculation.requested`
 - `trip.finance.recalculated`
 - `reserve.allocation.requested`
+- `reserve.allocation.completed`
 - `fuel-price.import.completed`
 - `toll-data.import.completed`
 
@@ -211,7 +212,7 @@ Finance caveats:
 
 Published when reserve allocation should be recalculated after freight payment, policy changes, or manual correction.
 
-ROU-217 stages the worker-side allocation logic but keeps Core API as the temporary synchronous allocation owner so reserve wallets and transaction history are immediately durable for MVP mobile/dashboard work. ROU-253 owns the final async path: Core API publishes this request event, Finance Worker calculates the allocation result, and Core API persists the worker result without double-crediting buckets.
+ROU-217 staged the worker-side allocation logic while keeping Core API as the temporary synchronous allocation owner. ROU-253 makes the async path authoritative: Core API publishes this request event with the active reserve rules used as deterministic inputs, Finance Worker calculates the allocation result, and Core API persists `reserve.allocation.completed` without double-crediting buckets.
 
 Contract metadata:
 
@@ -232,6 +233,7 @@ Schema:
 | `version` | integer | Yes | Must be `1`. |
 | `eventId` | string | Yes | Unique event ID. |
 | `idempotencyKey` | string | Yes | Stable reserve allocation key. |
+| `accountId` | string | Yes | Cofrete account ID that owns the reserve wallet. |
 | `allocationSubjectId` | string | Yes | Freight payment, manual correction, or rule-change subject ID. |
 | `allocationRevision` | integer | Yes | Monotonic revision for allocation inputs. |
 | `freightPaymentId` | string | Conditional | Required when allocation source is freight payment. |
@@ -239,8 +241,10 @@ Schema:
 | `driverId` | string | Yes | Cofrete driver ID. |
 | `grossAmount` | string | Yes | Amount available for allocation. |
 | `passThroughAmount` | string | Yes | Amount excluded from reserves/profit when it is reimbursement or Vale-Pedagio. |
+| `distanceKm` | string | No | Distance used by active `PER_KM` rules. |
 | `currency` | string | Yes | ISO currency, MVP value `BRL`. |
 | `reason` | string | Yes | Allocation trigger. |
+| `rules` | array[object] | Yes | Active reserve rules with bucket, policy, rate/fixed/per-km values. |
 | `correlationId` | string | Yes | Trace ID from source request or command. |
 | `producer` | string | Yes | `core-api`. |
 | `requestedAt` | string | Yes | ISO-8601 UTC timestamp. |
@@ -260,6 +264,7 @@ Example:
   "version": 1,
   "eventId": "evt_125",
   "idempotencyKey": "reserve:pay_123:3",
+  "accountId": "acct_123",
   "allocationSubjectId": "pay_123",
   "allocationRevision": 3,
   "freightPaymentId": "pay_123",
@@ -267,8 +272,18 @@ Example:
   "driverId": "driver_123",
   "grossAmount": "8000.00",
   "passThroughAmount": "385.70",
+  "distanceKm": "1000.00",
   "currency": "BRL",
   "reason": "FREIGHT_PAYMENT_RECEIVED",
+  "rules": [
+    {
+      "bucket": "MAINTENANCE",
+      "policy": "PERCENT_OF_AMOUNT",
+      "rate": "0.080000",
+      "fixedAmount": null,
+      "perKmAmount": null
+    }
+  ],
   "correlationId": "corr_123",
   "producer": "core-api",
   "requestedAt": "2026-05-11T12:00:10Z"
@@ -280,6 +295,79 @@ Reserve caveats:
 - Reserve allocation events request virtual ledger allocation, not real payment movement.
 - Pass-through toll or Vale-Pedagio amounts are excluded from profit treatment.
 - Manual corrections must remain auditable through the allocation subject and revision.
+
+## `reserve.allocation.completed`
+
+Published by Finance Worker after deterministic reserve allocation completes.
+
+Contract metadata:
+
+| Property | Value |
+|---|---|
+| Producer | `finance-worker` |
+| Consumer | `core-api` |
+| Routing key | `reserve.allocation.completed` |
+| Idempotency key | Same stable key as the corresponding `reserve.allocation.requested` request. |
+| Ordering | Core API ignores results older than the latest `allocationRevision` for the same allocation subject and never applies a completed allocation twice. |
+| Retry behavior | Retry transient broker or Core API persistence failures with the same `idempotencyKey`. Duplicate deliveries must not create duplicate wallet credits or transactions. |
+
+Schema:
+
+| Field | Type | Required | Semantics |
+|---|---|---|---|
+| `eventType` | string | Yes | Must be `reserve.allocation.completed`. |
+| `version` | integer | Yes | Must be `1`. |
+| `eventId` | string | Yes | Unique event ID. |
+| `idempotencyKey` | string | Yes | Stable key matching the request/allocation record. |
+| `accountId` | string | Yes | Cofrete account ID that owns the reserve wallet. |
+| `allocationSubjectId` | string | Yes | Freight payment, manual correction, or rule-change subject ID. |
+| `allocationRevision` | integer | Yes | Monotonic revision used for calculation. |
+| `driverId` | string | Yes | Cofrete driver ID. |
+| `grossAmount` | string | Yes | Gross amount considered by the worker. |
+| `passThroughAmount` | string | Yes | Pass-through amount excluded before allocation. |
+| `allocatableAmount` | string | Yes | Gross minus pass-through amount. |
+| `requiredReserveAmount` | string | Yes | Sum allocated to required reserve buckets. |
+| `safePersonalWithdrawal` | string | Yes | Advisory safe withdrawal result. |
+| `currency` | string | Yes | ISO currency, MVP value `BRL`. |
+| `bucketAllocations` | object | Yes | Map of reserve bucket name to allocated decimal string. |
+| `allocationTraceId` | string | Yes | Deterministic worker trace ID for audit/support. |
+| `correlationId` | string | Yes | Trace ID from original request chain. |
+| `producer` | string | Yes | `finance-worker`. |
+| `allocatedAt` | string | Yes | ISO-8601 UTC timestamp. |
+
+Example:
+
+```json
+{
+  "eventType": "reserve.allocation.completed",
+  "version": 1,
+  "eventId": "evt_128",
+  "idempotencyKey": "reserve:pay_123:3",
+  "accountId": "acct_123",
+  "allocationSubjectId": "pay_123",
+  "allocationRevision": 3,
+  "driverId": "driver_123",
+  "grossAmount": "8000.00",
+  "passThroughAmount": "385.70",
+  "allocatableAmount": "7614.30",
+  "requiredReserveAmount": "609.14",
+  "safePersonalWithdrawal": "7005.16",
+  "currency": "BRL",
+  "bucketAllocations": {
+    "MAINTENANCE": "609.14"
+  },
+  "allocationTraceId": "reserve_alloc_123",
+  "correlationId": "corr_123",
+  "producer": "finance-worker",
+  "allocatedAt": "2026-05-11T12:00:12Z"
+}
+```
+
+Reserve result caveats:
+
+- The result is a virtual ledger allocation, not real payment movement.
+- Core API persists the result idempotently so duplicate delivery cannot double-credit reserve wallets.
+- Safe personal withdrawal remains advisory and excludes pass-through cash flow.
 
 ## `fuel-price.import.completed`
 

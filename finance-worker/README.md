@@ -6,9 +6,9 @@ Background worker for finance-related processing in Cofrete Platform.
 
 Finance Worker owns asynchronous finance recalculation, reserve allocation, safe-withdrawal calculation, and financial health scoring tasks.
 
-The service includes the ROU-216 deterministic trip finance calculation engine. ROU-217 adds deterministic virtual reserve allocation logic after freight payment or reserve-rule changes.
+The service includes the ROU-216 deterministic trip finance calculation engine. ROU-217 added deterministic virtual reserve allocation logic after freight payment or reserve-rule changes.
 
-ROU-217 keeps Core API as the temporary synchronous reserve allocation persistence path for MVP usability. ROU-253 owns the final async integration where Finance Worker allocation results are persisted back into Core API reserve wallets and transactions.
+Reserve allocation is now worker-owned in the async path: Finance Worker consumes `reserve.allocation.requested`, calculates deterministic bucket allocations, and publishes `reserve.allocation.completed` for Core API persistence.
 
 Finance output is advisory product software. Do not present worker results as official ANTT, ANP, SUSEP, Receita Federal, DETRAN, SEFAZ, insurer, legal, tax, accounting, or government authority.
 
@@ -21,13 +21,14 @@ Consumed stubs:
 - `trip.recalculation.requested`
 - `reserve.allocation.requested`
 
-Published stub:
+Published events:
 
 - `trip.finance.recalculated`
+- `reserve.allocation.completed`
 
 `trip.recalculation.requested` handling validates the canonical event, deduplicates by idempotency key, loads an explicit trip finance input snapshot, calculates deterministic money output, and publishes `trip.finance.recalculated`.
 
-The current event contract carries trip IDs and `inputRevision`, not the full calculation snapshot. `TripFinanceInputSnapshotProvider` is the integration boundary for a future Core API or durable read-model source. The default provider fails explicitly so the worker does not fabricate production finance results before authoritative inputs exist.
+The current trip recalculation event contract carries trip IDs and `inputRevision`, not the full calculation snapshot. `TripFinanceInputSnapshotProvider` is the integration boundary for a future Core API or durable read-model source. The default trip provider fails explicitly so the worker does not fabricate production finance results before authoritative inputs exist. Reserve allocation requests carry active reserve rules as explicit deterministic inputs.
 
 Calculation rules, reserve formulas, rounding, and trace output are documented in `../docs/architecture/finance-calculation-engine.md`.
 

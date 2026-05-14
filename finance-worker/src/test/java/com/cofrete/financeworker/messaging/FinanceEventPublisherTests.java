@@ -3,6 +3,7 @@ package com.cofrete.financeworker.messaging;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.cofrete.financeworker.messaging.events.ReserveAllocationCompletedEvent;
 import com.cofrete.financeworker.messaging.events.TripFinanceRecalculatedEvent;
 import java.time.Instant;
 import java.util.Map;
@@ -35,6 +36,26 @@ class FinanceEventPublisherTests {
             .hasMessageContaining(FinanceEventNames.TRIP_FINANCE_RECALCULATED);
     }
 
+    @Test
+    void publishesReserveAllocationCompletedWithCanonicalRoutingKey() {
+        ReserveAllocationCompletedEvent event = reserveCompletedEvent(FinanceEventNames.RESERVE_ALLOCATION_COMPLETED);
+
+        publisher.publishReserveAllocationCompleted(event);
+
+        assertThat(rabbitTemplate.exchange).isEqualTo(properties.getExchange());
+        assertThat(rabbitTemplate.routingKey).isEqualTo(FinanceEventNames.RESERVE_ALLOCATION_COMPLETED);
+        assertThat(rabbitTemplate.message).isSameAs(event);
+    }
+
+    @Test
+    void rejectsUnexpectedReserveAllocationCompletedEventName() {
+        ReserveAllocationCompletedEvent event = reserveCompletedEvent("reserve.allocation.updated");
+
+        assertThatThrownBy(() -> publisher.publishReserveAllocationCompleted(event))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining(FinanceEventNames.RESERVE_ALLOCATION_COMPLETED);
+    }
+
     private static TripFinanceRecalculatedEvent recalculatedEvent(String eventType) {
         return new TripFinanceRecalculatedEvent(
             eventType,
@@ -62,6 +83,30 @@ class FinanceEventPublisherTests {
             "corr_123",
             "finance-worker",
             Instant.parse("2026-05-11T12:00:05Z")
+        );
+    }
+
+    private static ReserveAllocationCompletedEvent reserveCompletedEvent(String eventType) {
+        return new ReserveAllocationCompletedEvent(
+            eventType,
+            1,
+            "evt_125",
+            "reserve:pay_123:1",
+            "acct_123",
+            "pay_123",
+            1,
+            "driver_123",
+            "8000.00",
+            "600.00",
+            "7400.00",
+            "592.00",
+            "6808.00",
+            "BRL",
+            Map.of("MAINTENANCE", "592.00"),
+            "reserve_alloc_123",
+            "corr_123",
+            "finance-worker",
+            Instant.parse("2026-05-11T12:00:10Z")
         );
     }
 

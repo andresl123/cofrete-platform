@@ -26,6 +26,9 @@ public class FinanceWorkerRabbitProperties {
     @NotBlank
     private String tripFinanceRecalculatedRoutingKey = FinanceEventNames.TRIP_FINANCE_RECALCULATED;
 
+    @NotBlank
+    private String reserveAllocationCompletedRoutingKey = FinanceEventNames.RESERVE_ALLOCATION_COMPLETED;
+
     public String getExchange() {
         return exchange;
     }
@@ -72,5 +75,13 @@ public class FinanceWorkerRabbitProperties {
 
     public void setTripFinanceRecalculatedRoutingKey(String tripFinanceRecalculatedRoutingKey) {
         this.tripFinanceRecalculatedRoutingKey = tripFinanceRecalculatedRoutingKey;
+    }
+
+    public String getReserveAllocationCompletedRoutingKey() {
+        return reserveAllocationCompletedRoutingKey;
+    }
+
+    public void setReserveAllocationCompletedRoutingKey(String reserveAllocationCompletedRoutingKey) {
+        this.reserveAllocationCompletedRoutingKey = reserveAllocationCompletedRoutingKey;
     }
 }

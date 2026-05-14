@@ -8,8 +8,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.cofrete.coreapi.auth.AuthenticatedUserService;
+import com.cofrete.coreapi.auth.AppUser;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -35,6 +38,9 @@ class ReserveEndpointTests {
     @Autowired
     private ReserveRuleRepository reserveRules;
 
+    @Autowired
+    private ReserveService reserves;
+
     @Test
     void reserveApisRequireAuthentication() throws Exception {
         mockMvc.perform(get("/api/reserve-wallets"))
@@ -54,15 +60,21 @@ class ReserveEndpointTests {
 
         allocate("reserve-trip_123-pay_123-v1", "8000.00", "600.00")
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.reserveAllocation.status").value("ALLOCATED"))
-            .andExpect(jsonPath("$.reserveAllocation.requestStatus").value("ALLOCATED"))
+            .andExpect(jsonPath("$.reserveAllocation.status").value("REQUESTED"))
+            .andExpect(jsonPath("$.reserveAllocation.requestStatus").value("REQUESTED"))
             .andExpect(jsonPath("$.reserveAllocation.duplicate").value(false))
             .andExpect(jsonPath("$.reserveAllocation.allocatableAmount").value("7400.00"))
-            .andExpect(jsonPath("$.reserveAllocation.requiredReserveAmount").value("1110.00"))
-            .andExpect(jsonPath("$.reserveAllocation.safePersonalWithdrawal").value("1110.00"))
-            .andExpect(jsonPath("$.reserveAllocation.bucketAllocations.MAINTENANCE").value("592.00"))
-            .andExpect(jsonPath("$.reserveAllocation.bucketAllocations.DRIVER_SALARY").value("1110.00"))
-            .andExpect(jsonPath("$.reserveAllocation.transactions", hasSize(5)));
+            .andExpect(jsonPath("$.reserveAllocation.requiredReserveAmount").value("0.00"))
+            .andExpect(jsonPath("$.reserveAllocation.safePersonalWithdrawal").value("0.00"))
+            .andExpect(jsonPath("$.reserveAllocation.transactions", hasSize(0)));
+
+        applyResult("reserve-allocation@example.test", "reserve-trip_123-pay_123-v1", 1, Map.of(
+            ReserveBucket.MAINTENANCE, "592.00",
+            ReserveBucket.TIRES, "296.00",
+            ReserveBucket.TAXES_AND_DOCUMENTS, "222.00",
+            ReserveBucket.DRIVER_SALARY, "1110.00",
+            ReserveBucket.PROFIT, "370.00"
+        ));
 
         allocate("reserve-trip_123-pay_123-v1", "8000.00", "600.00")
             .andExpect(status().isCreated())
@@ -90,13 +102,72 @@ class ReserveEndpointTests {
     }
 
     @Test
+    @WithMockUser(username = "reserve-result-idempotency@example.test")
+    void duplicateWorkerResultsDoNotDoubleCreditWallets() throws Exception {
+        createPercentRule("MAINTENANCE", "0.100000", "5000.00").andExpect(status().isCreated());
+        allocate("reserve-result-once", "1000.00", "0.00").andExpect(status().isCreated());
+
+        applyResult("reserve-result-idempotency@example.test", "reserve-result-once", 1, Map.of(
+            ReserveBucket.MAINTENANCE, "100.00"
+        ));
+        applyResult("reserve-result-idempotency@example.test", "reserve-result-once", 1, Map.of(
+            ReserveBucket.MAINTENANCE, "100.00"
+        ));
+
+        mockMvc.perform(get("/api/reserve-wallets"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.reserveWallets[?(@.bucket=='MAINTENANCE')].currentBalance").value("100.00"))
+            .andExpect(jsonPath("$.reserveWallets[?(@.bucket=='MAINTENANCE')].transactions", hasSize(1)));
+    }
+
+    @Test
+    @WithMockUser(username = "reserve-result-ordering@example.test")
+    void olderWorkerResultDoesNotOverrideNewerRequestedRevision() throws Exception {
+        createPercentRule("MAINTENANCE", "0.100000", "5000.00").andExpect(status().isCreated());
+        allocateRevision("reserve-order-old", 1, "1000.00").andExpect(status().isCreated());
+        allocateRevision("reserve-order-new", 2, "2000.00").andExpect(status().isCreated());
+
+        applyResult("reserve-result-ordering@example.test", "reserve-order-old", 1, Map.of(
+            ReserveBucket.MAINTENANCE, "100.00"
+        ));
+
+        mockMvc.perform(get("/api/reserve-wallets"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.reserveWallets[?(@.bucket=='MAINTENANCE')].currentBalance").value("0.00"));
+
+        applyResult("reserve-result-ordering@example.test", "reserve-order-new", 2, Map.of(
+            ReserveBucket.MAINTENANCE, "200.00"
+        ));
+
+        mockMvc.perform(get("/api/reserve-wallets"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.reserveWallets[?(@.bucket=='MAINTENANCE')].currentBalance").value("200.00"));
+    }
+
+    @Test
+    @WithMockUser(username = "reserve-result-mismatch@example.test")
+    void rejectsWorkerResultWithDifferentRequestAmounts() throws Exception {
+        createPercentRule("MAINTENANCE", "0.100000", "5000.00").andExpect(status().isCreated());
+        allocate("reserve-result-mismatch", "1000.00", "0.00").andExpect(status().isCreated());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> applyResult(
+                "reserve-result-mismatch@example.test",
+                "reserve-result-mismatch",
+                1,
+                Map.of(ReserveBucket.MAINTENANCE, "100.00")
+            ))
+            .isInstanceOf(ReserveConflictException.class)
+            .hasMessageContaining("amounts do not match");
+    }
+
+    @Test
     @WithMockUser(username = "reserve-idempotency-scale@example.test")
     void treatsEquivalentMoneyScalesAsSameIdempotencyInput() throws Exception {
         createPercentRule("MAINTENANCE", "0.100000", "5000.00").andExpect(status().isCreated());
 
         allocate("reserve-scale-key", "1000.0", "0.0")
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.reserveAllocation.requestStatus").value("ALLOCATED"));
+            .andExpect(jsonPath("$.reserveAllocation.requestStatus").value("REQUESTED"));
 
         allocate("reserve-scale-key", "1000.00", "0.00")
             .andExpect(status().isCreated())
@@ -109,6 +180,10 @@ class ReserveEndpointTests {
         createPercentRule("MAINTENANCE", "0.500000", "500.00").andExpect(status().isCreated());
         createPercentRule("DRIVER_SALARY", "0.250000", null).andExpect(status().isCreated());
         allocate("reserve-health-v1", "1000.00", "0.00").andExpect(status().isCreated());
+        applyResult("reserve-health@example.test", "reserve-health-v1", 1, Map.of(
+            ReserveBucket.MAINTENANCE, "500.00",
+            ReserveBucket.DRIVER_SALARY, "250.00"
+        ));
 
         mockMvc.perform(get("/api/financial-health-score"))
             .andExpect(status().isOk())
@@ -281,8 +356,21 @@ class ReserveEndpointTests {
                     }
                     """))
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.reserveAllocation.transactions[0].type").value("CREDIT"))
-            .andExpect(jsonPath("$.reserveAllocation.transactions[0].sourceReference").value("manual-emergency-123-v1"));
+            .andExpect(jsonPath("$.reserveAllocation.status").value("REQUESTED"))
+            .andExpect(jsonPath("$.reserveAllocation.transactions", hasSize(0)));
+
+        var response = applyResult(
+            "reserve-manual-correction@example.test",
+            "manual-emergency-123-v1",
+            1,
+            Map.of(ReserveBucket.EMERGENCY, "50.00")
+        );
+
+        org.assertj.core.api.Assertions.assertThat(response.transactions()).hasSize(1);
+        org.assertj.core.api.Assertions.assertThat(response.transactions().getFirst().type())
+            .isEqualTo(ReserveTransactionType.CREDIT);
+        org.assertj.core.api.Assertions.assertThat(response.transactions().getFirst().sourceReference())
+            .isEqualTo("manual-emergency-123-v1");
     }
 
     private org.springframework.test.web.servlet.ResultActions createPercentRule(
@@ -326,5 +414,95 @@ class ReserveEndpointTests {
                   "requestedAt": "2026-05-11T12:00:10Z"
                 }
                 """.formatted(grossAmount, passThroughAmount, idempotencyKey)));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions allocateRevision(
+        String idempotencyKey,
+        int revision,
+        String grossAmount
+    ) throws Exception {
+        return mockMvc.perform(post("/api/reserve-allocations")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {
+                  "tripId": "trip_123",
+                  "freightPaymentId": "pay_123",
+                  "allocationSubjectId": "pay_123",
+                  "allocationRevision": %d,
+                  "grossAmount": "%s",
+                  "passThroughAmount": "0.00",
+                  "currency": "BRL",
+                  "idempotencyKey": "%s",
+                  "reason": "FREIGHT_PAYMENT_RECEIVED",
+                  "requestedAt": "2026-05-11T12:00:10Z"
+                }
+                """.formatted(revision, grossAmount, idempotencyKey)));
+    }
+
+    private ReserveAllocationResponse applyResult(
+        String username,
+        String idempotencyKey,
+        int revision,
+        Map<ReserveBucket, String> bucketAllocations
+    ) {
+        AppUser user = authenticatedUsers.requireUser(new UsernamePasswordAuthenticationToken(username, "n/a", List.of()));
+        BigDecimal gross = new BigDecimal(grossFor(idempotencyKey));
+        BigDecimal passThrough = new BigDecimal(idempotencyKey.startsWith("reserve-trip") ? "600.00" : "0.00");
+        BigDecimal allocatable = gross.subtract(passThrough);
+        BigDecimal required = bucketAllocations.entrySet().stream()
+            .filter(entry -> List.of(
+                ReserveBucket.FUEL_ARLA_TOLL_CASH_FLOW,
+                ReserveBucket.MAINTENANCE,
+                ReserveBucket.TIRES,
+                ReserveBucket.INSURANCE,
+                ReserveBucket.TAXES_AND_DOCUMENTS,
+                ReserveBucket.TRUCK_REPLACEMENT,
+                ReserveBucket.EMERGENCY
+            ).contains(entry.getKey()))
+            .map(entry -> new BigDecimal(entry.getValue()))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal salary = bucketAllocations.get(ReserveBucket.DRIVER_SALARY) == null
+            ? BigDecimal.ZERO
+            : new BigDecimal(bucketAllocations.get(ReserveBucket.DRIVER_SALARY));
+        BigDecimal safeWithdrawal = salary.compareTo(BigDecimal.ZERO) > 0
+            ? salary
+            : allocatable.subtract(required).max(BigDecimal.ZERO);
+        return reserves.persistWorkerResult(new ReserveAllocationCompletedEvent(
+            ReserveAllocationCompletedEvent.EVENT_TYPE,
+            ReserveAllocationCompletedEvent.VERSION,
+            "evt_" + idempotencyKey,
+            idempotencyKey,
+            user.getAccountId(),
+            idempotencyKey.startsWith("manual") ? "manual_123" : "pay_123",
+            revision,
+            user.getId(),
+            gross.toPlainString(),
+            passThrough.toPlainString(),
+            allocatable.toPlainString(),
+            required.setScale(2).toPlainString(),
+            safeWithdrawal.setScale(2).toPlainString(),
+            "BRL",
+            bucketAllocations,
+            "reserve_alloc_test_" + revision,
+            "corr_test",
+            ReserveAllocationCompletedEvent.PRODUCER,
+            Instant.parse("2026-05-11T12:00:11Z")
+        ));
+    }
+
+    private static String grossFor(String idempotencyKey) {
+        if (idempotencyKey.startsWith("reserve-health")) {
+            return "1000.00";
+        }
+        if (idempotencyKey.startsWith("reserve-result-once") || idempotencyKey.startsWith("reserve-order-old")) {
+            return "1000.00";
+        }
+        if (idempotencyKey.startsWith("reserve-order-new")) {
+            return "2000.00";
+        }
+        if (idempotencyKey.startsWith("manual")) {
+            return "500.00";
+        }
+        return "8000.00";
     }
 }

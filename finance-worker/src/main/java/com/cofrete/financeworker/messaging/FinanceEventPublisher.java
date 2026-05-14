@@ -1,6 +1,7 @@
 package com.cofrete.financeworker.messaging;
 
 import com.cofrete.financeworker.messaging.events.TripFinanceRecalculatedEvent;
+import com.cofrete.financeworker.messaging.events.ReserveAllocationCompletedEvent;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
@@ -26,6 +27,20 @@ public class FinanceEventPublisher {
         rabbitTemplate.convertAndSend(
             properties.getExchange(),
             properties.getTripFinanceRecalculatedRoutingKey(),
+            event
+        );
+    }
+
+    public void publishReserveAllocationCompleted(ReserveAllocationCompletedEvent event) {
+        Assert.isTrue(
+            FinanceEventNames.RESERVE_ALLOCATION_COMPLETED.equals(event.eventType()),
+            () -> "Expected eventType " + FinanceEventNames.RESERVE_ALLOCATION_COMPLETED
+                + " but received " + event.eventType()
+        );
+
+        rabbitTemplate.convertAndSend(
+            properties.getExchange(),
+            properties.getReserveAllocationCompletedRoutingKey(),
             event
         );
     }

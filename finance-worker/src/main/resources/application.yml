@@ -18,6 +18,7 @@ cofrete:
       trip-recalculation-requested-routing-key: trip.recalculation.requested
       reserve-allocation-requested-routing-key: reserve.allocation.requested
       trip-finance-recalculated-routing-key: trip.finance.recalculated
+      reserve-allocation-completed-routing-key: reserve.allocation.completed
 
 management:
   endpoints:

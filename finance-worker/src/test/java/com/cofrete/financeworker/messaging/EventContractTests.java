@@ -15,7 +15,8 @@ class EventContractTests {
         List<String> canonicalEventNames = List.of(
             FinanceEventNames.TRIP_RECALCULATION_REQUESTED,
             FinanceEventNames.RESERVE_ALLOCATION_REQUESTED,
-            FinanceEventNames.TRIP_FINANCE_RECALCULATED
+            FinanceEventNames.TRIP_FINANCE_RECALCULATED,
+            FinanceEventNames.RESERVE_ALLOCATION_COMPLETED
         );
 
         String eventContracts = Files.readString(Path.of("..", "docs", "architecture", "event-contracts.md"));
@@ -23,7 +24,8 @@ class EventContractTests {
         assertThat(canonicalEventNames).containsExactly(
             "trip.recalculation.requested",
             "reserve.allocation.requested",
-            "trip.finance.recalculated"
+            "trip.finance.recalculated",
+            "reserve.allocation.completed"
         );
         assertThat(canonicalEventNames)
             .allSatisfy(eventName -> assertThat(eventContracts).contains("`" + eventName + "`"));

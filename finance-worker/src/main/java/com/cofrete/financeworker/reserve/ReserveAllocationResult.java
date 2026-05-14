@@ -7,6 +7,7 @@ import java.util.TreeMap;
 public record ReserveAllocationResult(
     String allocationSubjectId,
     int allocationRevision,
+    String accountId,
     String driverId,
     String grossAmount,
     String passThroughAmount,
