@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -63,6 +64,54 @@ class TripController {
         @Valid @RequestBody AcceptanceDecisionRequest request
     ) {
         return new AcceptanceDecisionEnvelope(trips.decide(users.requireUser(authentication), tripId, request));
+    }
+
+    @PostMapping(ApiRoutingConventions.API_PREFIX + "/toll-estimates")
+    TollEstimateEnvelope estimateTolls(
+        Authentication authentication,
+        @Valid @RequestBody TollEstimateRequest request
+    ) {
+        return new TollEstimateEnvelope(trips.estimateTolls(users.requireUser(authentication), request));
+    }
+
+    @GetMapping(ApiRoutingConventions.API_PREFIX + "/trips/{tripId}/tolls")
+    TripTollsEnvelope getTolls(Authentication authentication, @PathVariable String tripId) {
+        return trips.getTolls(users.requireUser(authentication), tripId);
+    }
+
+    @PostMapping(ApiRoutingConventions.API_PREFIX + "/trips/{tripId}/tolls/manual-payment")
+    @ResponseStatus(HttpStatus.CREATED)
+    TripTollEnvelope recordManualTollPayment(
+        Authentication authentication,
+        @PathVariable String tripId,
+        @Valid @RequestBody ManualTollPaymentRequest request,
+        HttpServletRequest servletRequest
+    ) {
+        return new TripTollEnvelope(
+            trips.recordManualTollPayment(users.requireUser(authentication), tripId, request, correlationId(servletRequest))
+        );
+    }
+
+    @PostMapping(ApiRoutingConventions.API_PREFIX + "/trips/{tripId}/vale-pedagio")
+    @ResponseStatus(HttpStatus.CREATED)
+    ValePedagioEnvelope recordValePedagio(
+        Authentication authentication,
+        @PathVariable String tripId,
+        @Valid @RequestBody ValePedagioRequest request,
+        HttpServletRequest servletRequest
+    ) {
+        return new ValePedagioEnvelope(
+            trips.recordValePedagio(users.requireUser(authentication), tripId, request, correlationId(servletRequest))
+        );
+    }
+
+    @GetMapping(ApiRoutingConventions.API_PREFIX + "/toll-data/import-status")
+    TollDataImportStatusEnvelope tollDataImportStatus(
+        Authentication authentication,
+        @RequestParam(required = false) String source
+    ) {
+        users.requireUser(authentication);
+        return new TollDataImportStatusEnvelope(trips.tollDataImportStatus(source));
     }
 
     private static String correlationId(HttpServletRequest request) {

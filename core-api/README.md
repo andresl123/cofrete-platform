@@ -6,7 +6,7 @@ Backend API service for Cofrete Platform.
 
 Core API owns authenticated product APIs and primary PostgreSQL persistence for driver profile, trip, advisory finance, reserve, compliance, receivables, imports, auth, and audit data.
 
-The service now implements the first profile-domain product controllers plus reserve wallet/allocation endpoints. Remaining contracted routes under `/api/*` are reserved for implementation issues documented in `../docs/architecture/api-contracts.md`.
+The service now implements the first profile-domain product controllers, trip profitability APIs, reserve wallet/allocation endpoints, and toll/Vale-Pedagio classification endpoints. Remaining contracted routes under `/api/*` are reserved for implementation issues documented in `../docs/architecture/api-contracts.md`.
 
 Reserve allocation is async: Core API records allocation requests, publishes `reserve.allocation.requested`, and idempotently persists Finance Worker `reserve.allocation.completed` results into reserve wallets and transactions.
 
@@ -53,6 +53,18 @@ ROU-213 / COF-009 implements the first authenticated Core API profile model:
 - `POST /api/tax-profile` and `GET /api/tax-profile`
 
 The backing migration creates app identity, driver, truck, trailer, tax profile, tax rule year, IPVA rule, compliance profile, and insurance policy metadata tables. CPF/CNPJ, RNTRC, RENAVAM, and plate identifiers are treated as app-maintained metadata and masked in normal responses.
+
+## Trip Tolls And Vale-Pedagio
+
+ROU-219 / COF-015 implements advisory toll classification in the trip module:
+
+- `POST /api/toll-estimates`
+- `GET /api/trips/{tripId}/tolls`
+- `POST /api/trips/{tripId}/tolls/manual-payment`
+- `POST /api/trips/{tripId}/vale-pedagio`
+- `GET /api/toll-data/import-status`
+
+Toll reimbursement and Vale-Pedagio records are preserved separately from profit through classification, finance treatment, and confidence metadata. Persisted pass-through toll records can supply default toll inputs for the temporary synchronous trip profitability estimate when request toll fields are omitted.
 
 ## Validation
 

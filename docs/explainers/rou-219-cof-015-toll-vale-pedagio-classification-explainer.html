@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ROU-219 Toll And Vale-Pedagio Classification Explainer</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.5;
+        margin: 0;
+        color: #172018;
+        background: #f7faf8;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 40px 20px 56px;
+      }
+      h1, h2 {
+        line-height: 1.15;
+      }
+      h1 {
+        margin-bottom: 8px;
+      }
+      .note {
+        border-left: 4px solid #16a34a;
+        background: #ecfdf3;
+        padding: 12px 16px;
+      }
+      code {
+        background: #e8eee9;
+        border-radius: 4px;
+        padding: 2px 5px;
+      }
+      li {
+        margin: 6px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ROU-219 / COF-015 Toll And Vale-Pedagio Classification</h1>
+      <p class="note">
+        Manually maintained derived summary. Canonical source of truth remains the Markdown docs and service code.
+      </p>
+
+      <h2>What Changed</h2>
+      <ul>
+        <li>Core API now exposes the contracted toll endpoints: <code>POST /api/toll-estimates</code>, <code>GET /api/trips/{tripId}/tolls</code>, <code>POST /api/trips/{tripId}/tolls/manual-payment</code>, <code>POST /api/trips/{tripId}/vale-pedagio</code>, and <code>GET /api/toll-data/import-status</code>.</li>
+        <li>Trip toll records store amount, payer, classification, finance treatment, confidence, source metadata, and receipt/proof references.</li>
+        <li>Vale-Pedagio records store provider/proof metadata, received status, derived classification, finance treatment, and confidence.</li>
+        <li>Trip profitability estimates use persisted toll classifications as defaults when request toll override fields are omitted. Pass-through, Vale-Pedagio, and identified included-in-freight toll components are excluded from profit; unknown tolls are treated conservatively as direct cost until reviewed.</li>
+      </ul>
+
+      <h2>Why It Changed</h2>
+      <p>
+        Toll reimbursement and Vale-Pedagio are pass-through cash flow. They can help explain cash movement, but they must not inflate expected profit or safe personal withdrawal.
+      </p>
+
+      <h2>Affected Areas</h2>
+      <ul>
+        <li><code>core-api/src/main/java/com/cofrete/coreapi/trip</code>: toll entities, request/response contracts, service methods, and controller endpoints.</li>
+        <li><code>core-api/src/main/resources/db/migration/V6__trip_toll_vale_pedagio_model.sql</code>: persistence for trip tolls and Vale-Pedagio records.</li>
+        <li><code>core-api/src/test/java/com/cofrete/coreapi/trip/TripEndpointTests.java</code>: endpoint, classification, and deterministic profitability coverage.</li>
+        <li><code>docs/architecture/api-contracts.md</code> and <code>docs/compliance/vale-pedagio.md</code>: classification semantics aligned with API behavior.</li>
+        <li><code>core-api/README.md</code>: service status and endpoint summary.</li>
+      </ul>
+
+      <h2>Validation</h2>
+      <ul>
+        <li><code>cd core-api &amp;&amp; mvn -q validate test</code></li>
+        <li><code>python scripts/agent_harness_check.py</code></li>
+      </ul>
+
+      <h2>Unblocks</h2>
+      <p>
+        This lowers finance/compliance risk before mobile reserve wallet and dashboard flows expose more profitability and safe-withdrawal numbers.
+      </p>
+    </main>
+  </body>
+</html>

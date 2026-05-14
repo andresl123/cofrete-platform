@@ -15,6 +15,25 @@ record ProfitabilitySnapshotEnvelope(ProfitabilitySnapshotResponse profitability
 record AcceptanceDecisionEnvelope(AcceptanceDecisionResponse acceptanceDecision) {
 }
 
+record TollEstimateEnvelope(TollEstimateResponse tollEstimate) {
+}
+
+record TripTollsEnvelope(
+    List<TripTollResponse> tripTolls,
+    List<ValePedagioRecordResponse> valePedagioRecords,
+    TollClassificationTotalsResponse classificationTotals
+) {
+}
+
+record TripTollEnvelope(TripTollResponse tripToll) {
+}
+
+record ValePedagioEnvelope(ValePedagioRecordResponse valePedagioRecord) {
+}
+
+record TollDataImportStatusEnvelope(TollDataImportStatusResponse tollDataImportStatus) {
+}
+
 record RoutePointResponse(String city, String state) {
 }
 
@@ -199,6 +218,171 @@ record AcceptanceDecisionResponse(
             decision.getNote(),
             decision.getDecidedAt(),
             decision.getCreatedAt()
+        );
+    }
+}
+
+record TollEstimateResponse(
+    String tripId,
+    TollRouteResponse route,
+    TollVehicleResponse vehicle,
+    List<EstimatedTollResponse> estimatedTolls,
+    String totalEstimatedToll,
+    String currency,
+    String financeTreatment,
+    String freshnessStatus,
+    String confidence
+) {
+
+    static TollEstimateResponse from(TollEstimateRequest request) {
+        String distance = request.distanceKm() == null ? null : TripMoney.money(request.distanceKm());
+        return new TollEstimateResponse(
+            request.tripId(),
+            new TollRouteResponse(
+                request.origin().city() + ", " + request.origin().state(),
+                request.destination().city() + ", " + request.destination().state(),
+                distance
+            ),
+            new TollVehicleResponse(request.vehicleType(), request.axles()),
+            List.of(),
+            "0.00",
+            TripMoney.BRL,
+            "pass_through_or_reimbursement_not_profit",
+            "UNKNOWN",
+            "no_imported_toll_data_available"
+        );
+    }
+}
+
+record TollRouteResponse(String origin, String destination, String distanceKm) {
+}
+
+record TollVehicleResponse(String type, Integer axles) {
+}
+
+record EstimatedTollResponse(
+    String name,
+    String highway,
+    String state,
+    String amount,
+    String currency,
+    String confidence,
+    TollClassification classification
+) {
+}
+
+record TripTollResponse(
+    String id,
+    String plazaName,
+    String amount,
+    String currency,
+    TollPaidBy paidBy,
+    TollClassification classification,
+    String financeTreatment,
+    String confidence,
+    String source,
+    String sourceReference,
+    Instant paidAt,
+    String note,
+    Instant createdAt
+) {
+
+    static TripTollResponse from(TripToll toll) {
+        return new TripTollResponse(
+            toll.getId(),
+            toll.getPlazaName(),
+            TripMoney.money(toll.getAmount()),
+            toll.getCurrency(),
+            toll.getPaidBy(),
+            toll.getClassification(),
+            toll.getFinanceTreatment(),
+            toll.getConfidence(),
+            toll.getSource(),
+            toll.getSourceReference(),
+            toll.getPaidAt(),
+            toll.getNote(),
+            toll.getCreatedAt()
+        );
+    }
+}
+
+record ValePedagioRecordResponse(
+    String id,
+    String provider,
+    String proofReference,
+    String amount,
+    String currency,
+    ValePedagioStatus receivedStatus,
+    TollClassification classification,
+    String financeTreatment,
+    String confidence,
+    Instant receivedAt,
+    String note,
+    Instant createdAt
+) {
+
+    static ValePedagioRecordResponse from(ValePedagioRecord record) {
+        return new ValePedagioRecordResponse(
+            record.getId(),
+            record.getProvider(),
+            record.getProofReference(),
+            TripMoney.money(record.getAmount()),
+            record.getCurrency(),
+            record.getReceivedStatus(),
+            record.getClassification(),
+            record.getFinanceTreatment(),
+            record.getConfidence(),
+            record.getReceivedAt(),
+            record.getNote(),
+            record.getCreatedAt()
+        );
+    }
+}
+
+record TollClassificationTotalsResponse(
+    String passThroughAmount,
+    String driverPaidNonReimbursedAmount,
+    String includedInFreightAmount,
+    String noTollAmount,
+    String unknownAmount,
+    String valePedagioPassThroughAmount,
+    String currency,
+    String financeTreatment
+) {
+
+    static TollClassificationTotalsResponse from(TollClassificationTotals totals) {
+        return new TollClassificationTotalsResponse(
+            TripMoney.money(totals.passThroughAmount()),
+            TripMoney.money(totals.driverPaidNonReimbursedAmount()),
+            TripMoney.money(totals.includedInFreightAmount()),
+            TripMoney.money(totals.noTollAmount()),
+            TripMoney.money(totals.unknownAmount()),
+            TripMoney.money(totals.valePedagioPassThroughAmount()),
+            TripMoney.BRL,
+            "toll_reimbursement_and_vale_pedagio_excluded_from_profit"
+        );
+    }
+}
+
+record TollDataImportStatusResponse(
+    String source,
+    String dataset,
+    String freshnessStatus,
+    String confidence,
+    String advisoryText,
+    Instant retrievedAt,
+    String importAuditId
+) {
+
+    static TollDataImportStatusResponse unknown(String source) {
+        return new TollDataImportStatusResponse(
+            source == null || source.isBlank() ? "ANTT" : source.trim(),
+            "toll_plazas_and_tariffs",
+            "UNKNOWN",
+            "not_imported",
+            "Toll estimates are advisory. Cofrete has no production paid toll provider integration in this module.",
+            null,
+            null
         );
     }
 }
