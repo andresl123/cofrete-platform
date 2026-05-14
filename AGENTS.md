@@ -37,9 +37,10 @@ This file is intentionally short. Durable project knowledge belongs in versioned
 
 ## Working Rules
 
-- Before making any file change, create or switch to a dedicated Git worktree branch for the task.
+- Before making any file change, create and switch to a dedicated Git worktree branch for the task.
 - Do not start implementation edits in the main checkout. First create the task worktree, then make changes inside that worktree.
 - Prefer `scripts/start_task_worktree.sh <task-name> [base-branch]` when starting a new task worktree.
+- always make sure you have the newest data from origin/main
 - For every new task, invoke the `caveman` skill in `lite` mode and keep responses concise, professional, and technically complete unless the user asks for normal mode.
 - For any frontend interface change, invoke the `impeccable` skill before editing UI files and follow its required preflight, design, validation, and handoff workflow.
 - Read the nearest `AGENTS.md` before editing a service.

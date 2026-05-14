@@ -15,3 +15,19 @@ spring:
     properties:
       hibernate:
         default_schema: core_api
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+      direct:
+        auto-startup: false
+
+cofrete:
+  core-api:
+    rabbitmq:
+      enabled: false
+
+management:
+  health:
+    rabbit:
+      enabled: false

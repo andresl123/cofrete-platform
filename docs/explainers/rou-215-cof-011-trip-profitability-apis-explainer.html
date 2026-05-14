@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ROU-215 / COF-011 Trip Profitability APIs Explainer</title>
+    <style>
+      body {
+        color: #111827;
+        font-family: Arial, sans-serif;
+        line-height: 1.5;
+        margin: 0 auto;
+        max-width: 920px;
+        padding: 32px;
+      }
+      code {
+        background: #f3f4f6;
+        border-radius: 4px;
+        padding: 2px 4px;
+      }
+      h1,
+      h2 {
+        line-height: 1.2;
+      }
+      li {
+        margin: 8px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ROU-215 / COF-011 Trip Profitability APIs</h1>
+    <p>
+      This manually maintained derived summary covers the Core API implementation for
+      freight and trip profitability endpoints. Canonical wording remains in
+      <code>docs/architecture/api-contracts.md</code>,
+      <code>docs/architecture/event-contracts.md</code>, and related architecture docs.
+    </p>
+
+    <h2>What Changed</h2>
+    <ul>
+      <li>Added durable Core API records for freights, trips, trip cost inputs, profitability snapshots, acceptance decisions, and trip recalculation events.</li>
+      <li>Implemented the trip-first public workflow: create trip, read trip, request profitability estimate, read latest snapshot, and record acceptance decision.</li>
+      <li>Added advisory profitability math that excludes toll reimbursement and Vale-Pedagio as pass-through cash flow before calculating profit and safe personal withdrawal.</li>
+      <li>Added canonical <code>trip.recalculation.requested</code> event records and RabbitMQ publication using the contract routing key.</li>
+      <li>Added Core API tests for validation, persistence, snapshot behavior, acceptance decisions, and canonical event fields.</li>
+      <li>Documented the temporary Core API synchronous estimate decision in <code>docs/adr/0002-temporary-core-api-trip-estimates.md</code>.</li>
+    </ul>
+
+    <h2>Risk Boundaries</h2>
+    <ul>
+      <li>Profitability output is advisory planning data, not legal, tax, accounting, insurance, ANTT, ANP, DETRAN, SEFAZ, or payment guidance.</li>
+      <li>Pass-through cash flow is visible but does not inflate expected profit or safe personal withdrawal.</li>
+      <li>Core API owns only the temporary synchronous estimate path; Finance Worker remains the long-term async profitability calculation owner.</li>
+      <li>RabbitMQ publication is part of the recalculation request path so Finance Worker can recalculate from authoritative Core API trip state.</li>
+    </ul>
+
+    <h2>Validation</h2>
+    <ul>
+      <li><code>cd core-api &amp;&amp; mvn -q validate test</code></li>
+      <li><code>docker compose config</code></li>
+      <li><code>python scripts/agent_harness_check.py</code></li>
+      <li><code>git diff --check</code></li>
+      <li><code>grill-with-docs</code> review loop executed for ROU-215 before final handoff.</li>
+    </ul>
+
+    <h2>Unblocks</h2>
+    <p>
+      This slice unblocks COF-018 mobile onboarding and new freight calculator screens by
+      giving the product a durable backend surface for the driver question:
+      should I accept this freight?
+    </p>
+  </body>
+</html>

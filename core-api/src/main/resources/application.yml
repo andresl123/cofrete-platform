@@ -13,6 +13,15 @@ spring:
     properties:
       hibernate:
         default_schema: core_api
+  rabbitmq:
+    addresses: ${COFRETE_CORE_API_AMQP_URL:amqp://cofrete:cofrete_local_password@localhost:5672/cofrete}
+
+cofrete:
+  core-api:
+    rabbitmq:
+      enabled: ${COFRETE_CORE_API_RABBITMQ_ENABLED:true}
+      exchange: ${COFRETE_CORE_API_EVENTS_EXCHANGE:cofrete.finance.events}
+      trip-recalculation-requested-routing-key: trip.recalculation.requested
 
 management:
   endpoints:

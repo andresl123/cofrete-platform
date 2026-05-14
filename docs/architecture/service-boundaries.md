@@ -11,6 +11,7 @@ Owns:
 - Auth endpoints, Spring Security configuration, session issuance/revocation, user role authorization, account scoping, API request validation, and persistence.
 - Audit logging for user/admin/support HTTP actions and internal service writes that land in Core API.
 - Temporary MVP synchronous reserve allocation through ROU-217, so mobile and dashboard work can consume durable reserve wallets before the async worker result path lands in ROU-253.
+- Temporary MVP synchronous trip profitability estimates through ROU-215, so the trip-first API can return immediate advisory decisions before Finance Worker result persistence is wired.
 
 Internal implementation rule:
 
@@ -31,7 +32,7 @@ These modules should be separated in code even while they deploy together inside
 Does not own:
 
 - Long-running external imports.
-- Heavy financial recalculation loops.
+- Heavy financial recalculation loops after the temporary ROU-215 synchronous estimate path is replaced by worker result persistence.
 - Frontend-specific business math.
 - Long-term reserve allocation math after ROU-253 wires worker-owned async allocation result persistence.
 
@@ -47,7 +48,7 @@ Owns:
 - Financial health scoring.
 - Idempotent handling of finance events.
 
-ROU-217 introduces deterministic reserve allocation logic in the worker and a temporary synchronous Core API allocation path for MVP persistence. ROU-253 is the follow-up that makes the documented async ownership fully effective by persisting worker allocation results back into Core API wallets and transactions.
+ROU-217 introduces deterministic reserve allocation logic in the worker and a temporary synchronous Core API allocation path for MVP persistence. ROU-215 introduces a similar temporary synchronous Core API trip estimate path so the mobile freight decision workflow has an immediate API response. Follow-up worker-result persistence work should make the documented async ownership fully effective by persisting worker finance results back into Core API snapshots without changing pass-through or safe-withdrawal semantics.
 
 Does not own:
 
